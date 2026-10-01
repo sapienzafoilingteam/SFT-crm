@@ -6,6 +6,8 @@ La pagina `/drive` usa Google Drive come archivio. Supabase continua a gestire l
 
 1. Accedi alla [console Google Cloud](https://console.cloud.google.com/) con l’account del team, crea o scegli un progetto e abilita **Google Drive API**.
 2. In **Google Auth Platform**, configura nome dell’app e contatti. Se il progetto è in modalità Testing, aggiungi `sapienzafoilingteam@gmail.com` ai test users. Per un’app External pubblicata, lo scope completo Drive è restricted e Google può richiedere verifica. La configurazione Internal è disponibile solo se l’organizzazione Google Workspace la supporta.
+In **Data Access**, dichiara gli scope `https://www.googleapis.com/auth/drive` e `https://www.googleapis.com/auth/userinfo.email`.
+
 3. In **Clients**, crea un client OAuth di tipo **Web application**. Aggiungi alle Authorized JavaScript origins:
    - `https://crm.sapienzafoilingteam.com`
    - `https://sft-crm.vercel.app`
@@ -46,3 +48,7 @@ In modalità demo le operazioni sono solo nella sessione del browser. In modalit
 Dopo la configurazione: un membro attivo apre Drive, autorizza Google, naviga in una cartella di prova, carica un file di prova, rinomina, visualizza, scarica e sposta nel cestino lo stesso file. Verificare anche account errato, permessi read-only e scadenza del token. Questo collaudo richiede l’account reale e deve essere completato dall’utente: l’agente non inserisce password Google né concede il consenso al posto dell’utente.
 
 Fonti: [Google token model](https://developers.google.com/identity/oauth2/web/guides/use-token-model), [upload](https://developers.google.com/workspace/drive/api/guides/manage-uploads), [download/export](https://developers.google.com/workspace/drive/api/guides/manage-downloads), [scope Drive](https://developers.google.com/workspace/drive/api/guides/api-specific-auth).
+
+## Errore 403: access_denied in Testing
+
+Se Google dice che l’app è disponibile solo ai developer-approved testers, apri **Google Auth Platform → Audience → Test users → Add users**, aggiungi `sapienzafoilingteam@gmail.com` e salva. Seleziona il progetto del Client ID configurato nel CRM e riprova scegliendo lo stesso account del team. Un invito Supabase non aggiunge un tester Google.
