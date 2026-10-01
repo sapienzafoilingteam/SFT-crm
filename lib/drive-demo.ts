@@ -1,3 +1,4 @@
+import { TEAMS } from "./model";
 import { DriveFile, DRIVE_FOLDER } from "./google-drive";
 export interface DemoFile extends DriveFile {
   demoText?: string;
@@ -30,9 +31,8 @@ export function driveDemo(): DemoFile[] {
     capabilities: { canEdit: true, canTrash: true, canDownload: true },
   });
   return [
-    folder("demo-management", "Management e Comunicazione"),
+    ...TEAMS.map(team => folder(`demo-${team.id}`, team.name)),
     folder("demo-media", "Media"),
-    folder("demo-scafo", "Scafo e terrazze"),
     folder("demo-sponsor", "Sponsor e contratti", "demo-management"),
     text(
       "demo-readme",

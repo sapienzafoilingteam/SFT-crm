@@ -1,4 +1,5 @@
 "use client";
+import { DriveView } from "./drive-view";
 import Link from "next/link";
 import { linkIcon } from "./link-icons";
 import { Deadlines } from "./deadlines";
@@ -507,6 +508,9 @@ export function OverviewView({ edit }: Props) {
         </section>
       </div>
       <Deadlines edit={edit} teamId="management" />
+      <section className="team-drive-section">
+        <DriveView team={TEAMS.find(t => t.id === "management")!} />
+      </section>
       <div className="management-shortcuts">
         {[
           [
@@ -967,6 +971,9 @@ export function TeamView({
           )}
         </div>
       </div>
+      <section className="team-drive-section">
+        <DriveView key={team.id} team={team} />
+      </section>
       <SectionTitle title="Report e aggiornamenti">
         <Button
           variant="outline"

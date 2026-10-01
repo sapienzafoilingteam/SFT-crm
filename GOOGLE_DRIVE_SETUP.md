@@ -41,3 +41,11 @@ Il browser non può fare operazioni generali su Google attraverso questo URL. Le
 ## Collaudo
 
 Verificare con un membro attivo lettura, upload piccolo, download, anteprima, rinomina e cestino di un file di prova. Verificare che un secondo membro apra il Drive senza autorizzazione Google. Un membro disattivato e una richiesta anonima devono essere rifiutati. I test automatici coprono questi controlli del server e le operazioni REST; l'autorizzazione reale richiede l'account del responsabile.
+
+## Cartelle dei reparti
+
+Il comando `node --import tsx scripts/provision-drive.ts` crea le sette cartelle dei reparti nella root configurata, riutilizza quelle marcate con `appProperties.sftTeam` oppure una cartella dal nome esatto e non crea duplicati a ogni apertura della pagina. In caso di nomi ambigui si ferma per evitare di scegliere file sbagliati. Salva la mappa in `GOOGLE_DRIVE_TEAM_FOLDERS`, variabile server JSON da configurare su Vercel insieme alle credenziali Google.
+
+La pagina di ogni reparto mostra esclusivamente la propria cartella come punto di partenza e permette di navigare nelle sottocartelle. Il percorso si ferma alla root del reparto; la pagina Drive principale rimane il punto di accesso all'intero Drive. Queste cartelle organizzano i contenuti: tutti i membri attivi mantengono accesso a tutti i reparti, come richiesto per il CRM.
+
+Trascinamento dei file disponibile sia nella pagina Drive sia nei reparti, anche per più file insieme. La destinazione è la cartella attualmente aperta; cartelle trascinate non sono accettate. Sono gestiti permessi, caricamento in corso, limite 100 MB e fallimenti parziali. L'associazione rimane valida anche se si rinomina la cartella su Google Drive. Dopo spostamento nel cestino serve il ripristino su Drive prima di usare nuovamente il reparto.

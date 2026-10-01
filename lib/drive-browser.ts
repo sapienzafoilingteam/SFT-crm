@@ -6,11 +6,11 @@ async function crmHeaders() {
   if (!token) throw new DriveError('Accedi al CRM per usare il Drive.', 401);
   return { Authorization: `Bearer ${token}` };
 }
-export async function driveStatus() {
-  const response = await fetch('/api/drive', { headers: await crmHeaders(), cache: 'no-store' });
+export async function driveStatus(teamId?: string) {
+  const response = await fetch(`/api/drive${teamId ? '?team=' + encodeURIComponent(teamId) : ''}`, { headers: await crmHeaders(), cache: 'no-store' });
   const result = await response.json();
   if (!response.ok) throw new DriveError(result.error, response.status);
-  return result.connected as boolean;
+  return result as { connected: boolean; folderId: string | null };
 }
 const transport: typeof fetch = async (input, init = {}) => {
   const url = String(input);

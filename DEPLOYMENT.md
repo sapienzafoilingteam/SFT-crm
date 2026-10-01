@@ -46,8 +46,10 @@ La Home usa il componente Scadenze per tutte le attività aperte della stagione.
 
 La nuova implementazione usa `/api/drive` con JWT Supabase e verifica di `members.active` per ogni richiesta. OAuth Google è richiesto solo al responsabile; tutti i membri attivi usano direttamente il CRM. Client Secret, refresh token e access token rimangono sul server. La pagina mostra anche lo spazio dell'account Google con dettaglio Drive/cestino.
 
-Verifica locale: 15 test passati, incluse richieste anonime, membership disattivata, destinazioni non consentite e assenza di credenziali nelle risposte. Nessuna migrazione Supabase richiesta. Configurazione e limiti sono descritti in GOOGLE_DRIVE_SETUP.md.
+Verifica locale: 17 test passati, incluse richieste anonime, membership disattivata, destinazioni non consentite e assenza di credenziali nelle risposte. Nessuna migrazione Supabase richiesta. Configurazione e limiti sono descritti in GOOGLE_DRIVE_SETUP.md.
 
-Stato attivazione: Client Secret importato dal JSON locale senza mostrarlo; in attesa dell'autorizzazione iniziale del responsabile e della configurazione delle tre variabili server su Vercel. Non distribuire la nuova versione prima di completare questo passaggio: sostituisce il precedente login Google nel browser.
+Stato attivazione: autorizzazione del responsabile completata. Credenziali server e GOOGLE_DRIVE_TEAM_FOLDERS configurate come Secret su Vercel Production e Preview, senza mostrarle. Sette cartelle reali create e verificate; seconda esecuzione ha riutilizzato le cartelle. Provati sul Drive reale upload diretto senza OAuth nel browser, CORS e download di un file temporaneo, poi spostato nel cestino. In anteprima verificati caricamento e creazione sottocartella nel reparto Scafo. Trascinamento implementato ma non simulato nel browser di anteprima. Deploy della nuova versione in corso.
 
 Rollback: mantenere il deployment precedente `dpl_2EWZaA8WTqgS19PaXr5FaYAS7pLp` se il Drive condiviso non supera il collaudo. Il rollback non richiede modifiche al database e ripristina il collegamento Google individuale della versione precedente.
+
+Ogni pagina reparto contiene File del reparto, incluse la panoramica Management e la sua pagina componibile. La root della navigazione è la cartella del reparto; il trascinamento usa la cartella aperta. Le associazioni usano gli ID Google e rimangono valide dopo una rinomina.

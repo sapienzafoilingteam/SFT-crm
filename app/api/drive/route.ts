@@ -1,3 +1,4 @@
+import { configuredTeamFolder } from '@/lib/drive-team-folders';
 import { driveTarget } from '@/lib/drive-proxy-policy';
 import { driveConfigured, googleDriveToken, requireDriveMember, ServerDriveError } from '@/lib/drive-server';
 export const runtime = 'nodejs';
@@ -9,7 +10,10 @@ function failure(error: unknown) {
 export async function GET(request: Request) {
   try {
     await requireDriveMember(request);
-    return Response.json({ connected: driveConfigured() }, { headers: { 'Cache-Control': 'no-store' } });
+    const teamId = new URL(request.url).searchParams.get('team');
+    const folderId = teamId ? configuredTeamFolder(teamId, process.env.GOOGLE_DRIVE_TEAM_FOLDERS) : null;
+    if (teamId && !folderId && driveConfigured()) throw new ServerDriveError('La cartella Drive di questo reparto non è ancora configurata.', 503);
+    return Response.json({ connected: driveConfigured(), folderId }, { headers: { 'Cache-Control': 'no-store' } });
   } catch (error) { return failure(error); }
 }
 export async function POST(request: Request) {

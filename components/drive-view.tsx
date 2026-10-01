@@ -60,13 +60,13 @@ function googleLink(file: DriveFile) {
     return fallback;
   }
 }
-export function DriveView() {
+export function DriveView({ team }: { team?: { id: string; name: string } } = {}) {
   const demo = !live;
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(!demo);
   const [storage, setStorage] = useState<DriveStorage | null>(null);
   const [path, setPath] = useState([
-    { id: demo ? "demo-root" : rootId, name: "Drive del team" },
+    { id: demo ? (team ? `demo-${team.id}` : "demo-root") : rootId, name: team?.name || "Drive del team" },
   ]);
   const folder = path[path.length - 1];
   const [rows, setRows] = useState<DriveFile[]>([]);
@@ -78,6 +78,9 @@ export function DriveView() {
   const [grid, setGrid] = useState(false);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const dragDepth = useRef(0);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [pageToken, setPageToken] = useState("");
@@ -106,18 +109,21 @@ export function DriveView() {
   useEffect(() => {
     if (demo) return;
     let active = true;
-    driveStatus().then(value => { if (active) setReady(value); })
+    driveStatus(team?.id).then(value => { if (active) {
+      if (team && value.folderId) setPath([{ id: value.folderId, name: team.name }]);
+      setReady(value.connected);
+    } })
       .catch(e => { if (active) setError(e.message); })
       .finally(() => { if (active) setChecking(false); });
     return () => { active = false; };
-  }, [demo]);
+  }, [demo, team?.id, team?.name]);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || team) return;
     let active = true;
     driveStorage().then(value => { if (active) setStorage(value); })
       .catch(() => { if (active) setStorage(null); });
     return () => { active = false; };
-  }, [ready, refresh]);
+  }, [ready, refresh, team]);
   useEffect(
     () => () => {
       if (preview?.url) URL.revokeObjectURL(preview.url);
@@ -178,7 +184,8 @@ export function DriveView() {
     };
   }, [demo, ready, folder.id, search, refresh, demoFiles]);
   async function perform(action: () => Promise<void>) {
-    if (busy) return;
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError("");
     setNotice("");
@@ -191,6 +198,7 @@ export function DriveView() {
         setRows([]);
       }
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -238,7 +246,7 @@ export function DriveView() {
       else setPreview({ file, mime });
     });
   }
-  function upload(files: FileList | null, target?: DriveFile | null) {
+  function upload(files: FileList | File[] | null, target?: DriveFile | null) {
     if (!files?.length) return;
     const selected = Array.from(files);
     void perform(async () => {
@@ -273,6 +281,9 @@ export function DriveView() {
           count++;
         }
         setNotice(`${count} file ${target ? "aggiornato" : count === 1 ? "caricato" : "caricati"}.`);
+      } catch (error) {
+        if (count) setNotice(`${count} file caricati prima dell’interruzione. Gli altri non sono stati caricati.`);
+        throw error;
       } finally {
         setRefresh((n) => n + 1);
         if (uploadInput.current) uploadInput.current.value = "";
@@ -280,6 +291,22 @@ export function DriveView() {
         replaceTarget.current = null;
       }
     });
+  }
+  function dropFiles(event: React.DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    dragDepth.current = 0;
+    setDragging(false);
+    if (!event.dataTransfer.types.includes("Files")) return;
+    if (!canAdd || busyRef.current || loading) {
+      setError(loading || busyRef.current ? "Attendi la fine dell’operazione prima di caricare altri file." : "Non hai il permesso di caricare file in questa cartella.");
+      return;
+    }
+    const items = Array.from(event.dataTransfer.items);
+    if (items.some(item => item.webkitGetAsEntry?.()?.isDirectory)) {
+      setError("Trascina i file, non le cartelle. Puoi creare le sottocartelle con Nuova cartella.");
+      return;
+    }
+    upload(Array.from(event.dataTransfer.files));
   }
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -409,11 +436,11 @@ export function DriveView() {
   );
   return (
     <>
-      <div className="page-heading">
+      <div className={team ? "page-heading drive-team-heading" : "page-heading"}>
         <div>
           <div className="eyebrow">FILE E CARTELLE CONDIVISI</div>
-          <h1>Drive del team</h1>
-          <p>I documenti del Sapienza Foiling Team, in un unico spazio.</p>
+          {team ? <h2>File del reparto</h2> : <h1>Drive del team</h1>}
+          <p>{team ? `La cartella condivisa di ${team.name}.` : "I documenti del Sapienza Foiling Team, in un unico spazio."}</p>
         </div>
         <div className="heading-actions">
           {connected && (
@@ -469,7 +496,7 @@ export function DriveView() {
           <p>{checking ? "Verifica dell’accesso del team in corso." : "Il responsabile deve completare il collegamento Google. I membri accedono direttamente dal CRM."}</p>
         </div>
       )}
-      {connected && !demo && (
+      {connected && !demo && !team && (
         <div className="drive-storage" aria-label="Spazio Google utilizzato">
           {storage ? <>
             <div><strong>Spazio dell’account Google</strong><span>{storageBytes(storage.usage)} utilizzati{storage.limit ? ` su ${storageBytes(storage.limit)}` : " · limite non comunicato da Google"}</span></div>
@@ -490,7 +517,27 @@ export function DriveView() {
         </p>
       )}
       {connected && (
-        <div className="panel drive-browser" aria-busy={loading || busy}>
+        <div className={`panel drive-browser${dragging ? " drive-dragging" : ""}`} aria-busy={loading || busy}
+          aria-label={team ? `Drive ${team.name}` : "Drive del team"}
+          onDragEnter={event => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            event.preventDefault();
+            dragDepth.current++;
+            if (canAdd && !busyRef.current && !loading) setDragging(true);
+          }}
+          onDragOver={event => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect = canAdd && !busyRef.current && !loading ? "copy" : "none";
+          }}
+          onDragLeave={event => {
+            if (!event.dataTransfer.types.includes("Files")) return;
+            dragDepth.current = Math.max(0, dragDepth.current - 1);
+            if (!dragDepth.current) setDragging(false);
+          }}
+          onDrop={dropFiles}>
+          {dragging && <div className="drive-drop-overlay" role="status"><Upload size={32} /><strong>Rilascia i file qui</strong><span>Caricamento nella cartella {folder.name}</span></div>}
+          {canAdd && <p className="drive-drop-hint">Trascina qui i file oppure usa Carica file · massimo 100 MB per file</p>}
           <div className="drive-toolbar">
             <nav className="drive-path" aria-label="Percorso Drive">
               {path.map((part, i) => (
