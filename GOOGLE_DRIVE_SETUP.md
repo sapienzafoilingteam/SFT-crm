@@ -1,54 +1,43 @@
-# Drive del team nel CRM
+# Drive condiviso nel CRM
 
-La pagina `/drive` usa Google Drive come archivio. Supabase continua a gestire l’accesso al CRM, senza copiare i file o le autorizzazioni Google.
+Il CRM accede al Drive di `sapienzafoilingteam@gmail.com` tramite il proprio server. I membri attivi accedono con la sola sessione Supabase: non devono usare un account Google o conoscere le credenziali del team. Ogni chiamata verifica la sessione presso Supabase e `members.active`, comprese lettura, download, ricerca e modifiche. Tutti i membri attivi possono usare le operazioni disponibili nel Drive del team.
 
-## Configurazione richiesta
+## Configurazione del responsabile
 
-1. Accedi alla [console Google Cloud](https://console.cloud.google.com/) con l’account del team, crea o scegli un progetto e abilita **Google Drive API**.
-2. In **Google Auth Platform**, configura nome dell’app e contatti. Se il progetto è in modalità Testing, aggiungi `sapienzafoilingteam@gmail.com` ai test users. Per un’app External pubblicata, lo scope completo Drive è restricted e Google può richiedere verifica. La configurazione Internal è disponibile solo se l’organizzazione Google Workspace la supporta.
-In **Data Access**, dichiara gli scope `https://www.googleapis.com/auth/drive` e `https://www.googleapis.com/auth/userinfo.email`.
+1. Abilitare Google Drive API nel progetto Google Cloud del client OAuth Web.
+2. Aggiungere agli URI di reindirizzamento autorizzati del client `http://localhost:4387/callback`.
+3. Se l'app è in Testing, aggiungere solo l'account Google del team ai test users.
+4. Eseguire dalla cartella del progetto:
 
-3. In **Clients**, crea un client OAuth di tipo **Web application**. Aggiungi alle Authorized JavaScript origins:
-   - `https://crm.sapienzafoilingteam.com`
-   - `https://sft-crm.vercel.app`
-   - `http://127.0.0.1:3000` e `http://localhost:3000` per lo sviluppo.
-4. Copia il **Client ID**, non il Client Secret. Questo flusso browser non usa un secret né redirect URI applicative.
-5. Configura localmente e su Vercel Production/Preview:
+   ```sh
+   node scripts/connect-drive.mjs /percorso/client_secret.json
+   ```
 
-```dotenv
-NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID=CLIENT_ID.apps.googleusercontent.com
-NEXT_PUBLIC_GOOGLE_DRIVE_ROOT_ID=root
-NEXT_PUBLIC_GOOGLE_DRIVE_ACCOUNT_EMAIL=sapienzafoilingteam@gmail.com
-```
+5. Aprire il link generato e autorizzare **sapienzafoilingteam@gmail.com**. Il server locale verifica state, PKCE, account e scope. Il collegamento termina dopo 15 minuti se non completato.
+6. Il comando importa Client ID e Client Secret e salva il refresh token in `.env.local`, con permessi `0600`, senza stamparli. Il JSON deve rimanere fuori dalla repository.
+7. Configurare su Vercel, come variabili **server**, `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_REFRESH_TOKEN`, poi effettuare un nuovo deploy. Nessuna di queste variabili deve avere il prefisso `NEXT_PUBLIC_`.
 
-Le tre variabili sono configurazione pubblica, non credenziali. Non inserire token o client secret in variabili `NEXT_PUBLIC_*`. Dopo una modifica alle variabili ridistribuisci l’app.
+Restano necessari `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` e `NEXT_PUBLIC_DATA_MODE=supabase`. La root è `NEXT_PUBLIC_GOOGLE_DRIVE_ROOT_ID=root` per il My Drive del team. Nessuna migrazione Supabase aggiuntiva è richiesta.
 
-## Account e permessi
+**Google in Testing:** con lo scope Drive il refresh token scade normalmente dopo sette giorni. Per evitare il rinnovo settimanale il responsabile deve passare l'app a In production; lo scope Drive è ristretto e rimangono applicabili i requisiti Google di verifica e i limiti per app non verificate. Anche fuori dal Testing una revoca dell'autorizzazione può richiedere un nuovo collegamento del responsabile. I membri non devono effettuare OAuth.
 
-Il link `https://drive.google.com/drive/u/1/my-drive` è una vista dell’account attivo nel browser: `/u/1` non identifica il Drive del team. Per questo il CRM verifica che l’account autorizzato sia `sapienzafoilingteam@gmail.com`, poi apre la sua radice `root`.
+## File e spazio
 
-Ogni persona deve poter autorizzare questo account; un invito al CRM non concede accesso a Google. Per membri che usano account individuali, è preferibile configurare un ID di cartella condivisa con i loro account e lasciare `NEXT_PUBLIC_GOOGLE_DRIVE_ACCOUNT_EMAIL` vuoto. Non distribuire password Google tramite il CRM.
+- Navigazione, ricerca nella cartella, cartelle nuove, upload, rinomina, sostituzione del contenuto, cestino, anteprima e download.
+- I documenti Google possono essere esportati. Per modificarne il contenuto si apre l'editor Google, che richiede un account Google con i propri permessi sul documento.
+- Lo spazio arriva da `about.storageQuota`: il totale usato e il limite riguardano l'account Google (Drive, Gmail e Foto); vengono mostrati separatamente uso di Drive e cestino. Un limite omesso non viene presentato come zero o come illimitato.
+- La barra dello spazio si aggiorna entrando nella pagina e premendo Aggiorna.
+- I file eliminati vengono spostati nel cestino, non cancellati definitivamente.
+- Limite dell'interfaccia: 100 MB per upload/download; export Google Docs limitato da Google. Upload oltre il limite: usare Google Drive.
 
-Il browser richiede gli scope Drive completo e email: Drive completo consente gestione dei file già esistenti; `drive.file` limita invece l’app ai file creati o selezionati per l’app e non replica tutto Il mio Drive. Il token resta in memoria per la durata della pagina, non viene memorizzato su Supabase, localStorage o nei log. Alla scadenza occorre premere Connetti Google. Scollega rimuove il token dalla pagina; per revocare il consenso anche su Google usare la pagina delle autorizzazioni del proprio account Google.
+## Confine di sicurezza
 
-## Operazioni
+`/api/drive` verifica JWT e membership prima di contattare Google. Usa solo URL HTTPS del dominio Google e percorsi Drive consentiti; rifiuta DELETE e destinazioni esterne. Client Secret, refresh token e access token restano sul server. Le risposte non vengono memorizzate in cache. Non vengono registrati token, risposte OAuth o contenuti di file.
 
-- Elenco paginato di cartelle/file, navigazione a breadcrumb, ricerca nella cartella, lista/griglia.
-- Nuova cartella, caricamento e sostituzione di file binari con sessione di upload Google; limite 100 MB per file nel CRM.
-- Rinomina e spostamento nel cestino, rispettando capabilities Google. Non è disponibile l’eliminazione definitiva.
-- Download file ed export Docs in DOCX, Sheets in XLSX, Slides in PPTX, Drawings in PDF. Per la preview i documenti Google vengono esportati in PDF, secondo i limiti Google (export fino a 10 MB).
-- Anteprima testo (fino a 2 MB), immagini, PDF, audio e video. Per formati non supportati, Apri in Google o Scarica.
-- Modifica del contenuto di documenti Google nell’editor Google, tramite link; nessun editor Docs/Sheets viene ricreato nel CRM.
-- Le shortcuts Google e navigazione del cestino non sono implementate. Le cartelle sono mostrate entro il percorso configurato. I permessi Google restano l’autorità; il percorso non è una nuova barriera di sicurezza.
+Gli upload usano sessioni resumable: il server autorizza la creazione/sostituzione, poi il browser invia il file direttamente all'URL della singola sessione Google, senza token OAuth e senza passare dal limite di payload Vercel. L'URL di sessione consente solo quell'upload ed è riservato all'utente che lo avvia: non condividerlo. Una sessione già concessa può completarsi anche se il membro viene disattivato successivamente; le nuove operazioni richiedono sempre membership attiva.
 
-In modalità demo le operazioni sono solo nella sessione del browser. In modalità Supabase senza Client ID appare lo stato “Collega il Drive del team”; nessun file dimostrativo viene presentato come file reale.
+Il browser non può fare operazioni generali su Google attraverso questo URL. Le anteprime rimangono Blob locali; i PDF sono visualizzati in un iframe isolato. La modalità mock continua a funzionare senza Google, ma non inventa dati di spazio.
 
-## Collaudo reale
+## Collaudo
 
-Dopo la configurazione: un membro attivo apre Drive, autorizza Google, naviga in una cartella di prova, carica un file di prova, rinomina, visualizza, scarica e sposta nel cestino lo stesso file. Verificare anche account errato, permessi read-only e scadenza del token. Questo collaudo richiede l’account reale e deve essere completato dall’utente: l’agente non inserisce password Google né concede il consenso al posto dell’utente.
-
-Fonti: [Google token model](https://developers.google.com/identity/oauth2/web/guides/use-token-model), [upload](https://developers.google.com/workspace/drive/api/guides/manage-uploads), [download/export](https://developers.google.com/workspace/drive/api/guides/manage-downloads), [scope Drive](https://developers.google.com/workspace/drive/api/guides/api-specific-auth).
-
-## Errore 403: access_denied in Testing
-
-Se Google dice che l’app è disponibile solo ai developer-approved testers, apri **Google Auth Platform → Audience → Test users → Add users**, aggiungi `sapienzafoilingteam@gmail.com` e salva. Seleziona il progetto del Client ID configurato nel CRM e riprova scegliendo lo stesso account del team. Un invito Supabase non aggiunge un tester Google.
+Verificare con un membro attivo lettura, upload piccolo, download, anteprima, rinomina e cestino di un file di prova. Verificare che un secondo membro apra il Drive senza autorizzazione Google. Un membro disattivato e una richiesta anonima devono essere rifiutati. I test automatici coprono questi controlli del server e le operazioni REST; l'autorizzazione reale richiede l'account del responsabile.

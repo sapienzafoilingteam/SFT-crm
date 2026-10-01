@@ -11,3 +11,6 @@ app.js
 styles.css
 *.bat
 *.command
+client_secret*.json
+secrets/
+scripts/

@@ -10,3 +10,7 @@ node_modules/
 .DS_Store
 screenshots/
 *.log
+
+# OAuth credentials are never versioned
+client_secret*.json
+secrets/

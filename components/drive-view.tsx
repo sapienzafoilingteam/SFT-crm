@@ -1,5 +1,4 @@
 "use client";
-import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import {
   FolderOpen,
@@ -16,7 +15,6 @@ import {
   List,
   RefreshCw,
   Eye,
-  LogOut,
 } from "lucide-react";
 import { Button } from "./ui/button";
 import {
@@ -26,8 +24,8 @@ import {
   DialogDescription,
 } from "./ui/dialog";
 import { live } from "@/lib/repository";
+import { sharedDriveClient, driveStatus, driveStorage, DriveStorage } from "@/lib/drive-browser";
 import {
-  createDriveClient,
   DriveError,
   DriveFile,
   DRIVE_FOLDER,
@@ -35,30 +33,13 @@ import {
 } from "@/lib/google-drive";
 import { driveDemo, DemoFile } from "@/lib/drive-demo";
 
-const clientId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID || "";
 const rootId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_ROOT_ID || "root";
-const accountEmail =
-  process.env.NEXT_PUBLIC_GOOGLE_DRIVE_ACCOUNT_EMAIL ??
-  (rootId === "root" ? "sapienzafoilingteam@gmail.com" : "");
-type TokenReply = {
-  access_token?: string;
-  expires_in?: number;
-  error?: string;
-  scope?: string;
-};
-type GoogleSDK = {
-  accounts: {
-    oauth2: {
-      initTokenClient(config: {
-        client_id: string;
-        scope: string;
-        hint?: string;
-        callback: (response: TokenReply) => void;
-        error_callback: () => void;
-      }): { requestAccessToken(options: { prompt: string }): void };
-    };
-  };
-};
+function storageBytes(value?: string) {
+  if (value === undefined) return "non disponibile";
+  const bytes = Number(value);
+  if (!Number.isFinite(bytes)) return "non disponibile";
+  return bytes >= 1073741824 ? `${(bytes / 1073741824).toFixed(1)} GB` : `${(bytes / 1048576).toFixed(1)} MB`;
+}
 function fileSize(size?: string) {
   const bytes = Number(size || 0);
   return bytes
@@ -81,10 +62,9 @@ function googleLink(file: DriveFile) {
 }
 export function DriveView() {
   const demo = !live;
-  const [sdk, setSdk] = useState(false);
-  const [token, setToken] = useState("");
-  const [expires, setExpires] = useState(0);
-  const [connecting, setConnecting] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [checking, setChecking] = useState(!demo);
+  const [storage, setStorage] = useState<DriveStorage | null>(null);
   const [path, setPath] = useState([
     { id: demo ? "demo-root" : rootId, name: "Drive del team" },
   ]);
@@ -116,28 +96,28 @@ export function DriveView() {
   const uploadInput = useRef<HTMLInputElement>(null);
   const replaceInput = useRef<HTMLInputElement>(null);
   const replaceTarget = useRef<DriveFile | null>(null);
-  const configured = !!clientId && (rootId !== "root" || !!accountEmail);
-  const connected = demo || !!token;
+  const connected = demo || ready;
   const canAdd = demo || folderMeta?.capabilities?.canAddChildren === true;
-  const api = token ? createDriveClient(token) : null;
+  const api = ready ? sharedDriveClient() : null;
   useEffect(() => {
     const timeout = setTimeout(() => setSearch(inputSearch.trim()), 300);
     return () => clearTimeout(timeout);
   }, [inputSearch]);
   useEffect(() => {
-    if (!expires) return;
-    const timeout = setTimeout(
-      () => {
-        setToken("");
-        setRows([]);
-        setError(
-          "Le autorizzazioni Google sono scadute. Ricollega l’account per continuare.",
-        );
-      },
-      Math.max(0, expires - Date.now()),
-    );
-    return () => clearTimeout(timeout);
-  }, [expires]);
+    if (demo) return;
+    let active = true;
+    driveStatus().then(value => { if (active) setReady(value); })
+      .catch(e => { if (active) setError(e.message); })
+      .finally(() => { if (active) setChecking(false); });
+    return () => { active = false; };
+  }, [demo]);
+  useEffect(() => {
+    if (!ready) return;
+    let active = true;
+    driveStorage().then(value => { if (active) setStorage(value); })
+      .catch(() => { if (active) setStorage(null); });
+    return () => { active = false; };
+  }, [ready, refresh]);
   useEffect(
     () => () => {
       if (preview?.url) URL.revokeObjectURL(preview.url);
@@ -168,14 +148,14 @@ export function DriveView() {
       );
       return;
     }
-    if (!token) return;
+    if (!ready) return;
     let active = true;
     setLoading(true);
     setError("");
     setRows([]);
     setPageToken("");
     setFolderMeta(null);
-    const client = createDriveClient(token);
+    const client = sharedDriveClient();
     Promise.all([client.metadata(folder.id), client.list(folder.id, search)])
       .then(([metadata, result]) => {
         if (active) {
@@ -187,7 +167,7 @@ export function DriveView() {
       .catch((e) => {
         if (active) {
           setError(e.message);
-          if (e instanceof DriveError && e.status === 401) setToken("");
+          if (e instanceof DriveError && e.status === 401) setReady(false);
         }
       })
       .finally(() => {
@@ -196,72 +176,7 @@ export function DriveView() {
     return () => {
       active = false;
     };
-  }, [demo, token, folder.id, search, refresh, demoFiles]);
-  async function connect() {
-    const google = (window as unknown as { google?: GoogleSDK }).google;
-    if (!google || !configured) {
-      setError("Il collegamento Google non è ancora configurato.");
-      return;
-    }
-    setConnecting(true);
-    setError("");
-    google.accounts.oauth2
-      .initTokenClient({
-        client_id: clientId,
-        scope:
-          "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email",
-        hint: accountEmail || undefined,
-        error_callback: () => {
-          setConnecting(false);
-          setError(
-            "Collegamento interrotto. Consenti la finestra Google e riprova.",
-          );
-        },
-        callback: async (response) => {
-          try {
-            if (
-              response.error ||
-              !response.access_token ||
-              !response.scope
-                ?.split(" ")
-                .includes("https://www.googleapis.com/auth/drive")
-            )
-              throw new Error(
-                "Autorizza l’accesso a Drive per usare questa pagina.",
-              );
-            if (accountEmail) {
-              const identity = await fetch(
-                "https://www.googleapis.com/oauth2/v2/userinfo",
-                {
-                  headers: { Authorization: `Bearer ${response.access_token}` },
-                },
-              );
-              if (!identity.ok)
-                throw new Error("Non riesco a verificare l’account Google.");
-              const user = await identity.json();
-              if (user.email?.toLowerCase() !== accountEmail.toLowerCase())
-                throw new Error(
-                  `Seleziona l’account del team: ${accountEmail}.`,
-                );
-            }
-            setPath([{ id: rootId, name: "Drive del team" }]);
-            setToken(response.access_token);
-            setExpires(
-              Date.now() +
-                Math.max(1, Number(response.expires_in || 3600) - 30) * 1000,
-            );
-            setNotice("Drive collegato.");
-          } catch (e) {
-            setError(
-              e instanceof Error ? e.message : "Collegamento non riuscito.",
-            );
-          } finally {
-            setConnecting(false);
-          }
-        },
-      })
-      .requestAccessToken({ prompt: "select_account" });
-  }
+  }, [demo, ready, folder.id, search, refresh, demoFiles]);
   async function perform(action: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
@@ -272,7 +187,7 @@ export function DriveView() {
     } catch (e) {
       setError(e instanceof Error ? e.message : "Operazione non riuscita.");
       if (e instanceof DriveError && e.status === 401) {
-        setToken("");
+        setReady(false);
         setRows([]);
       }
     } finally {
@@ -281,7 +196,7 @@ export function DriveView() {
   }
   async function content(file: DriveFile, forPreview = false) {
     if (!demo) {
-      if (!api) throw new Error("Collega Google Drive.");
+      if (!api) throw new Error("Drive del team non disponibile.");
       return api.download(file, forPreview);
     }
     const existing = demoBlobs.current.get(file.id);
@@ -352,7 +267,7 @@ export function DriveView() {
               },
             ]);
           } else {
-            if (!api) throw new Error("Collega Google Drive.");
+            if (!api) throw new Error("Drive del team non disponibile.");
             await api.upload(folder.id, file, target?.id);
           }
           count++;
@@ -401,7 +316,7 @@ export function DriveView() {
         if (current.kind === "trash")
           setDemoFiles((old) => old.filter((f) => f.id !== current.file?.id));
       } else {
-        if (!api) throw new Error("Collega Google Drive.");
+        if (!api) throw new Error("Drive del team non disponibile.");
         if (current.kind === "folder") await api.createFolder(folder.id, clean);
         if (current.kind === "rename")
           await api.rename(current.file!.id, clean);
@@ -494,17 +409,6 @@ export function DriveView() {
   );
   return (
     <>
-      {configured && !demo && (
-        <Script
-          src="https://accounts.google.com/gsi/client"
-          onReady={() => setSdk(true)}
-          onError={() =>
-            setError(
-              "Non riesco a caricare l’autorizzazione Google. Controlla la connessione.",
-            )
-          }
-        />
-      )}
       <div className="page-heading">
         <div>
           <div className="eyebrow">FILE E CARTELLE CONDIVISI</div>
@@ -535,31 +439,6 @@ export function DriveView() {
               </Button>
             </>
           )}
-          {!demo &&
-            (token ? (
-              <Button
-                variant="ghost"
-                disabled={busy}
-                onClick={() => {
-                  setToken("");
-                  setExpires(0);
-                  setRows([]);
-                  setPreview(null);
-                  setError("");
-                  setNotice("Drive scollegato da questa pagina.");
-                }}
-              >
-                <LogOut size={16} />
-                Scollega
-              </Button>
-            ) : (
-              <Button
-                disabled={!configured || !sdk || connecting}
-                onClick={connect}
-              >
-                {connecting ? "Collegamento…" : "Connetti Google"}
-              </Button>
-            ))}
         </div>
       </div>
       <input
@@ -583,26 +462,21 @@ export function DriveView() {
           non il Drive reale.
         </div>
       )}
-      {!demo && !configured && (
+      {!demo && !ready && (
         <div className="panel drive-connection">
           <FolderOpen size={36} />
-          <h2>Collega il Drive del team</h2>
-          <p>
-            La pagina è pronta. Prima di usare i file reali occorre configurare
-            il collegamento Google e autorizzare l’account del team.
-          </p>
-          <p>File e cartelle rimangono su Google Drive.</p>
+          <h2>{checking ? "Apertura del Drive…" : "Drive in attesa di collegamento"}</h2>
+          <p>{checking ? "Verifica dell’accesso del team in corso." : "Il responsabile deve completare il collegamento Google. I membri accedono direttamente dal CRM."}</p>
         </div>
       )}
-      {!demo && configured && !token && (
-        <div className="panel drive-connection">
-          <FolderOpen size={36} />
-          <h2>Accedi al Drive del team</h2>
-          <p>
-            Premi Connetti Google e scegli{" "}
-            {accountEmail || "un account con accesso alla cartella del team"}.
-            Il collegamento al CRM non concede nuovi permessi sui file.
-          </p>
+      {connected && !demo && (
+        <div className="drive-storage" aria-label="Spazio Google utilizzato">
+          {storage ? <>
+            <div><strong>Spazio dell’account Google</strong><span>{storageBytes(storage.usage)} utilizzati{storage.limit ? ` su ${storageBytes(storage.limit)}` : " · limite non comunicato da Google"}</span></div>
+            {storage.limit && <progress aria-label="Spazio utilizzato" value={Math.min(Number(storage.usage || 0), Number(storage.limit))} max={Number(storage.limit) || 1} />}
+            <p>{storage.limit ? `${storageBytes(String(Math.max(0, Number(storage.limit) - Number(storage.usage || 0))))} disponibili · ` : ""}Drive: {storageBytes(storage.usageInDrive)} · Cestino Drive: {storageBytes(storage.usageInDriveTrash)}</p>
+            <small>Il totale include anche Gmail e Google Foto.</small>
+          </> : <span>Informazioni sullo spazio non disponibili.</span>}
         </div>
       )}
       {error && (

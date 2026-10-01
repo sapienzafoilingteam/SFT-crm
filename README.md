@@ -27,7 +27,7 @@ Il vecchio prototipo rimane disponibile in `index.html`, con la sua documentazio
 - Sponsor: anagrafica, contatto, fase, attività, prossimo passo, valori cash/tecnici e collegamenti ai contratti.
 - Contratti e catalogo delle offerte; modelli documentali da collegare ai documenti ufficiali.
 - Template email con variabili, anteprima modificabile, copia testo e apertura Gmail. Nessun invio automatico.
-- Drive del team: navigazione, ricerca, cartelle, upload, rinomina, sostituzione, cestino, preview e download. Attivazione Google OAuth in [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).
+- Drive del team: navigazione, ricerca, cartelle, upload, rinomina, sostituzione, cestino, preview e download. Accesso condiviso dal server, solo per membri attivi, e indicatore dello spazio Google. Attivazione del responsabile in [GOOGLE_DRIVE_SETUP.md](GOOGLE_DRIVE_SETUP.md).
 - Agenda con calendario/lista e generazione idempotente delle delivery mensili da modelli. Scadenze nella Home e nei reparti, filtrate per stagione e sottoteam, con priorità e segnalazioni di ritardo.
 - Bilancio: registro costi, filtri, totali esatti ed export CSV protetto dalle formule.
 - Archiviazione e ripristino; tema chiaro/scuro; layout responsive e controlli da tastiera.
