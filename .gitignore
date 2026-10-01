@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.vercel/
+.env*
+!.env.example
+*.tsbuildinfo
+.vercel
+
+# File locali e prove visive
+.DS_Store
+screenshots/
+*.log

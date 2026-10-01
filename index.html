@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sapienza Foiling Team - Sponsor & Partner CRM</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="logosft.svg">
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- APP HEADER -->
+    <header class="app-header">
+      <div class="brand-wrapper">
+        <img src="logosft.svg" alt="Sapienza Foiling Team Logo" class="brand-logo-img">
+        <div class="brand-titles">
+          <h1>
+            SAPIENZA FOILING TEAM
+            <span class="brand-badge">Sponsor CRM</span>
+          </h1>
+          <p class="brand-subtitle">
+            <span>SuMoth Challenge • Meravijosa</span>
+            <span class="dot"></span>
+            <span>Gestionale Sponsor Finanziari & Partner Tecnici</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Direct Team Gmail Shortcut -->
+        <a id="headerGmailLink" href="https://mail.google.com/mail/u/?authuser=sapienzafoilingteam@gmail.com" target="_blank" class="btn btn-secondary btn-sm" title="Apri casella Gmail del Team (sapienzafoilingteam@gmail.com)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ea4335" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Gmail Squadra
+        </a>
+
+        <!-- Team Google Drive Link -->
+        <a id="headerDriveLink" href="#" target="_blank" class="btn btn-secondary btn-sm" style="display:none;" title="Apri la Cartella Google Drive del Team">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+          Google Drive Squadra
+        </a>
+
+        <!-- Configure Cloud Accounts Modal Button -->
+        <button id="btnConfigureTeamCloud" class="btn btn-secondary btn-sm" title="Configura l'indirizzo Gmail e il link Google Drive del team">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          Account Team
+        </button>
+
+        <!-- CSV Export for Excel -->
+        <button id="btnExportCsv" class="btn btn-secondary btn-sm" title="Esporta tabella per Microsoft Excel">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+          Excel (CSV)
+        </button>
+
+        <!-- JSON Backup / Restore -->
+        <button id="btnExportJson" class="btn btn-secondary btn-sm" title="Salva file di backup JSON per il team">
+          Backup JSON
+        </button>
+
+        <button id="btnImportJson" class="btn btn-secondary btn-sm" title="Carica backup JSON da un compagno di squadra">
+          Importa
+        </button>
+        <input type="file" id="importJsonFileInput" accept=".json" style="display:none;">
+
+        <!-- Reset Button -->
+        <button id="btnResetDatabase" class="btn btn-outline-danger btn-sm" title="Ripristina le 70 aziende con tipologie ed email">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+          Ripristina Database
+        </button>
+      </div>
+    </header>
+
+    <!-- QUICK NAVIGATION ANCHOR BAR -->
+    <nav class="quick-nav-bar" id="quickNavBar">
+      <button type="button" class="quick-nav-btn active" data-target="trackerSection">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+        Quadro & Obiettivi
+      </button>
+      <button type="button" class="quick-nav-btn" data-target="formSection">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        Scheda Sponsor & Pitch
+      </button>
+      <button type="button" class="quick-nav-btn" data-target="documentsSection">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+        Archivio Pitch & Documenti
+      </button>
+      <button type="button" class="quick-nav-btn" data-target="tableSection">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+        Registro Sponsor (70)
+      </button>
+      <button type="button" class="quick-nav-btn" id="btnToggleQuickGuide" style="margin-left:auto; border-color:rgba(0,180,216,0.3); color:var(--foil-cyan);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        Guida Rapida all'Uso
+      </button>
+    </nav>
+
+    <!-- QUICK GUIDE BANNER (Collapsible) -->
+    <div class="quick-guide-banner" id="quickGuideBanner" style="display:none;">
+      <div class="quick-guide-header" id="quickGuideHeader">
+        <div style="font-weight:700; font-size:0.85rem; color:var(--sail-white); display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--foil-cyan)" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+          Flusso Operativo Consigliato per la Gestione Sponsor
+        </div>
+        <button type="button" id="btnCloseQuickGuide" class="btn btn-secondary btn-sm" style="padding:2px 8px; font-size:0.75rem;">✕ Chiudi</button>
+      </div>
+      <div class="quick-guide-steps">
+        <div class="guide-step-card">
+          <div class="guide-step-number">Passo 1 • Selezione</div>
+          <div class="guide-step-title">Scegli o Cerca l'Azienda</div>
+          <div class="guide-step-text">Seleziona lo sponsor dal Registro o digitalo nel campo di ricerca rapida della Scheda Sponsor.</div>
+        </div>
+        <div class="guide-step-card">
+          <div class="guide-step-number">Passo 2 • Pitch Dedicato</div>
+          <div class="guide-step-title">Associa la Presentazione</div>
+          <div class="guide-step-text">Incolla il link Drive/Canva o trascina il file PDF/PPTX della presentazione calibrata su quella specifica azienda.</div>
+        </div>
+        <div class="guide-step-card">
+          <div class="guide-step-number">Passo 3 • Comunicazione</div>
+          <div class="guide-step-title">Invia Email & Traccia</div>
+          <div class="guide-step-text">Clicca "Scrivi Email": si aprirà la casella ufficiale di squadra (sapienzafoilingteam@gmail.com) già compilata.</div>
+        </div>
+        <div class="guide-step-card">
+          <div class="guide-step-number">Passo 4 • Chiusura Accordo</div>
+          <div class="guide-step-title">Imposta "Accordo Chiuso"</div>
+          <div class="guide-step-text">Quando la collaborazione è confermata, assegna la fase "Accordo Chiuso": il Tracker Finanziario si aggiorna subito!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 1: FINANCIAL & TECHNICAL DASHBOARD -->
+    <section class="tracker-section" id="trackerSection">
+      <div class="section-header-row">
+        <h2 class="section-title">
+          <span class="section-title-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          </span>
+          Quadro Finanziario & Partnership Tecniche
+        </h2>
+        <div style="font-size: 0.82rem; color: var(--text-secondary);">
+          Calcolato in tempo reale su accordi monetari e forniture in-kind confermate
+        </div>
+      </div>
+
+      <!-- KPI Grid (5 Cards: Target, Cash Raised, Cash Missing, Technical Value, Total Team Impact) -->
+      <div class="kpi-grid">
+        <!-- Target Cash -->
+        <div class="kpi-card target-card">
+          <div class="kpi-icon-box kpi-icon-target">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          </div>
+          <div class="kpi-info">
+            <div class="kpi-label">
+              <span>Target Fondi Stagionali</span>
+              <button id="btnEditBudget" class="edit-budget-btn" title="Modifica obiettivo budget">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              </button>
+            </div>
+            <div class="kpi-value" id="kpiTargetVal">€ 20.000</div>
+            <div class="kpi-subtext">Obiettivo fondi monetari</div>
+          </div>
+        </div>
+
+        <!-- Cash Raised (Clickable to filter Won deals) -->
+        <div class="kpi-card raised-card clickable-kpi" id="kpiCardRaised" data-filter-stage="Vinto" title="Clicca per visualizzare gli accordi conclusi in tabella">
+          <div class="kpi-icon-box kpi-icon-raised">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+          </div>
+          <div class="kpi-info">
+            <div class="kpi-label">Fondi Raccolti ↗</div>
+            <div class="kpi-value" id="kpiRaisedVal">€ 0</div>
+            <div class="kpi-subtext">Accordi monetari conclusi</div>
+          </div>
+        </div>
+
+        <!-- Cash Missing (Clickable to filter Negotiations) -->
+        <div class="kpi-card missing-card clickable-kpi" id="kpiCardMissing" data-filter-stage="In Trattativa" title="Clicca per visualizzare le trattative aperte in tabella">
+          <div class="kpi-icon-box kpi-icon-missing">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          </div>
+          <div class="kpi-info">
+            <div class="kpi-label">Residuo al Target ↗</div>
+            <div class="kpi-value" id="kpiMissingVal">€ 20.000</div>
+            <div class="kpi-subtext">Al target (Pipeline: <span id="kpiPipelineVal" style="color:var(--text-primary); font-weight:700;">€ 0</span>)</div>
+          </div>
+        </div>
+
+        <!-- Technical In-Kind Value (Clickable to filter Tech partners) -->
+        <div class="kpi-card tech-card clickable-kpi" id="kpiCardTech" data-filter-type="Tecnico" title="Clicca per visualizzare i partner tecnici in tabella">
+          <div class="kpi-icon-box kpi-icon-tech">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          </div>
+          <div class="kpi-info">
+            <div class="kpi-label">Valore Forniture Tecniche ↗</div>
+            <div class="kpi-value" id="kpiTechVal">€ 0</div>
+            <div class="kpi-subtext">Materiali, lavorazioni & licenze</div>
+          </div>
+        </div>
+
+        <!-- Total Impact Value (Clickable to show all) -->
+        <div class="kpi-card total-impact-card clickable-kpi" id="kpiCardImpact" data-filter-type="Tutti" title="Clicca per visualizzare tutti gli sponsor in tabella">
+          <div class="kpi-icon-box kpi-icon-impact">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+          </div>
+          <div class="kpi-info">
+            <div class="kpi-label">Valore Complessivo Supporto ↗</div>
+            <div class="kpi-value" id="kpiTotalImpactVal">€ 0</div>
+            <div class="kpi-subtext">Fondi raccolti + Forniture tecniche</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Bar Container -->
+      <div class="progress-container">
+        <div class="progress-header">
+          <div class="progress-title">
+            <span>Avanzamento Obiettivo Stagionale Cash (20.000 €)</span>
+          </div>
+          <div class="progress-percentage" id="progressPercentageLabel">0%</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="mainProgressBar"></div>
+        </div>
+        <div class="progress-milestones">
+          <span>0 €</span>
+          <span>5.000 € (25%)</span>
+          <span>10.000 € (50%)</span>
+          <span>15.000 € (75%)</span>
+          <span>Target Pieno (100%)</span>
+        </div>
+      </div>
+
+      <!-- Funnel Quick Summary (Clickable Pills) -->
+      <div class="funnel-row">
+        <div class="funnel-pill clickable-pill" data-filter-type="Tutti" title="Filtra tutti">Totale Sponsor: <span class="count" id="countTotaleAziende">70</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-type="Finanziario" style="border-color: rgba(245, 158, 11, 0.4);" title="Filtra sponsor monetari"><span class="status-indicator-dot dot-cash"></span> Finanziari: <span class="count" id="countTypeCash">0</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-type="Tecnico" style="border-color: rgba(0, 180, 216, 0.4);" title="Filtra fornitori tecnici"><span class="status-indicator-dot dot-tech"></span> Tecnici: <span class="count" id="countTypeTech">0</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-type="Ibrido" style="border-color: rgba(168, 85, 247, 0.4);" title="Filtra sponsor ibridi"><span class="status-indicator-dot dot-hybrid"></span> Ibridi: <span class="count" id="countTypeHybrid">0</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-stage="Da Contattare" title="Filtra da contattare">Da Contattare: <span class="count" id="countDaContattare">70</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-stage="Primo Contatto Inviato" title="Filtra primo contatto">1° Contatto: <span class="count" id="countPrimoContatto">0</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-stage="In Trattativa" title="Filtra in trattativa">In Trattativa: <span class="count" id="countInTrattativa">0</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-stage="Vinto" style="border-color: rgba(16, 185, 129, 0.4); color: var(--status-vinto);" title="Filtra accordi conclusi"><span class="status-indicator-dot dot-won"></span> Accordi Conclusi: <span class="count" id="countVinto" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">0</span></div>
+        <div class="funnel-pill clickable-pill" data-filter-stage="Perso" style="border-color: rgba(239, 68, 68, 0.4); color: var(--status-perso);" title="Filtra trattative perse"><span class="status-indicator-dot dot-lost"></span> Non Conclusi: <span class="count" id="countPerso" style="background: rgba(239, 68, 68, 0.2); color: #f87171;">0</span></div>
+      </div>
+    </section>
+
+    <!-- WORKSPACE TWO-COLUMNS: FORM + DOCUMENTS -->
+    <div class="workspace-grid">
+
+      <!-- SECTION 2: GESTIONE AZIENDE (FORM) -->
+      <section class="form-section" id="formSection">
+        <div class="section-header-row">
+          <h2 class="section-title">
+            <span class="section-title-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </span>
+            Scheda Sponsor & Trattativa
+          </h2>
+          <button id="btnToggleNewCompany" class="btn btn-gold btn-sm">
+            + Nuova Azienda
+          </button>
+        </div>
+
+        <!-- Active Sponsor Indicator Banner -->
+        <div class="active-sponsor-banner" id="activeSponsorBanner" style="display:none;">
+          <div class="active-sponsor-info">
+            <span style="font-size:0.75rem; color:var(--text-secondary); text-transform:uppercase; font-weight:700;">Azienda in Modifica:</span>
+            <span class="active-sponsor-name" id="activeSponsorNameLabel">-</span>
+            <span id="activeSponsorTypeBadge" class="type-badge type-cash">Cash</span>
+            <span id="activeSponsorStageBadge" class="stage-badge stage-badge-da-contattare">Da Contattare</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button type="button" id="activeSponsorQuickMailBtn" class="btn btn-secondary btn-sm" title="Componi email a questo sponsor">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ea4335" stroke-width="2.2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              Scrivi Email
+            </button>
+            <button type="button" id="btnDeselectActiveSponsor" class="btn btn-secondary btn-sm" title="Deseleziona per crearne una nuova o pulire">
+              Deseleziona
+            </button>
+          </div>
+        </div>
+
+        <!-- Company Selector / New Toggle Bar -->
+        <div class="company-selection-bar">
+          <div class="company-select-wrap">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+              <label class="form-label" style="margin-bottom: 0;">Seleziona Sponsor da Gestire</label>
+              <span style="font-size:0.72rem; color:var(--text-muted);">70 aziende precaricate</span>
+            </div>
+            <!-- Quick Filter Instant Search -->
+            <input type="text" id="formSponsorSearchInput" class="form-control" placeholder="🔍 Cerca rapidamente per nome (es. Pirelli, Enel, Brembo...)" style="margin-bottom: 6px; font-size: 0.82rem;" autocomplete="off">
+            <select id="companySelect" class="form-control" style="font-weight: 600;">
+              <!-- Populated via JavaScript -->
+            </select>
+          </div>
+
+          <div id="manualCompanyGroup" style="display:none; flex: 1;">
+            <label class="form-label" style="margin-bottom: 4px; color: var(--racing-gold-bright);">Nome Nuova Azienda</label>
+            <input type="text" id="manualCompanyNameInput" class="form-control" placeholder="Es. Mare Nostrum Compositi S.p.A.">
+          </div>
+        </div>
+
+        <!-- SPONSOR TYPE SELECTOR: CASH vs TECHNICAL vs HYBRID -->
+        <div class="form-group">
+          <label class="form-label">Tipologia di Collaborazione</label>
+          <div class="type-radio-selector">
+            <label class="type-radio-card type-cash">
+              <input type="radio" name="sponsorTypeRadio" value="Finanziario" checked>
+              <div class="type-radio-label">Sponsor Finanziario (Cash)</div>
+            </label>
+            <label class="type-radio-card type-tech">
+              <input type="radio" name="sponsorTypeRadio" value="Tecnico">
+              <div class="type-radio-label">Partner Tecnico (Materiali & Servizi)</div>
+            </label>
+            <label class="type-radio-card type-hybrid">
+              <input type="radio" name="sponsorTypeRadio" value="Ibrido">
+              <div class="type-radio-label">Partnership Ibrida (Cash + Materiali)</div>
+            </label>
+          </div>
+        </div>
+
+        <!-- CASH FIELDS SECTION -->
+        <div class="form-row-2" id="cashFieldsGroup">
+          <div class="form-group">
+            <label class="form-label" for="ticketRichiestoInput">Ticket Richiesto Cash (€)</label>
+            <input type="number" id="ticketRichiestoInput" class="form-control" placeholder="0" min="0" step="500">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ticketOttenutoInput" style="color: var(--status-vinto);">Ticket Ottenuto Cash (€) [Se Concluso]</label>
+            <input type="number" id="ticketOttenutoInput" class="form-control" placeholder="0" min="0" step="500" style="border-color: rgba(16, 185, 129, 0.4);">
+          </div>
+        </div>
+
+        <!-- TECHNICAL / IN-KIND FIELDS SECTION -->
+        <div class="tech-details-box" id="techFieldsGroup" style="display:none;">
+          <div class="tech-details-header">
+            <span>Specifiche Fornitura Tecnica & Servizi In-Kind</span>
+          </div>
+
+          <!-- Multi Categories Selection Grid -->
+          <div class="form-group">
+            <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+              <span>Categorie Fornitura (Selezione Multipla)</span>
+              <span id="selectedCategoriesCountLabel" style="font-size:0.75rem; color:var(--foil-cyan); font-weight:700; text-transform:none;">1 selezionata</span>
+            </label>
+            <div class="multi-category-pills" id="techCategoryPillsContainer">
+              <button type="button" class="category-pill-btn active" data-category="Materiali Compositi">Materiali Compositi & Fibre</button>
+              <button type="button" class="category-pill-btn" data-category="Lavorazioni Meccaniche & Stampi">Lavorazioni Meccaniche & CNC</button>
+              <button type="button" class="category-pill-btn" data-category="Vele & Manovre">Vele, Corde & Rigging</button>
+              <button type="button" class="category-pill-btn" data-category="Elettronica & Sensori">Elettronica, Sensori & Telemetria</button>
+              <button type="button" class="category-pill-btn" data-category="Software & Simulazione">Software CAD, CFD & Simulazione</button>
+              <button type="button" class="category-pill-btn" data-category="Abbigliamento Tecnico">Abbigliamento Tecnico Team</button>
+              <button type="button" class="category-pill-btn" data-category="Componentistica Nautica">Componentistica & Ferramenta</button>
+              <button type="button" class="category-pill-btn" data-category="Logistica & Trasporti">Logistica & Trasporti</button>
+              <button type="button" class="category-pill-btn" data-category="Consulenza & Servizi">Consulenza Ingegneristica & Test</button>
+              <button type="button" class="category-pill-btn" data-category="Altro">Altre Forniture Tecniche</button>
+            </div>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" for="techValueInput" style="color:var(--foil-cyan);">Valore Stimato Fornitura (€)</label>
+              <input type="number" id="techValueInput" class="form-control" placeholder="Es. 3500" min="0" step="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="techDeliveryStatusSelect">Stato della Fornitura</label>
+              <select id="techDeliveryStatusSelect" class="form-control">
+                <option value="Da Concordare">Da Concordare</option>
+                <option value="Confermato">Accordo Confermato</option>
+                <option value="In Produzione / Spedizione">In Produzione / Spedizione</option>
+                <option value="Consegnato">Materiale Consegnato / Attivo</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="techDescriptionInput">Dettaglio Materiali / Servizi Forniti</label>
+            <input type="text" id="techDescriptionInput" class="form-control" placeholder="Es. 40mq fibra di carbonio 200g + 15kg resina epossidica">
+          </div>
+        </div>
+
+        <!-- STAGE SELECTOR -->
+        <div class="form-group">
+          <label class="form-label">Fase della Trattativa</label>
+          <div class="stage-selector">
+            <label class="stage-radio-card da-contattare">
+              <input type="radio" name="stageRadio" value="Da Contattare" checked>
+              <div class="stage-radio-label">Da Contattare</div>
+            </label>
+            <label class="stage-radio-card primo-contatto">
+              <input type="radio" name="stageRadio" value="Primo Contatto Inviato">
+              <div class="stage-radio-label">1° Contatto</div>
+            </label>
+            <label class="stage-radio-card in-trattativa">
+              <input type="radio" name="stageRadio" value="In Trattativa">
+              <div class="stage-radio-label">In Trattativa</div>
+            </label>
+            <label class="stage-radio-card vinto">
+              <input type="radio" name="stageRadio" value="Vinto">
+              <div class="stage-radio-label">Accordo Chiuso</div>
+            </label>
+            <label class="stage-radio-card perso">
+              <input type="radio" name="stageRadio" value="Perso">
+              <div class="stage-radio-label">Non Concluso</div>
+            </label>
+          </div>
+        </div>
+
+        <!-- DEDICATED PITCH DECK FOR THIS SPONSOR (KEY FEATURE) -->
+        <div class="dedicated-pitch-box" id="companyDedicatedPitchBox">
+          <div class="dedicated-pitch-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="display:flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:rgba(245,158,11,0.2); color:var(--racing-gold-bright);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              </span>
+              <div>
+                <div style="font-weight:700; font-size:0.88rem; color:var(--sail-white);">Pitch Deck Dedicato a questo Sponsor</div>
+                <div style="font-size:0.72rem; color:var(--text-secondary);">Presentazione personalizzata e calibrata sulle esigenze dell'azienda</div>
+              </div>
+            </div>
+            <span id="companyPitchStatusBadge" class="pitch-status-badge pitch-status-missing">Non Caricato</span>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label" style="font-size:0.75rem;">Link Diretto Drive / Canva del Pitch Dedicato</label>
+              <div class="input-with-button">
+                <input type="url" id="companyDedicatedPitchUrlInput" class="form-control" placeholder="https://drive.google.com/... o Canva">
+                <a id="openCompanyDedicatedPitchBtn" href="#" target="_blank" class="btn btn-secondary btn-icon" style="display:none;" title="Apri Presentazione">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </a>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:8px;">
+              <label class="form-label" style="font-size:0.75rem;">Carica File Presentazione Dedicata (PDF / PPTX)</label>
+              <input type="file" id="companyDedicatedPitchFileInput" accept=".pdf,.pptx,.ppt,.docx" style="display:none;">
+              <div class="doc-upload-dropzone doc-upload-dropzone-sm" id="companyDedicatedPitchDropzone" style="padding:9px 12px; cursor:pointer;">
+                <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  <span style="font-size:0.78rem; font-weight:600;">Seleziona file PDF o PPTX per questa azienda</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dedicated pitch file preview (from IndexedDB) -->
+          <div class="file-list-preview" id="companyDedicatedPitchPreview" style="margin-top:4px;"></div>
+        </div>
+
+        <!-- Direct Email & Conversations -->
+        <div class="form-group">
+          <label class="form-label" for="companyEmailInput">Email Contatto (Istituzionale / Ufficio Tecnico / CSR)</label>
+          <div class="input-with-button" style="flex-wrap: wrap;">
+            <input type="email" id="companyEmailInput" class="form-control" placeholder="contatto@azienda.it" style="min-width: 200px;">
+            <button type="button" id="sendMailFromFormBtn" class="btn btn-secondary" title="Componi email formale tramite Gmail del Team (sapienzafoilingteam@gmail.com)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ea4335" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              Scrivi Email
+            </button>
+            <button type="button" id="searchGmailFromFormBtn" class="btn btn-secondary" title="Cerca le comunicazioni con questa azienda nella casella del team">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              Cerca Thread
+            </button>
+            <button type="button" id="btnOpenEmailAnalyzer" class="btn btn-gold" title="Analizza il testo della risposta email per estrarre offerte e verbale">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+              Analizza Risposta Email
+            </button>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <!-- Communication Thread URL -->
+          <div class="form-group">
+            <label class="form-label" for="threadUrlInput">URL Thread Comunicazione</label>
+            <div class="input-with-button">
+              <input type="url" id="threadUrlInput" class="form-control" placeholder="https://mail.google.com/...">
+              <button id="openThreadUrlBtn" class="btn btn-secondary btn-icon" title="Apri Thread">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Company Specific Google Drive Folder -->
+          <div class="form-group">
+            <label class="form-label" for="companyDriveUrlInput">Cartella / File Google Drive</label>
+            <div class="input-with-button">
+              <input type="url" id="companyDriveUrlInput" class="form-control" placeholder="https://drive.google.com/...">
+              <button id="openCompanyDriveBtn" class="btn btn-secondary btn-icon" title="Apri Cartella Drive Sponsor">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" stroke-width="2.2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes / Feedback Meeting -->
+        <div class="form-group">
+          <label class="form-label" for="companyNotesInput">Note & Verbale Meeting (Feedback, Accordi, Specifiche Tecniche)</label>
+          <textarea id="companyNotesInput" class="form-control" rows="4" placeholder="Annota qui i punti salienti del meeting, referenti incontrati, riscontri tecnici, preventivi o scadenze..."></textarea>
+        </div>
+
+        <!-- Company Dedicated Attachments & Cloud Sync -->
+        <div class="company-attachments-box" id="companyAttachmentsGroup">
+          <div class="company-attachments-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-weight:700; font-size:0.85rem; color:var(--sail-white); display:flex; align-items:center; gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                Documentazione & Allegati Aziendali
+              </span>
+              <span id="companyAttachmentCountBadge" class="badge" style="background:var(--carbon-hover); font-size:0.72rem; color:var(--foil-cyan); padding:2px 8px; border-radius:9999px; border:1px solid var(--border-color);">0 file</span>
+            </div>
+            <button type="button" id="btnOpenCompanyDriveFolder" class="btn btn-secondary btn-sm" title="Apri o crea la cartella Google Drive dedicata a questo sponsor">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#00b4d8" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              Cartella Drive Sponsor
+            </button>
+          </div>
+          
+          <div style="font-size:0.78rem; color:var(--text-secondary); margin-bottom:8px;">
+            Carica allegati scambiati con questa azienda (Contratti, Offerte, Specifiche o Pitch Deck).
+          </div>
+
+          <input type="file" id="companyAttachmentFileInput" accept=".pdf,.pptx,.ppt,.docx,.xlsx,.jpg,.png" style="display:none;" multiple>
+          <div class="doc-upload-dropzone doc-upload-dropzone-sm" id="companyAttachmentDropzone">
+            <div class="doc-upload-icon" style="font-size:22px;">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <div class="doc-upload-text" style="font-size:0.82rem;">
+              <strong>Clicca per allegare</strong> o trascina file da associare a questa azienda
+            </div>
+            <div class="doc-upload-subtext" style="font-size:0.72rem;">Salvataggio permanente nel database locale protetto</div>
+          </div>
+
+          <div style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--text-secondary);">
+            <input type="checkbox" id="syncPitchDeckCheckbox" checked style="accent-color:var(--brand-primary); cursor:pointer;">
+            <label for="syncPitchDeckCheckbox" style="cursor:pointer;">
+              Se il file è una presentazione/Pitch Deck, <strong>sincronizza automaticamente</strong> anche come Pitch Deck Ufficiale di Squadra
+            </label>
+          </div>
+
+          <div class="file-list-preview" id="companyAttachmentsList" style="margin-top:10px;"></div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <div style="display:flex; gap: 10px;">
+            <button id="saveCompanyBtn" class="btn btn-brand">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+              Salva Aggiornamento
+            </button>
+            <button id="clearFormBtn" class="btn btn-secondary">
+              Pulisci Modulo
+            </button>
+          </div>
+          <div>
+            <button id="deleteCompanyBtn" class="btn btn-outline-danger" style="display:none;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              Elimina Azienda
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: GESTIONE DOCUMENTI -->
+      <section class="documents-section" id="documentsSection">
+        <div class="section-header-row">
+          <h2 class="section-title">
+            <span class="section-title-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            </span>
+            Archivio Documenti & Cloud
+          </h2>
+        </div>
+
+        <!-- Google Drive Hub of Team -->
+        <div class="cloud-drive-box">
+          <div class="cloud-drive-header">
+            <div class="cloud-drive-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+              Cartella Google Drive Ufficiale del Team
+            </div>
+            <a id="openTeamDriveBtn" href="#" target="_blank" class="btn btn-brand btn-sm" style="display:none;">
+              Apri Drive ↗
+            </a>
+          </div>
+          <div class="input-with-button">
+            <input type="url" id="teamDriveInput" class="form-control" placeholder="Incolla link cartella Google Drive di Squadra">
+            <button id="saveTeamDriveInputBtn" class="btn btn-secondary btn-sm">Salva Link</button>
+          </div>
+        </div>
+
+        <!-- Doc Box 1: Pitch Deck Ufficiale di Squadra (Master) -->
+        <div class="doc-card">
+          <div class="doc-card-header">
+            <div class="doc-card-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              <span>Pitch Deck Master di Squadra (Istituzionale)</span>
+            </div>
+          </div>
+
+          <!-- Cloud Link for Pitch Deck -->
+          <div style="margin-bottom: 12px;">
+            <label class="form-label" style="font-size:0.75rem;">Collegamento Diretto Drive / Canva del Pitch Deck Master</label>
+            <div class="input-with-button">
+              <input type="url" id="pitchDriveInput" class="form-control" placeholder="https://drive.google.com/... o Canva">
+              <button id="savePitchDriveBtn" class="btn btn-secondary btn-sm">Salva</button>
+              <a id="openPitchDriveBtn" href="#" target="_blank" class="btn btn-secondary btn-icon" style="display:none;" title="Apri Collegamento">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Local Upload Dropzone (IndexedDB) -->
+          <input type="file" id="pitchDeckFileInput" accept=".pdf,.pptx,.ppt,.docx" style="display:none;">
+          <div class="doc-upload-dropzone" id="pitchDropzone">
+            <div class="doc-upload-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <div class="doc-upload-text"><strong>Seleziona o trascina il file Master</strong> (PDF / PPTX)</div>
+            <div class="doc-upload-subtext">Archiviato in modo permanente nel database locale del gestionale</div>
+          </div>
+          <div class="file-list-preview" id="pitchDeckFileList"></div>
+        </div>
+
+        <!-- Doc Box 2: Centro Pitch Deck Personalizzati per Sponsor (NEW) -->
+        <div class="doc-card" style="margin-top: 16px;">
+          <div class="doc-card-header">
+            <div class="doc-card-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+              <span>Pitch Deck Dedicati per Singolo Sponsor</span>
+            </div>
+            <span id="customPitchDecksCountBadge" class="badge" style="background:var(--carbon-hover); font-size:0.72rem; color:var(--racing-gold-bright); border:1px solid var(--border-color); border-radius:9999px; padding:2px 8px;">0 pronti</span>
+          </div>
+
+          <div style="font-size:0.75rem; color:var(--text-secondary); margin-bottom:8px;">
+            Presentazioni create e calibrate su misura per le singole aziende partner.
+          </div>
+
+          <div style="margin-bottom: 8px;">
+            <input type="text" id="customPitchSearchInput" class="form-control" placeholder="Cerca pitch dedicato per azienda..." style="font-size:0.78rem; padding:6px 10px;">
+          </div>
+
+          <div id="customPitchDecksList" style="display:flex; flex-direction:column; gap:6px; max-height:220px; overflow-y:auto;">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+
+        <!-- Doc Box 3: Contratti Firmati -->
+        <div class="doc-card" style="margin-top: 16px;">
+          <div class="doc-card-header">
+            <div class="doc-card-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+              <span>Accordi & Contratti di Partnership Firmati</span>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 10px;">
+            <label class="form-label" style="font-size:0.75rem;">Associa a Sponsor (Opzionale)</label>
+            <select id="contractCompanySelect" class="form-control" style="font-size:0.8rem;">
+              <option value="">-- Associa ad un'azienda --</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 10px;">
+            <input type="url" id="contractDriveLinkInput" class="form-control" placeholder="Link Google Drive del contratto firmato (opzionale)">
+          </div>
+
+          <input type="file" id="contractFileInput" accept=".pdf,.doc,.docx,.jpg,.png" style="display:none;">
+          <div class="doc-upload-dropzone" id="contractDropzone">
+            <div class="doc-upload-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </div>
+            <div class="doc-upload-text"><strong>Carica Contratto Firmato</strong> (PDF o scansione)</div>
+            <div class="doc-upload-subtext">Memorizzato nel database protetto dei documenti</div>
+          </div>
+          <div class="file-list-preview" id="contractsFileList"></div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- SECTION 4: DATABASE VISIVO (TABELLA INTERATTIVA) -->
+    <section class="table-section" id="tableSection">
+      <div class="section-header-row">
+        <h2 class="section-title">
+          <span class="section-title-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+          </span>
+          Registro Generale Sponsor & Partner
+        </h2>
+        <div id="tableCountLabel" style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 700;">
+          Caricamento aziende...
+        </div>
+      </div>
+
+      <!-- Type Filter Sub-Bar -->
+      <div class="type-filter-bar">
+        <span class="type-filter-title">Tipologia:</span>
+        <button class="type-filter-btn active" data-type="Tutti">Tutti i Partner</button>
+        <button class="type-filter-btn" data-type="Finanziario"><span class="status-indicator-dot dot-cash"></span>Sponsor Cash</button>
+        <button class="type-filter-btn" data-type="Tecnico"><span class="status-indicator-dot dot-tech"></span>Partner Tecnici</button>
+        <button class="type-filter-btn" data-type="Ibrido"><span class="status-indicator-dot dot-hybrid"></span>Partnership Ibride</button>
+      </div>
+
+      <!-- Controls: Filter Tabs & Live Search -->
+      <div class="table-controls">
+        <div class="filter-tabs">
+          <button class="filter-tab active" data-stage="Tutte">Tutti</button>
+          <button class="filter-tab" data-stage="Da Contattare">Da Contattare</button>
+          <button class="filter-tab" data-stage="Primo Contatto Inviato">1° Contatto</button>
+          <button class="filter-tab" data-stage="In Trattativa">In Trattativa</button>
+          <button class="filter-tab" data-stage="Vinto"><span class="status-indicator-dot dot-won"></span>Accordi Chiusi</button>
+          <button class="filter-tab" data-stage="Perso"><span class="status-indicator-dot dot-lost"></span>Non Conclusi</button>
+        </div>
+
+        <div class="search-box-wrap">
+          <span class="search-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          </span>
+          <input type="text" id="tableSearchInput" class="form-control search-input" placeholder="Cerca azienda, referente, materiali o note...">
+        </div>
+      </div>
+
+      <!-- Responsive Interactive Table -->
+      <div class="table-responsive">
+        <table class="crm-table">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="name">Azienda <span style="font-size:0.7rem; color:var(--text-muted);">↕</span></th>
+              <th class="sortable" data-sort="type">Tipo <span style="font-size:0.7rem; color:var(--text-muted);">↕</span></th>
+              <th class="sortable" data-sort="stage">Fase Trattativa <span style="font-size:0.7rem; color:var(--text-muted);">↕</span></th>
+              <th class="sortable" data-sort="value">Valore / Ticket <span style="font-size:0.7rem; color:var(--text-muted);">↕</span></th>
+              <th class="sortable" data-sort="pitch">Pitch Deck <span style="font-size:0.7rem; color:var(--text-muted);">↕</span></th>
+              <th>Fornitura / Note</th>
+              <th>Email Contatto</th>
+              <th style="text-align: center;">Drive</th>
+              <th class="sortable" data-sort="updatedAt">Aggiornato <span style="font-size:0.7rem; color:var(--text-muted);">↕</span></th>
+              <th>Azioni</th>
+            </tr>
+          </thead>
+          <tbody id="crmTableBody">
+            <!-- Populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <div>
+          <em>Seleziona la tipologia di partner o clicca su <strong>Modifica</strong> per gestire schede tecniche, importi e forniture di materiali.</em>
+        </div>
+        <div>
+          Sapienza Foiling Team • Gestionale Ufficiale di Squadra
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- MODAL: EDIT SEASONAL BUDGET -->
+  <div class="modal-overlay" id="budgetModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Modifica Target Cash Stagionale</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:14px;">
+          Imposta il nuovo target monetario complessivo per la campagna sponsorizzazioni. Il valore iniziale prefissato è 20.000 €.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="budgetInputModal">Importo Obiettivo Cash (€)</label>
+          <input type="number" id="budgetInputModal" class="form-control" min="1000" step="1000">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Annulla</button>
+        <button class="btn btn-brand" id="btnSaveBudgetModal">Salva Obiettivo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CONFIGURE CLOUD & GMAIL TEAM ACCOUNTS -->
+  <div class="modal-overlay" id="cloudConfigModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Configura Gmail & Drive di Squadra</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:14px;">
+          Imposta l'indirizzo della casella Gmail e la cartella Google Drive del team. I pulsanti "Cerca Gmail" apriranno automaticamente questa casella invece di quella personale.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="teamGmailConfigInput">Indirizzo Gmail del Team</label>
+          <input type="email" id="teamGmailConfigInput" class="form-control" placeholder="sapienzafoilingteam@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="teamDriveConfigInput">Link Cartella Condivisa Google Drive</label>
+          <input type="url" id="teamDriveConfigInput" class="form-control" placeholder="https://drive.google.com/drive/folders/...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Annulla</button>
+        <button class="btn btn-brand" id="btnSaveCloudModal">Salva Impostazioni</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: VIEW FULL NOTES -->
+  <div class="modal-overlay" id="notesModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 class="modal-title" id="notesModalTitle">Note & Dettagli Fornitura</h3>
+        <button class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="notesModalContent" style="background:var(--bg-void); padding:16px; border-radius:var(--radius-sm); border:1px solid var(--border-color); font-size:0.88rem; color:var(--text-primary); max-height:340px; overflow-y:auto; white-space:pre-wrap; line-height: 1.6;"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Chiudi</button>
+        <button class="btn btn-brand" id="notesModalEditBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px; vertical-align:-1px;"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+          Modifica Scheda
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: SMART EMAIL RESPONSE ANALYZER -->
+  <div class="modal-overlay" id="emailAnalyzerModal">
+    <div class="modal-card" style="max-width: 680px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display:flex; align-items:center; gap:8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--foil-cyan)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Analisi Semantica Comunicazioni Sponsor
+          </h3>
+          <div style="font-size:0.8rem; color:var(--foil-cyan); margin-top:3px;">
+            Azienda Target: <strong id="analyzerCompanyTargetLabel" style="color:var(--sail-white);">Nessuna selezionata</strong>
+          </div>
+        </div>
+        <button class="modal-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size:0.82rem; color:var(--text-secondary); margin-bottom:12px; line-height:1.5;">
+          Incolla il testo dell'email ricevuta dallo sponsor o dal referente. L'algoritmo identifica in automatico le <strong>proposte monetarie (€)</strong>, il <strong>valore commerciale delle forniture tecniche</strong>, la <strong>fase della trattativa</strong> (Accordo Chiuso, In Trattativa, Non Concluso) e genera il <strong>resoconto/verbale</strong> con data pronto per essere archiviato nel CRM.
+        </p>
+
+        <!-- Company Selector if not yet chosen -->
+        <div class="form-group" id="analyzerCompanySelectGroup" style="display:none; margin-bottom:12px;">
+          <label class="form-label" for="analyzerCompanySelect">Seleziona Azienda Sponsor da Aggiornare:</label>
+          <select id="analyzerCompanySelect" class="form-control" style="font-size:0.85rem; font-weight:600;"></select>
+        </div>
+
+        <!-- Textarea input -->
+        <div class="form-group">
+          <label class="form-label" for="emailAnalyzerInput">Testo dell'Email / Thread Ricevuto:</label>
+          <textarea id="emailAnalyzerInput" class="form-control" rows="5" placeholder="Es. Gentile Sapienza Foiling Team, abbiamo valutato la vostra proposta per la barca Meravijosa. Siamo lieti di confermarvi che abbiamo deliberato un contributo di 5.000 € e una fornitura tecnica di tessuti in fibra di carbonio del valore stimato di 2.500 €. Potete inviarci il contratto firmato per procedere..."></textarea>
+        </div>
+
+        <!-- Run Analysis Button + Sample Button -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:8px; flex-wrap:wrap;">
+          <button type="button" id="btnRunEmailAnalysis" class="btn btn-brand">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            Analizza Risposta ed Estrai Dati
+          </button>
+          <div style="display:flex; gap:6px;">
+            <button type="button" id="btnPasteSampleWon" class="btn btn-secondary btn-sm" title="Carica esempio di email con accordo deliberato">
+              Esempio Accordo Confermato
+            </button>
+            <button type="button" id="btnPasteSampleNegotiation" class="btn btn-secondary btn-sm" title="Carica esempio di trattativa aperta">
+              Esempio Trattativa In Corso
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Extracted Analysis Result -->
+        <div id="analyzerResultBox" style="display:none; background:var(--bg-void); border:1px solid var(--border-color); border-radius:var(--radius-md); padding:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+            <span style="font-weight:700; font-size:0.85rem; color:var(--sail-white); display:flex; align-items:center; gap:8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+              <span>Esito Analisi</span>
+              <span id="analyzerConfidenceBadge" class="badge" style="background:rgba(16,185,129,0.2); color:#34d399; font-size:0.72rem; border-radius:9999px; padding:2px 8px; border:1px solid rgba(16,185,129,0.4);">Rilevamento Eseguito</span>
+            </span>
+            <span id="analyzerMatchStagePill" class="stage-badge stage-badge-vinto" style="font-size:0.75rem;">Accordo Confermato</span>
+          </div>
+
+          <div class="form-row-2">
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem; color:var(--racing-gold-bright);">Proposta Cash Rilevata (€)</label>
+              <input type="number" id="analyzerExtractedCashInput" class="form-control" placeholder="0" min="0" step="100">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="font-size:0.75rem; color:var(--foil-cyan);">Valore Fornitura Tecnica Rilevata (€)</label>
+              <input type="number" id="analyzerExtractedTechInput" class="form-control" placeholder="0" min="0" step="100">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label" style="font-size:0.75rem;">Categorie Tecniche Rilevate nel Testo:</label>
+            <div id="analyzerDetectedCategories" style="display:flex; flex-wrap:wrap; gap:6px; min-height:24px;">
+              <!-- Dynamic tags injected here -->
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label" style="font-size:0.75rem;">Nuova Fase Trattativa da Applicare:</label>
+            <select id="analyzerTargetStageSelect" class="form-control" style="font-size:0.82rem; font-weight:600;">
+              <option value="Vinto">Accordo Confermato (Delibera / Partnership Chiusa)</option>
+              <option value="In Trattativa">In Trattativa (Call conoscitiva / Valutazione in corso)</option>
+              <option value="Primo Contatto Inviato">Primo Contatto Inviato</option>
+              <option value="Perso">Non Concluso (Proposta Declinata / Budget Esaurito)</option>
+              <option value="Da Contattare">Da Contattare</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label" style="font-size:0.75rem;">Resoconto / Verbale Generato in Automatico (sarà aggiunto alle Note):</label>
+            <textarea id="analyzerGeneratedNotesInput" class="form-control" rows="3" style="font-size:0.8rem; font-family:var(--font-mono);"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary modal-close-btn">Annulla</button>
+        <button class="btn btn-brand" id="btnApplyAnalysisToCompany" style="display:none;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          Aggiorna Scheda Sponsor & Salva
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- SCRIPT -->
+  <script src="app.js"></script>
+</body>
+</html>
