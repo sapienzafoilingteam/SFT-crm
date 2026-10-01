@@ -158,7 +158,6 @@ export function createMock(): Workspace {
             "I contenuti iniziali sono esempi. Personalizzali con il lavoro del reparto.",
         },
         { id: id(), type: "titolo", content: "Risorse del reparto" },
-        { id: id(), type: "link", content: "Drive del reparto", url: "" },
         { id: id(), type: "link", content: "Riunione del reparto", url: "" },
       ],
       revisions: [],

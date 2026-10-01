@@ -251,20 +251,6 @@ export function HomeView({ edit }: Props) {
           const page = data.pages.find(
             (p) => p.team_id === t.id && p.season_id === season && !p.archived,
           );
-          const drive =
-            page?.blocks.find(
-              (b) =>
-                b.type === "link" &&
-                !!safeUrl(b.url || "") &&
-                b.content.toLowerCase().includes("drive"),
-            ) ||
-            data.links.find(
-              (l) =>
-                l.season_id === season &&
-                l.team_id === t.id &&
-                !l.archived &&
-                l.title === "Drive del reparto",
-            );
           const meeting =
             page?.blocks.find(
               (b) =>
@@ -296,24 +282,10 @@ export function HomeView({ edit }: Props) {
                   <span className="team-dot" style={{ background: t.color }} />
                   Pagina
                 </Link>
-                {safeUrl(drive?.url || "") ? (
-                  <a
-                    href={safeUrl(drive?.url || "")}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <FolderOpen size={12} />
-                    Drive
-                  </a>
-                ) : (
-                  <Link
-                    href={"/team/" + t.id}
-                    title="Configura il Drive nella pagina del reparto"
-                  >
-                    <FolderOpen size={12} />
-                    Drive
-                  </Link>
-                )}
+                <Link href={"/team/" + t.id + (t.id === "management" ? "/pagina" : "") + "#file-reparto"}>
+                  <FolderOpen size={12} />
+                  File
+                </Link>
                 {safeUrl(meeting?.url || "") ? (
                   <a
                     href={safeUrl(meeting?.url || "")}
@@ -508,7 +480,7 @@ export function OverviewView({ edit }: Props) {
         </section>
       </div>
       <Deadlines edit={edit} teamId="management" />
-      <section className="team-drive-section">
+      <section id="file-reparto" className="team-drive-section">
         <DriveView team={TEAMS.find(t => t.id === "management")!} />
       </section>
       <div className="management-shortcuts">
@@ -705,7 +677,7 @@ export function TeamView({
         {data.links
           .filter(
             (l) =>
-              !l.archived && l.season_id === season && l.team_id === team.id,
+              !l.archived && l.season_id === season && l.team_id === team.id && l.title !== "Drive del reparto",
           )
           .map((l) => (
             <div className="resource-block" key={l.id}>
@@ -754,7 +726,7 @@ export function TeamView({
           )}
         </div>
         <div className="blocks">
-          {page?.blocks.map((b, i) => (
+          {page?.blocks.map((b, i) => b.type === "link" && b.content.trim() === "Drive del reparto" ? null : (
             <div
               key={b.id}
               className={"block block-" + b.type + (editing ? " editable" : "")}
@@ -971,7 +943,7 @@ export function TeamView({
           )}
         </div>
       </div>
-      <section className="team-drive-section">
+      <section id="file-reparto" className="team-drive-section">
         <DriveView key={team.id} team={team} />
       </section>
       <SectionTitle title="Report e aggiornamenti">
@@ -2817,7 +2789,7 @@ export function SettingsView({ edit }: Props) {
             </Button>
           </SectionTitle>
           {data.links
-            .filter((l) => !l.archived && l.season_id === season)
+            .filter((l) => !l.archived && l.season_id === season && !(l.team_id && l.title === "Drive del reparto"))
             .map((l) => (
               <div className="settings-link-row" key={l.id}>
                 <FolderOpen size={19} />

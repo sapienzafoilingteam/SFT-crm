@@ -38,6 +38,8 @@ export function withDefaultLinks(workspace: Workspace): Workspace {
   ];
   const additions = SEASONS.flatMap((season, s) =>
     resources.flatMap((resource, i) => {
+      // Keep the original positions so IDs of existing defaults remain stable.
+      if (resource.title === "Drive del reparto") return [];
       const id = `00000000-0000-4000-9000-${String(s * 100 + i + 1).padStart(12, "0")}`;
       if (
         workspace.links.some(

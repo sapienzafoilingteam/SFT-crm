@@ -53,7 +53,7 @@ test("link iniziali senza duplicati e senza sovrascrivere risorse o archivi", as
   const initialized = withDefaultLinks(original);
   assert.equal(
     initialized.links.filter((l) => l.team_id === "scafo").length,
-    4,
+    2,
   );
   assert.equal(withDefaultLinks(initialized), initialized);
   const custom = {
