@@ -5,6 +5,7 @@ import { useTheme } from "next-themes";
 import {
   Home,
   CalendarDays,
+  FolderOpen,
   Settings,
   ChevronRight,
   ChevronDown,
@@ -25,6 +26,7 @@ import { TEAMS, SEASONS, Collection, Workspace } from "@/lib/model";
 import { live, supabase } from "@/lib/repository";
 import { Button } from "./ui/button";
 import { RecordEditor, newRecord } from "./record-editor";
+import { DriveView } from "./drive-view";
 import {
   HomeView,
   OverviewView,
@@ -36,7 +38,12 @@ import {
   LibraryView,
   SettingsView,
 } from "./views";
-export type Edit = (k: Collection, row?: object, defaults?: object, title?: string) => void;
+export type Edit = (
+  k: Collection,
+  row?: object,
+  defaults?: object,
+  title?: string,
+) => void;
 const management = [
   ["", "Panoramica"],
   ["pagina", "Pagina del reparto"],
@@ -70,36 +77,41 @@ export function WorkspaceApp({ path }: { path: string[] }) {
       row: row
         ? ({ ...row } as Record<string, unknown>)
         : { ...newRecord(collection, season), ...defaults },
-      title: title || (row
-        ? "Modifica dettagli"
-        : (
-            {
-              sponsors: "Nuova trattativa",
-              events: "Nuovo evento",
-              costs: "Aggiungi costo",
-              deliveries: "Nuova delivery",
-              reports: "Nuovo report",
-              templates: "Nuovo template",
-              contracts: "Nuovo contratto",
-              documents: "Nuova risorsa",
-              links: "Nuovo link",
-              offers: "Nuova offerta",
-              recurrences: "Nuovo modello mensile",
-            } as Record<string, string>
-          )[collection] || "Nuovo elemento"),
+      title:
+        title ||
+        (row
+          ? "Modifica dettagli"
+          : (
+              {
+                sponsors: "Nuova trattativa",
+                events: "Nuovo evento",
+                costs: "Aggiungi costo",
+                deliveries: "Nuova delivery",
+                reports: "Nuovo report",
+                templates: "Nuovo template",
+                contracts: "Nuovo contratto",
+                documents: "Nuova risorsa",
+                links: "Nuovo link",
+                offers: "Nuova offerta",
+                recurrences: "Nuovo modello mensile",
+              } as Record<string, string>
+            )[collection] || "Nuovo elemento"),
     });
   const crumb =
     section === "home"
       ? "Home"
       : section === "agenda"
         ? "Agenda e Delivery"
-        : section === "impostazioni"
-          ? "Impostazioni"
-          : team?.name || "Pagina non trovata";
+        : section === "drive"
+          ? "Drive del team"
+          : section === "impostazioni"
+            ? "Impostazioni"
+            : team?.name || "Pagina non trovata";
   const args = { edit: open };
   let content;
   if (section === "home") content = <HomeView {...args} />;
   else if (section === "agenda") content = <AgendaView {...args} />;
+  else if (section === "drive") content = <DriveView />;
   else if (section === "impostazioni") content = <SettingsView {...args} />;
   else if (section === "team" && team) {
     if (!isManagement || view === "pagina")
@@ -172,6 +184,13 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           >
             <Home size={18} />
             Home
+          </Link>
+          <Link
+            href="/drive"
+            className={section === "drive" ? "nav-link active" : "nav-link"}
+          >
+            <FolderOpen size={18} />
+            Drive del team
           </Link>
           <Link
             href="/agenda"

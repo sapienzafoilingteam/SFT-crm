@@ -1,0 +1,857 @@
+"use client";
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
+import {
+  FolderOpen,
+  FileText,
+  Upload,
+  Plus,
+  Download,
+  Pencil,
+  Trash2,
+  Search,
+  ArrowUpRight,
+  ChevronRight,
+  LayoutGrid,
+  List,
+  RefreshCw,
+  Eye,
+  LogOut,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "./ui/dialog";
+import { live } from "@/lib/repository";
+import {
+  createDriveClient,
+  DriveError,
+  DriveFile,
+  DRIVE_FOLDER,
+  GOOGLE_PREFIX,
+} from "@/lib/google-drive";
+import { driveDemo, DemoFile } from "@/lib/drive-demo";
+
+const clientId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_CLIENT_ID || "";
+const rootId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_ROOT_ID || "root";
+const accountEmail =
+  process.env.NEXT_PUBLIC_GOOGLE_DRIVE_ACCOUNT_EMAIL ??
+  (rootId === "root" ? "sapienzafoilingteam@gmail.com" : "");
+type TokenReply = {
+  access_token?: string;
+  expires_in?: number;
+  error?: string;
+  scope?: string;
+};
+type GoogleSDK = {
+  accounts: {
+    oauth2: {
+      initTokenClient(config: {
+        client_id: string;
+        scope: string;
+        hint?: string;
+        callback: (response: TokenReply) => void;
+        error_callback: () => void;
+      }): { requestAccessToken(options: { prompt: string }): void };
+    };
+  };
+};
+function fileSize(size?: string) {
+  const bytes = Number(size || 0);
+  return bytes
+    ? bytes >= 1048576
+      ? `${(bytes / 1048576).toFixed(1)} MB`
+      : `${Math.max(1, Math.round(bytes / 1024))} KB`
+    : "—";
+}
+function googleLink(file: DriveFile) {
+  const fallback = `https://drive.google.com/file/d/${encodeURIComponent(file.id)}/view`;
+  try {
+    const url = new URL(file.webViewLink || fallback);
+    return ["drive.google.com", "docs.google.com"].includes(url.hostname) &&
+      url.protocol === "https:"
+      ? url.href
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
+export function DriveView() {
+  const demo = !live;
+  const [sdk, setSdk] = useState(false);
+  const [token, setToken] = useState("");
+  const [expires, setExpires] = useState(0);
+  const [connecting, setConnecting] = useState(false);
+  const [path, setPath] = useState([
+    { id: demo ? "demo-root" : rootId, name: "Drive del team" },
+  ]);
+  const folder = path[path.length - 1];
+  const [rows, setRows] = useState<DriveFile[]>([]);
+  const [folderMeta, setFolderMeta] = useState<DriveFile | null>(null);
+  const [demoFiles, setDemoFiles] = useState<DemoFile[]>(driveDemo);
+  const demoBlobs = useRef(new Map<string, Blob>());
+  const [inputSearch, setInputSearch] = useState("");
+  const [search, setSearch] = useState("");
+  const [grid, setGrid] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [pageToken, setPageToken] = useState("");
+  const [refresh, setRefresh] = useState(0);
+  const [dialog, setDialog] = useState<{
+    kind: "folder" | "rename" | "trash";
+    file?: DriveFile;
+  } | null>(null);
+  const [name, setName] = useState("");
+  const [preview, setPreview] = useState<{
+    file: DriveFile;
+    url?: string;
+    text?: string;
+    mime?: string;
+  } | null>(null);
+  const uploadInput = useRef<HTMLInputElement>(null);
+  const replaceInput = useRef<HTMLInputElement>(null);
+  const replaceTarget = useRef<DriveFile | null>(null);
+  const configured = !!clientId && (rootId !== "root" || !!accountEmail);
+  const connected = demo || !!token;
+  const canAdd = demo || folderMeta?.capabilities?.canAddChildren === true;
+  const api = token ? createDriveClient(token) : null;
+  useEffect(() => {
+    const timeout = setTimeout(() => setSearch(inputSearch.trim()), 300);
+    return () => clearTimeout(timeout);
+  }, [inputSearch]);
+  useEffect(() => {
+    if (!expires) return;
+    const timeout = setTimeout(
+      () => {
+        setToken("");
+        setRows([]);
+        setError(
+          "Le autorizzazioni Google sono scadute. Ricollega l’account per continuare.",
+        );
+      },
+      Math.max(0, expires - Date.now()),
+    );
+    return () => clearTimeout(timeout);
+  }, [expires]);
+  useEffect(
+    () => () => {
+      if (preview?.url) URL.revokeObjectURL(preview.url);
+    },
+    [preview],
+  );
+  useEffect(() => {
+    setInputSearch("");
+    setSearch("");
+    setPageToken("");
+    setPreview(null);
+  }, [folder.id]);
+  useEffect(() => {
+    if (demo) {
+      setRows(
+        demoFiles
+          .filter(
+            (f) =>
+              f.parents?.includes(folder.id) &&
+              f.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
+          )
+          .sort(
+            (a, b) =>
+              Number(b.mimeType === DRIVE_FOLDER) -
+                Number(a.mimeType === DRIVE_FOLDER) ||
+              a.name.localeCompare(b.name),
+          ),
+      );
+      return;
+    }
+    if (!token) return;
+    let active = true;
+    setLoading(true);
+    setError("");
+    setRows([]);
+    setPageToken("");
+    setFolderMeta(null);
+    const client = createDriveClient(token);
+    Promise.all([client.metadata(folder.id), client.list(folder.id, search)])
+      .then(([metadata, result]) => {
+        if (active) {
+          setFolderMeta(metadata);
+          setRows(result.files);
+          setPageToken(result.nextPageToken || "");
+        }
+      })
+      .catch((e) => {
+        if (active) {
+          setError(e.message);
+          if (e instanceof DriveError && e.status === 401) setToken("");
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [demo, token, folder.id, search, refresh, demoFiles]);
+  async function connect() {
+    const google = (window as unknown as { google?: GoogleSDK }).google;
+    if (!google || !configured) {
+      setError("Il collegamento Google non è ancora configurato.");
+      return;
+    }
+    setConnecting(true);
+    setError("");
+    google.accounts.oauth2
+      .initTokenClient({
+        client_id: clientId,
+        scope:
+          "https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/userinfo.email",
+        hint: accountEmail || undefined,
+        error_callback: () => {
+          setConnecting(false);
+          setError(
+            "Collegamento interrotto. Consenti la finestra Google e riprova.",
+          );
+        },
+        callback: async (response) => {
+          try {
+            if (
+              response.error ||
+              !response.access_token ||
+              !response.scope
+                ?.split(" ")
+                .includes("https://www.googleapis.com/auth/drive")
+            )
+              throw new Error(
+                "Autorizza l’accesso a Drive per usare questa pagina.",
+              );
+            if (accountEmail) {
+              const identity = await fetch(
+                "https://www.googleapis.com/oauth2/v2/userinfo",
+                {
+                  headers: { Authorization: `Bearer ${response.access_token}` },
+                },
+              );
+              if (!identity.ok)
+                throw new Error("Non riesco a verificare l’account Google.");
+              const user = await identity.json();
+              if (user.email?.toLowerCase() !== accountEmail.toLowerCase())
+                throw new Error(
+                  `Seleziona l’account del team: ${accountEmail}.`,
+                );
+            }
+            setPath([{ id: rootId, name: "Drive del team" }]);
+            setToken(response.access_token);
+            setExpires(
+              Date.now() +
+                Math.max(1, Number(response.expires_in || 3600) - 30) * 1000,
+            );
+            setNotice("Drive collegato.");
+          } catch (e) {
+            setError(
+              e instanceof Error ? e.message : "Collegamento non riuscito.",
+            );
+          } finally {
+            setConnecting(false);
+          }
+        },
+      })
+      .requestAccessToken({ prompt: "select_account" });
+  }
+  async function perform(action: () => Promise<void>) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await action();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Operazione non riuscita.");
+      if (e instanceof DriveError && e.status === 401) {
+        setToken("");
+        setRows([]);
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function content(file: DriveFile, forPreview = false) {
+    if (!demo) {
+      if (!api) throw new Error("Collega Google Drive.");
+      return api.download(file, forPreview);
+    }
+    const existing = demoBlobs.current.get(file.id);
+    const text = demoFiles.find((f) => f.id === file.id)?.demoText;
+    if (!existing && text === undefined)
+      throw new Error("Contenuto non disponibile nella demo.");
+    return {
+      blob: existing || new Blob([text!], { type: "text/plain" }),
+      name: file.name,
+    };
+  }
+  function download(file: DriveFile) {
+    void perform(async () => {
+      const result = await content(file);
+      const url = URL.createObjectURL(result.blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = result.name;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setNotice("Download avviato.");
+    });
+  }
+  function openPreview(file: DriveFile) {
+    void perform(async () => {
+      const result = await content(file, true);
+      const mime = result.blob.type || file.mimeType;
+      if (mime.startsWith("text/") && result.blob.size < 2 * 1024 * 1024)
+        setPreview({ file, text: await result.blob.text(), mime });
+      else if (
+        mime.startsWith("image/") ||
+        mime === "application/pdf" ||
+        mime.startsWith("video/") ||
+        mime.startsWith("audio/")
+      )
+        setPreview({ file, url: URL.createObjectURL(result.blob), mime });
+      else setPreview({ file, mime });
+    });
+  }
+  function upload(files: FileList | null, target?: DriveFile | null) {
+    if (!files?.length) return;
+    const selected = Array.from(files);
+    void perform(async () => {
+      let count = 0;
+      try {
+        for (const file of selected) {
+          if (file.size > 100 * 1024 * 1024)
+            throw new Error("Limite di caricamento: 100 MB per file.");
+          if (demo) {
+            const id = target?.id || crypto.randomUUID();
+            demoBlobs.current.set(id, file);
+            setDemoFiles((old) => [
+              ...old.filter((f) => f.id !== id),
+              {
+                id,
+                name: target?.name || file.name,
+                mimeType: file.type || "application/octet-stream",
+                size: String(file.size),
+                modifiedTime: new Date().toISOString(),
+                parents: [folder.id],
+                capabilities: {
+                  canDownload: true,
+                  canEdit: true,
+                  canTrash: true,
+                },
+              },
+            ]);
+          } else {
+            if (!api) throw new Error("Collega Google Drive.");
+            await api.upload(folder.id, file, target?.id);
+          }
+          count++;
+        }
+        setNotice(`${count} file ${target ? "aggiornato" : count === 1 ? "caricato" : "caricati"}.`);
+      } finally {
+        setRefresh((n) => n + 1);
+        if (uploadInput.current) uploadInput.current.value = "";
+        if (replaceInput.current) replaceInput.current.value = "";
+        replaceTarget.current = null;
+      }
+    });
+  }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const current = dialog;
+    if (!current) return;
+    const clean = name.trim();
+    if (current.kind !== "trash" && !clean) {
+      setError("Inserisci un nome.");
+      return;
+    }
+    await perform(async () => {
+      if (demo) {
+        if (current.kind === "folder")
+          setDemoFiles((old) => [
+            ...old,
+            {
+              id: crypto.randomUUID(),
+              name: clean,
+              mimeType: DRIVE_FOLDER,
+              parents: [folder.id],
+              capabilities: {
+                canEdit: true,
+                canTrash: true,
+                canAddChildren: true,
+              },
+            },
+          ]);
+        if (current.kind === "rename")
+          setDemoFiles((old) =>
+            old.map((f) =>
+              f.id === current.file?.id ? { ...f, name: clean } : f,
+            ),
+          );
+        if (current.kind === "trash")
+          setDemoFiles((old) => old.filter((f) => f.id !== current.file?.id));
+      } else {
+        if (!api) throw new Error("Collega Google Drive.");
+        if (current.kind === "folder") await api.createFolder(folder.id, clean);
+        if (current.kind === "rename")
+          await api.rename(current.file!.id, clean);
+        if (current.kind === "trash") await api.trash(current.file!.id);
+      }
+      setDialog(null);
+      setRefresh((n) => n + 1);
+      setNotice(
+        current.kind === "trash"
+          ? (demo ? "Elemento rimosso dalla demo." : "Elemento spostato nel cestino di Drive.")
+          : "Modifiche salvate.",
+      );
+    });
+  }
+  const controls = (file: DriveFile) => (
+    <div className="drive-file-actions">
+      {file.mimeType !== DRIVE_FOLDER && (
+        <>
+          <button
+            disabled={busy || file.capabilities?.canDownload === false}
+            aria-label={`Anteprima ${file.name}`}
+            title="Anteprima"
+            onClick={() => openPreview(file)}
+          >
+            <Eye size={16} />
+          </button>
+          <button
+            disabled={busy || file.capabilities?.canDownload === false}
+            aria-label={`Scarica ${file.name}`}
+            title="Scarica"
+            onClick={() => download(file)}
+          >
+            <Download size={16} />
+          </button>
+        </>
+      )}
+      <button
+        disabled={busy || !file.capabilities?.canEdit}
+        aria-label={`Rinomina ${file.name}`}
+        title="Rinomina"
+        onClick={() => {
+          setDialog({ kind: "rename", file });
+          setName(file.name);
+          setError("");
+        }}
+      >
+        <Pencil size={16} />
+      </button>
+      {file.mimeType !== DRIVE_FOLDER &&
+        !file.mimeType.startsWith(GOOGLE_PREFIX) && (
+          <button
+            disabled={busy || !file.capabilities?.canEdit}
+            aria-label={`Sostituisci ${file.name}`}
+            title="Sostituisci contenuto"
+            onClick={() => {
+              replaceTarget.current = file;
+              replaceInput.current?.click();
+            }}
+          >
+            <Upload size={16} />
+          </button>
+        )}
+      {!demo && (
+        <a
+          href={googleLink(file)}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`Apri ${file.name} in Google`}
+          title={
+            file.mimeType.startsWith(GOOGLE_PREFIX)
+              ? "Apri / modifica in Google"
+              : "Apri in Google Drive"
+          }
+        >
+          <ArrowUpRight size={16} />
+        </a>
+      )}
+      <button
+        disabled={busy || !file.capabilities?.canTrash}
+        aria-label={`Sposta ${file.name} nel cestino`}
+        title="Sposta nel cestino"
+        onClick={() => {
+          setDialog({ kind: "trash", file });
+          setError("");
+        }}
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  );
+  return (
+    <>
+      {configured && !demo && (
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          onReady={() => setSdk(true)}
+          onError={() =>
+            setError(
+              "Non riesco a caricare l’autorizzazione Google. Controlla la connessione.",
+            )
+          }
+        />
+      )}
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">FILE E CARTELLE CONDIVISI</div>
+          <h1>Drive del team</h1>
+          <p>I documenti del Sapienza Foiling Team, in un unico spazio.</p>
+        </div>
+        <div className="heading-actions">
+          {connected && (
+            <>
+              <Button
+                variant="outline"
+                disabled={busy || loading || !canAdd}
+                onClick={() => {
+                  setDialog({ kind: "folder" });
+                  setName("");
+                  setError("");
+                }}
+              >
+                <Plus size={16} />
+                Nuova cartella
+              </Button>
+              <Button
+                disabled={busy || loading || !canAdd}
+                onClick={() => uploadInput.current?.click()}
+              >
+                <Upload size={16} />
+                {busy ? "Operazione in corso…" : "Carica file"}
+              </Button>
+            </>
+          )}
+          {!demo &&
+            (token ? (
+              <Button
+                variant="ghost"
+                disabled={busy}
+                onClick={() => {
+                  setToken("");
+                  setExpires(0);
+                  setRows([]);
+                  setPreview(null);
+                  setError("");
+                  setNotice("Drive scollegato da questa pagina.");
+                }}
+              >
+                <LogOut size={16} />
+                Scollega
+              </Button>
+            ) : (
+              <Button
+                disabled={!configured || !sdk || connecting}
+                onClick={connect}
+              >
+                {connecting ? "Collegamento…" : "Connetti Google"}
+              </Button>
+            ))}
+        </div>
+      </div>
+      <input
+        className="sr-only"
+        type="file"
+        multiple
+        ref={uploadInput}
+        aria-label="Carica file su Drive"
+        onChange={(e) => upload(e.target.files)}
+      />
+      <input
+        className="sr-only"
+        type="file"
+        ref={replaceInput}
+        aria-label="Sostituisci contenuto del file"
+        onChange={(e) => upload(e.target.files, replaceTarget.current)}
+      />
+      {demo && (
+        <div className="drive-info">
+          Anteprima dimostrativa. Le operazioni modificano solo questa sessione,
+          non il Drive reale.
+        </div>
+      )}
+      {!demo && !configured && (
+        <div className="panel drive-connection">
+          <FolderOpen size={36} />
+          <h2>Collega il Drive del team</h2>
+          <p>
+            La pagina è pronta. Prima di usare i file reali occorre configurare
+            il collegamento Google e autorizzare l’account del team.
+          </p>
+          <p>File e cartelle rimangono su Google Drive.</p>
+        </div>
+      )}
+      {!demo && configured && !token && (
+        <div className="panel drive-connection">
+          <FolderOpen size={36} />
+          <h2>Accedi al Drive del team</h2>
+          <p>
+            Premi Connetti Google e scegli{" "}
+            {accountEmail || "un account con accesso alla cartella del team"}.
+            Il collegamento al CRM non concede nuovi permessi sui file.
+          </p>
+        </div>
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p className="drive-info" role="status">
+          {notice}
+        </p>
+      )}
+      {connected && (
+        <div className="panel drive-browser" aria-busy={loading || busy}>
+          <div className="drive-toolbar">
+            <nav className="drive-path" aria-label="Percorso Drive">
+              {path.map((part, i) => (
+                <span key={part.id}>
+                  {i > 0 && <ChevronRight size={14} />}
+                  <button
+                    disabled={busy || i === path.length - 1}
+                    aria-current={i === path.length - 1 ? "page" : undefined}
+                    onClick={() => setPath(path.slice(0, i + 1))}
+                  >
+                    {part.name}
+                  </button>
+                </span>
+              ))}
+            </nav>
+            <div className="drive-view-controls">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={busy || loading}
+                aria-label="Aggiorna cartella"
+                onClick={() => setRefresh((n) => n + 1)}
+              >
+                <RefreshCw size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Vista lista"
+                aria-pressed={!grid}
+                onClick={() => setGrid(false)}
+              >
+                <List size={16} />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Vista griglia"
+                aria-pressed={grid}
+                onClick={() => setGrid(true)}
+              >
+                <LayoutGrid size={16} />
+              </Button>
+            </div>
+          </div>
+          <div className="search-box drive-search">
+            <Search size={16} />
+            <input
+              disabled={busy}
+              value={inputSearch}
+              onChange={(e) => setInputSearch(e.target.value)}
+              aria-label="Cerca nella cartella Drive"
+              placeholder="Cerca in questa cartella…"
+            />
+          </div>
+          {loading ? (
+            <div className="empty" role="status">
+              Caricamento dei file…
+            </div>
+          ) : rows.length ? (
+            <div
+              className={
+                grid ? "drive-files drive-grid" : "drive-files drive-list"
+              }
+            >
+              {rows.map((file) => (
+                <article className="drive-file" key={file.id}>
+                  <button
+                    className="drive-file-main"
+                    disabled={busy}
+                    onClick={() =>
+                      file.mimeType === DRIVE_FOLDER
+                        ? setPath([...path, { id: file.id, name: file.name }])
+                        : openPreview(file)
+                    }
+                  >
+                    {file.mimeType === DRIVE_FOLDER ? (
+                      <FolderOpen size={26} />
+                    ) : (
+                      <FileText size={26} />
+                    )}
+                    <span>
+                      <strong>{file.name}</strong>
+                      <small>
+                        {file.mimeType === DRIVE_FOLDER
+                          ? "Cartella"
+                          : fileSize(file.size)}
+                        {file.modifiedTime
+                          ? ` · ${new Date(file.modifiedTime).toLocaleDateString("it-IT")}`
+                          : ""}
+                      </small>
+                    </span>
+                  </button>
+                  {controls(file)}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="empty">
+              <FolderOpen size={28} />
+              <p>
+                {error
+                  ? "Non riesco a mostrare i file. Aggiorna la cartella per riprovare."
+                  : search
+                  ? "Nessun file corrisponde alla ricerca."
+                  : "Questa cartella è vuota."}
+              </p>
+            </div>
+          )}
+          {pageToken && (
+            <Button
+              variant="outline"
+              disabled={busy || loading}
+              onClick={() =>
+                void perform(async () => {
+                  const result = await api!.list(folder.id, search, pageToken);
+                  setRows((old) => [...old, ...result.files]);
+                  setPageToken(result.nextPageToken || "");
+                })
+              }
+            >
+              Carica altri file
+            </Button>
+          )}
+        </div>
+      )}
+      {dialog && (
+        <Dialog
+          open
+          onOpenChange={(v) => {
+            if (!v && !busy) setDialog(null);
+          }}
+        >
+          <DialogContent>
+            <DialogTitle>
+              {dialog.kind === "folder"
+                ? "Nuova cartella"
+                : dialog.kind === "rename"
+                  ? "Rinomina"
+                  : "Sposta nel cestino"}
+            </DialogTitle>
+            <DialogDescription>
+              {dialog.kind === "trash"
+                ? (demo ? `“${dialog.file?.name}” verrà rimosso soltanto dalla demo.` : `“${dialog.file?.name}” verrà spostato nel cestino di Google Drive${dialog.file?.mimeType === DRIVE_FOLDER ? ", insieme ai contenuti" : ""}. Potrai recuperarlo da Google Drive.`)
+                : "Scegli un nome per questo elemento."}
+            </DialogDescription>
+            <form onSubmit={submit}>
+              {dialog.kind !== "trash" && (
+                <label>
+                  <span className="field-label">Nome</span>
+                  <input
+                    required
+                    maxLength={255}
+                    autoFocus
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    aria-label="Nome elemento Drive"
+                  />
+                </label>
+              )}
+              {error && (
+                <p role="alert" className="form-error">
+                  {error}
+                </p>
+              )}
+              <div className="dialog-footer">
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => setDialog(null)}
+                >
+                  Annulla
+                </Button>
+                <Button disabled={busy}>
+                  {busy
+                    ? "Attendi…"
+                    : dialog.kind === "trash"
+                      ? "Sposta nel cestino"
+                      : "Salva"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      )}
+      {preview && (
+        <Dialog
+          open
+          onOpenChange={(v) => {
+            if (!v) setPreview(null);
+          }}
+        >
+          <DialogContent className="drive-preview">
+            <DialogTitle>{preview.file.name}</DialogTitle>
+            <DialogDescription>Anteprima del documento</DialogDescription>
+            {preview.text !== undefined ? (
+              <pre>{preview.text}</pre>
+            ) : preview.url && preview.mime?.startsWith("image/") ? (
+              <img src={preview.url} alt={preview.file.name} />
+            ) : preview.url && preview.mime === "application/pdf" ? (
+              <iframe src={preview.url} title={preview.file.name} sandbox="" />
+            ) : preview.url && preview.mime?.startsWith("video/") ? (
+              <video src={preview.url} controls />
+            ) : preview.url && preview.mime?.startsWith("audio/") ? (
+              <audio src={preview.url} controls />
+            ) : (
+              <p>
+                Anteprima non disponibile per questo formato. Scarica il file o
+                aprilo in Google.
+              </p>
+            )}
+            <div className="dialog-footer">
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => download(preview.file)}
+              >
+                <Download size={15} />
+                Scarica
+              </Button>
+              {!demo && (
+                <a
+                  className="btn"
+                  href={googleLink(preview.file)}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Apri / modifica in Google <ArrowUpRight size={15} />
+                </a>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
+  );
+}

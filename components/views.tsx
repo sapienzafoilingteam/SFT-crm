@@ -206,6 +206,7 @@ export function HomeView({ edit }: Props) {
   return (
     <>
       <SectionTitle title="Home">
+        <Link href="/drive" className="text-link"><FolderOpen size={15}/>Drive del team</Link>
         <Button variant="ghost" size="sm" onClick={() => edit("links")}>
           <Plus size={14} />
           Aggiungi link
