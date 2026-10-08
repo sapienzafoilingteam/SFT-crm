@@ -1,5 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { editorLayout } from "@/lib/editor-layout";
+import { interviewEnd } from "@/lib/recruiting";
+import { QuickChoices } from "./quick-choices";
 import { LINK_ICONS } from "./link-icons";
 import { interviewTitle } from "@/lib/recruiting";
 import {
@@ -370,7 +373,7 @@ export function newRecord(
         ...common,
         type: "Evento team",
         status: "Idea",
-        date: "",
+        date: today,
         start_time: "",
         end_time: "",
         team_id: "",
@@ -477,15 +480,54 @@ export function RecordEditor({
       ]),
     ),
   );
+  const [initialValues] = useState(values);
   const [error, setError] = useState("");
   const [archive, setArchive] = useState(false);
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const [errorField, setErrorField] = useState('');
+  const form = useRef<HTMLFormElement>(null);
+  const visibleFields = fields.filter(f => collection !== 'sponsors' || ((f.key !== 'amount_cents' || values.type !== 'Tecnico') && (f.key !== 'technical_cents' || values.type !== 'Finanziario')));
+  const [newRecordDefault] = useState(() => newRecord(collection, String(row.season_id)));
+  const layout = editorLayout(collection, visibleFields, values, data[collection].some(x => x.id === row.id), recruitingEvent, initialValues);
+  useEffect(() => {
+    if (!errorField) return;
+    (form.current?.elements.namedItem(errorField) as HTMLElement | null)?.focus();
+  }, [errorField, expanded]);
+  function update(key: string, value: string) {
+    setValues(v => {
+      if (collection === 'events' && key === 'start_time') {
+        const duration = v.start_time && v.end_time ? Number(v.end_time.slice(0,2)) * 60 + Number(v.end_time.slice(3)) - Number(v.start_time.slice(0,2)) * 60 - Number(v.start_time.slice(3)) : recruitingEvent ? 30 : 60;
+        return { ...v, start_time: value, end_time: value ? interviewEnd(value, duration > 0 ? duration : 60) : '' };
+      }
+      return { ...v, [key]: value };
+    });
+  }
+  function reveal(key: string) {
+    setExpanded(layout.groups.filter(g => g.fields.some(f => f.key === key)).map(g => g.id));
+    setErrorField(key);
+  }
+  function renderField(f: Field) {
+    const required = f.required || (collection === 'deliveries' && f.key === 'completion_url' && values.status === 'Consegnato / Pubblicato');
+    if (f.type === 'icon') return <fieldset key={f.key} className="wide link-icon-picker"><legend>Icona</legend><div className="link-icon-options"><button type="button" aria-pressed={!values.icon} onClick={() => update('icon', '')}>Automatica</button>{LINK_ICONS.map(({value, label, Icon}) => <button type="button" key={value} aria-pressed={values.icon === value} onClick={() => update('icon', value)}><Icon size={20} aria-hidden /><span>{label}</span></button>)}</div></fieldset>;
+    if (f.type === 'select' && ['type','stage','status','priority','category'].includes(f.key)) return <div className="wide" key={f.key}><QuickChoices label={f.label} value={values[f.key]} options={f.options || []} disabled={busy} onChange={value => update(f.key, value)} /></div>;
+    return <label key={f.key} className={f.type === 'textarea' || f.key === 'title' ? 'wide' : ''}><span className="field-label">{f.label}{required && <span className="required-marker" aria-hidden> *</span>}</span>
+      {f.type === 'select' ? <select name={f.key} aria-label={f.label} aria-invalid={Boolean(error && errorField === f.key)} aria-describedby={error && errorField === f.key ? "record-error" : undefined} required={required} value={values[f.key]} disabled={busy} onChange={e => update(f.key,e.target.value)}>{f.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
+      : f.type === 'textarea' ? <textarea name={f.key} aria-label={f.label} aria-invalid={Boolean(error && errorField === f.key)} aria-describedby={error && errorField === f.key ? "record-error" : undefined} rows={f.key === 'body' ? 6 : 3} required={required} value={values[f.key]} disabled={busy} onChange={e => update(f.key,e.target.value)} />
+      : <input name={f.key} aria-label={f.label} aria-invalid={Boolean(error && errorField === f.key)} aria-describedby={error && errorField === f.key ? "record-error" : undefined} type={f.type === 'money' ? 'text' : f.type || 'text'} inputMode={f.type === 'money' ? 'decimal' : undefined} min={f.type === 'number' ? 1 : undefined} max={f.type === 'number' ? 31 : undefined} required={required} value={values[f.key]} disabled={busy} autoComplete={f.type === 'email' ? 'email' : undefined} onInput={['date','time','month','number'].includes(f.type || '') ? e => update(f.key,e.currentTarget.value) : undefined} onChange={e => update(f.key,e.target.value)} />}
+    </label>;
+  }
   const existing = data[collection].some((x) => x.id === row.id);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    let activeField = '';
     try {
+      if (existing && data[collection].find(item => item.id === row.id)?.version !== row.version) throw new Error('Questa scheda è stata aggiornata. Riaprila prima di salvare le modifiche.');
       const patch: Record<string, unknown> = { ...row };
       for (const f of fields) {
+        activeField = f.key;
+        const input = form.current?.elements.namedItem(f.key) as HTMLInputElement | null;
+        if (input && 'checkValidity' in input && !input.checkValidity()) throw new Error(`${f.label}: controlla il valore inserito`);
         if (
           collection === "sponsors" &&
           ((f.key === "amount_cents" && values.type === "Tecnico") ||
@@ -508,13 +550,16 @@ export function RecordEditor({
               ? Number(val)
               : val;
       }
+      activeField = "amount_cents";
       if (collection === "costs" && Number(patch.amount_cents) <= 0)
         throw new Error("Inserisci un costo maggiore di zero");
+      activeField = "end_time";
       if (collection === "events") {
         const start = String(patch.start_time || ""), end = String(patch.end_time || "");
         if ((start || end) && (!start || !end || end <= start)) throw new Error("L’ora di fine deve seguire l’inizio nello stesso giorno.");
         if (recruitingEvent) { patch.title = interviewTitle(String(patch.team_id || "")); patch.archived = patch.status === "Annullato"; }
       }
+      activeField = "day";
       if (
         collection === "recurrences" &&
         (!Number.isInteger(patch.day) ||
@@ -522,6 +567,7 @@ export function RecordEditor({
           Number(patch.day) > 31)
       )
         throw new Error("Scegli un giorno da 1 a 31");
+      activeField = "completion_url";
       if (
         collection === "deliveries" &&
         patch.status === "Consegnato / Pubblicato"
@@ -530,7 +576,7 @@ export function RecordEditor({
           throw new Error(
             "Aggiungi un link come prova di consegna o pubblicazione",
           );
-        patch.completed_at = new Date().toISOString();
+        patch.completed_at = row.status === patch.status && row.completed_at ? row.completed_at : new Date().toISOString();
       }
       if (collection === "sponsors") {
         if (patch.type === "Tecnico") patch.amount_cents = 0;
@@ -566,6 +612,7 @@ export function RecordEditor({
         onClose();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+      reveal(activeField);
     }
   };
   return (
@@ -575,83 +622,20 @@ export function RecordEditor({
         if (!v) onClose();
       }}
     >
-      <DialogContent>
+      <DialogContent className="compact-editor">
         <DialogTitle className="dialog-title">{title}</DialogTitle>
         <DialogDescription className="muted">
-          {recruitingEvent ? "Qui modifichi i dati visibili nell’agenda. Appunti ed esito si gestiscono nella scheda recruiting protetta." : "Compila i dettagli utili. Potrai aggiornarli in seguito."}
+          {recruitingEvent ? "Qui modifichi i dati visibili nell’agenda. Appunti ed esito si gestiscono nella scheda recruiting protetta." : "Parti dall’essenziale. Gli altri dettagli si possono aggiungere quando servono."}
         </DialogDescription>
-        <form onSubmit={submit} className="record-form">
-          <div className="form-grid">
-            {fields
-              .filter(
-                (f) =>
-                  collection !== "sponsors" ||
-                  ((f.key !== "amount_cents" || values.type !== "Tecnico") &&
-                    (f.key !== "technical_cents" ||
-                      values.type !== "Finanziario")),
-              )
-              .map((f) => f.type === "icon" ? (
-                <fieldset key={f.key} className="wide link-icon-picker">
-                  <legend>Icona</legend>
-                  <div className="link-icon-options">
-                    <button type="button" aria-pressed={!values.icon} onClick={() => setValues(v => ({...v, icon: ""}))}>Automatica</button>
-                    {LINK_ICONS.map(({value, label, Icon}) => <button key={value} type="button" aria-pressed={values.icon === value} onClick={() => setValues(v => ({...v, icon: value}))}><Icon size={20} aria-hidden /><span>{label}</span></button>)}
-                  </div>
-                </fieldset>
-              ) : (
-                <label
-                  key={f.key}
-                  className={f.type === "textarea" ? "wide" : ""}
-                >
-                  <span className="field-label">
-                    {f.label}
-                    {f.required && (
-                      <span className="required-marker" aria-hidden>{"\u00a0"}*</span>
-                    )}
-                  </span>
-                  {f.type === "select" ? (
-                    <select
-                      aria-label={f.label}
-                      value={values[f.key]}
-                      onChange={(e) =>
-                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                      }
-                    >
-                      {f.options?.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
-                  ) : f.type === "textarea" ? (
-                    <textarea
-                      aria-label={f.label}
-                      rows={f.key === "body" ? 8 : 3}
-                      value={values[f.key]}
-                      required={f.required}
-                      onChange={(e) =>
-                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                      }
-                    />
-                  ) : (
-                    <input
-                      aria-label={f.label}
-                      type={f.type === "money" ? "text" : f.type || "text"}
-                      inputMode={f.type === "money" ? "decimal" : undefined}
-                      min={f.type === "number" ? 1 : undefined}
-                      max={f.type === "number" ? 31 : undefined}
-                      required={f.required}
-                      value={values[f.key]}
-                      onChange={(e) =>
-                        setValues((v) => ({ ...v, [f.key]: e.target.value }))
-                      }
-                    />
-                  )}
-                </label>
-              ))}
-          </div>
+        <form ref={form} noValidate onSubmit={submit} className="record-form">
+          <div className="form-grid">{layout.primary.map(renderField)}</div>
+          <div className="editor-context">{values.team_id && !layout.primary.some(f => f.key === 'team_id') && <span>Reparto: {TEAMS.find(t => t.id === values.team_id)?.short}</span>}{['type', existing ? '' : 'status', existing ? '' : 'stage'].filter(key => key && values[key]).map(key => <span key={key}>{values[key]}</span>)}</div>
+          {layout.groups.map(group => <details className="progressive-section" key={group.id} open={expanded.includes(group.id)} onToggle={e => {
+            const open = e.currentTarget.open;
+            setExpanded(current => open ? current.includes(group.id) ? current : [...current, group.id] : current.filter(id => id !== group.id));
+          }}><summary>{group.label}<span>{group.fields.filter(f => values[f.key] && values[f.key] !== String(newRecordDefault[f.key] ?? '')).length ? 'Dettagli presenti' : 'Apri'}</span></summary><div className="form-grid">{group.fields.map(renderField)}</div></details>)}
           {error && (
-            <p role="alert" className="form-error">
+            <p id="record-error" role="alert" className="form-error">
               {error}
             </p>
           )}

@@ -2,7 +2,7 @@ import { TEAMS, type EventRecord } from './model';
 
 export const RECRUITING_SHEET = '1VsWkktKRPBPs9rkZR5XDok8OZllv1JPB4QkdjKue46A';
 export const RECRUITING_TAB = 1212892271;
-export const RECRUITING_STATES = ['Nuova', 'Da contattare', 'Colloquio da fissare', 'Colloquio fissato', 'In valutazione', 'Accettata', 'Non selezionata', 'Ritirata'] as const;
+export const RECRUITING_STATES = ['In valutazione', 'Colloquio fissato', 'Accettato', 'Rifiutato'] as const;
 export type RecruitingState = typeof RECRUITING_STATES[number];
 export interface RecruitingAnswer { column: number; question: string; answer: string; group: string }
 export interface Candidate {
@@ -29,7 +29,23 @@ export function answerGroup(index: number) {
 }
 export function teamFromAnswer(value: string) {
   const text = value.toLowerCase();
-  return TEAMS.find(t => text.includes(t.id) || text.includes(t.short.toLowerCase()))?.id || '';
+  // Preferences are ordered in the answer, independently of the team's menu order.
+  return TEAMS.flatMap(t => [t.id, t.short.toLowerCase()].map(alias => ({ id: t.id, index: text.indexOf(alias) })))
+    .filter(t => t.index >= 0).sort((a, b) => a.index - b.index)[0]?.id || '';
+}
+export function candidateTeam(candidate: Pick<Candidate, 'assigned_team' | 'requested_team'>) {
+  return candidate.assigned_team || teamFromAnswer(candidate.requested_team);
+}
+export function recruitingStage(value: string): RecruitingState {
+  if (value === 'Accettata' || value === 'Accettato') return 'Accettato';
+  if (['Non selezionata', 'Ritirata', 'Rifiutato'].includes(value)) return 'Rifiutato';
+  return value === 'Colloquio fissato' ? value : 'In valutazione';
+}
+export function interviewEnd(start: string, duration = 30) {
+  const [hours, minutes] = start.split(':').map(Number);
+  const end = hours * 60 + minutes + duration;
+  if (!Number.isFinite(end) || end >= 1440) return '';
+  return `${String(Math.floor(end / 60)).padStart(2, '0')}:${String(end % 60).padStart(2, '0')}`;
 }
 export function attachmentIds(value: string) {
   return [...new Set([...value.matchAll(/https:\/\/(?:drive|docs)\.google\.com\/(?:file\/d\/|open\?id=|uc\?id=)([a-zA-Z0-9_-]+)/g)].map(m => m[1]))];
@@ -55,10 +71,10 @@ export function csvCell(value: unknown) {
   return '"' + (/^[\s]*[=+@-]/.test(text) ? "'" : '') + text.replaceAll('"', '""') + '"';
 }
 export function recruitingCsv(candidates: Candidate[]) {
-  const fields: [string, keyof Candidate][] = [['Nome','first_name'],['Cognome','last_name'],['Email','email'],['Telefono','phone'],['Corso','degree'],['Anno','year'],['Reparto richiesto','requested_team'],['Reparto assegnato','assigned_team'],['Stato','stage'],['Responsabile','owner'],['Prossima azione','next_action'],['Scadenza','due_date']];
+  const fields: [string, keyof Candidate][] = [['Nome','first_name'],['Cognome','last_name'],['Email','email'],['Telefono','phone'],['Corso','degree'],['Anno','year'],['Reparto richiesto','requested_team'],['Reparto assegnato','assigned_team'],['Stato','stage'],['Prossima azione','next_action'],['Scadenza','due_date']];
   return '\uFEFF' + [fields.map(([label]) => csvCell(label)).join(';'), ...candidates.map(c => fields.map(([,key]) => csvCell(c[key])).join(';'))].join('\r\n');
 }
 export function demoRecruiting(): RecruitingData {
   const c = parseCandidate(['Data','Nome','Cognome','Email','Telefono','Corso','Anno','Provenienza','Esperienze veliche','Lettera','CV','Reparto'], ['08/10/2026 10:00','Alex','Esempio','alex@example.invalid','','Ingegneria elettronica','2','Presentazione in università','Corso di vela','','','Elettronica e Data Analysis'], 'demo-1', '00000000-0000-4000-8000-000000000001');
-  return { candidates: [{ ...c, id: '10000000-0000-4000-8000-000000000001', source_hash: '', source_missing: false, stage: 'Nuova', owner: '', assigned_team: '', next_action: '', due_date: '', notes: '', evaluation: '', archived: false, version: 1, updated_at: new Date().toISOString() }], activities: [], interviews: [], last_sync: null, sync_error: null };
+  return { candidates: [{ ...c, id: '10000000-0000-4000-8000-000000000001', source_hash: '', source_missing: false, stage: 'In valutazione', owner: '', assigned_team: teamFromAnswer(c.requested_team), next_action: '', due_date: '', notes: '', evaluation: '', archived: false, version: 1, updated_at: new Date().toISOString() }], activities: [], interviews: [], last_sync: null, sync_error: null };
 }

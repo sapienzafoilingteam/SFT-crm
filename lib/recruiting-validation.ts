@@ -13,7 +13,7 @@ export function candidateFields(input: unknown) {
   const fields = input as Record<string, unknown>, output: Record<string, string | boolean> = {};
   for (const [key, value] of Object.entries(fields)) {
     if (key === 'archived') { if (typeof value !== 'boolean') throw new Error('Archivio non valido.'); output[key] = value; }
-    else if (['stage','owner','assigned_team','next_action','due_date','notes','evaluation'].includes(key)) output[key] = text(value, ['notes','evaluation'].includes(key) ? 12000 : 500);
+    else if (['stage','assigned_team','next_action','due_date','notes','evaluation'].includes(key)) output[key] = text(value, ['notes','evaluation'].includes(key) ? 12000 : 500);
     else throw new Error('Campo non modificabile.');
   }
   if (output.stage && !RECRUITING_STATES.includes(output.stage as typeof RECRUITING_STATES[number])) throw new Error('Stato non valido.');

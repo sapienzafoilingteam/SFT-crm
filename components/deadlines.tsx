@@ -1,4 +1,5 @@
 "use client";
+import { DeliveryActions } from "./delivery-actions";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, CalendarDays, Plus } from "lucide-react";
@@ -23,11 +24,11 @@ export function Deadlines({ edit, teamId }: { edit: Edit; teamId?: string }) {
         <Button variant="outline" size="sm" onClick={() => edit("deliveries", undefined, { team_id: teamId || "", type: "Altro" }, "Nuova scadenza")}><Plus size={14} />Nuova scadenza</Button>
       </div>
       {shown.length ? shown.map((row) => (
-        <button className="deadline-row" key={row.id} onClick={() => edit("deliveries", row, undefined, "Modifica scadenza")} aria-label={`Modifica scadenza: ${row.title}`}>
+        <div className="deadline-action-row" key={row.id}><button className="deadline-row" onClick={() => edit("deliveries", row, undefined, "Modifica scadenza")} aria-label={`Modifica scadenza: ${row.title}`}>
           <div className="date-box"><strong>{row.date.slice(8)}</strong><span>{dateLabel(row.date).split(" ")[1]}</span></div>
           <div className="deadline-content"><strong>{row.title}</strong><small>{dateLabel(row.date)} · {teamId ? row.type : TEAMS.find((team) => team.id === row.team_id)?.short || "Tutto il team"} · Priorità {row.priority.toLowerCase()}</small></div>
           <div className="deadline-status"><span className="badge">{row.status}</span>{row.date < today ? <span className="deadline-late">In ritardo</span> : row.date === today ? <span className="deadline-today">Oggi</span> : null}</div>
-        </button>
+        </button><DeliveryActions row={row} /></div>
       )) : <div className="empty"><CalendarDays size={25} /><p>{teamId ? "Nessuna scadenza aperta per questo reparto." : "Nessuna scadenza aperta per questa stagione."}</p></div>}
       <div className="deadlines-footer">
         {rows.length > 6 && <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>{expanded ? "Mostra meno" : `Mostra tutte (${rows.length})`}</Button>}

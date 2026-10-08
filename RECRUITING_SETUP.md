@@ -1,10 +1,10 @@
 # Recruiting
 
-La pagina `/recruiting` importa automaticamente le risposte del modulo della stagione 2026/2027, mostra tutte le domande e gestisce selezione, valutazioni, note, responsabili, scadenze, archivio, esportazione e colloqui nell'agenda.
+La pagina `/recruiting` importa automaticamente le risposte del modulo della stagione 2026/2027, mostra tutte le domande e gestisce selezione, valutazioni, note, scadenze, archivio, esportazione e colloqui nell'agenda.
 
 ## Attivazione
 
-1. Applica `supabase/migrations/202610080001_recruiting.sql` al progetto Supabase del CRM. È una migrazione aggiuntiva: non richiede che Calendar sia attivo. Per lo scheduler Supabase applica anche `202610080002_recruiting_scheduler.sql`.
+1. Applica `supabase/migrations/202610080001_recruiting.sql` al progetto Supabase del CRM. È una migrazione aggiuntiva: non richiede che Calendar sia attivo. Per lo scheduler Supabase applica anche `202610080002_recruiting_scheduler.sql`. Prima di distribuire il recruiting semplificato applica `202610080003_recruiting_quick_actions.sql`: converte gli stati esistenti, conserva lo stato precedente nello storico privato e assegna la prima preferenza ai candidati senza reparto. I reparti assegnati manualmente e gli altri dati sono conservati.
 2. Configura `SUPABASE_SERVICE_ROLE_KEY` esclusivamente sul server. Non usare il prefisso `NEXT_PUBLIC_` e non inserirla nei commit. Le tabelle recruiting non sono leggibili o modificabili con le chiavi pubbliche, neppure da un membro autenticato.
 3. Esegui `node scripts/setup-recruiting.mjs` in un terminale interattivo. Scegli la password condivisa; il setup salva soltanto il suo hash scrypt e prepara `.env.recruiting.vercel`, escluso da Git, con le quattro variabili da copiare su Vercel come Secret: `SUPABASE_SERVICE_ROLE_KEY`, `RECRUITING_PASSWORD_HASH`, `RECRUITING_SESSION_SECRET`, `RECRUITING_CRON_SECRET`. Il file contiene credenziali: non inviarlo in chat e non pubblicarlo. Copia i valori senza le virgolette esterne del file. Rilancia il setup per cambiare password: tutte le sessioni già sbloccate verranno invalidate. I segreti della sessione e dello scheduler già configurati vengono mantenuti, così la rotazione della password non interrompe il job Supabase.
 4. Attiva Google Sheets API nel progetto Google del collegamento Drive esistente. Il refresh token Drive del team, già autorizzato con scope `drive`, viene riutilizzato esclusivamente sul server. L'integrazione accede soltanto al foglio configurato.
@@ -34,6 +34,14 @@ La firma delle prime 32 intestazioni viene conservata dopo il primo import: se c
 - L'API Drive condivisa nasconde il foglio e gli allegati importati e impedisce operazioni su di essi finché il recruiting è bloccato. Le due cartelle antenate degli allegati vengono protette: controllare che siano le cartelle degli upload Google Forms e non cartelle operative condivise. Gli allegati già importati restano protetti anche quando la risposta viene rimossa dal foglio. Eventuali permessi di accesso diretto su Google rimangono gestiti da Google; la password CRM non revoca tali permessi.
 - Le risposte non vengono salvate nel localStorage del workspace, nei suoi export o nei log pubblici. La demo usa esclusivamente una candidatura inventata e indica esplicitamente che non applica la password ai dati fittizi.
 
+## Selezione rapida
+
+Le nuove candidature partono da **In valutazione**. Gli altri stati sono **Colloquio fissato**, **Accettato** e **Rifiutato**, sempre accompagnati da etichette e colori. Elenco, Kanban e scheda offrono pulsanti per accettare, rifiutare e rivalutare; dall'elenco è disponibile anche l'annullamento dell'ultimo cambio di stato, protetto dal controllo versione.
+
+Il reparto viene assegnato alla prima preferenza riconosciuta nel testo della candidatura. Si può cambiare direttamente nell'elenco o nella scheda; conteggi e filtri usano il reparto assegnato. Tutte le preferenze restano consultabili. Il campo Responsabile è rimosso da interfaccia, filtri ed esportazione; i valori storici rimangono nel database.
+
+Per fissare un colloquio bastano giorno e ora: candidato e reparto sono già associati e la durata iniziale è 30 minuti. «Altre opzioni» permette di gestire durata, luogo, selezionatori e dettagli privati. Annullando l'ultimo colloquio confermato dal recruiting, una candidatura con stato Colloquio fissato torna In valutazione; gli esiti Accettato e Rifiutato non vengono cambiati. Note, valutazione, promemoria, risposte e storico si aprono separatamente nella scheda; corso, anno e archivio restano sotto «Altri filtri».
+
 ## Colloqui e agenda
 
 Il colloquio crea un evento `Colloquio recruiting · [Reparto]`, con data, inizio/fine in Europe/Rome, selezionatori e luogo/link della call. Questi dati sono visibili nell'agenda condivisa. Nome del candidato, email, telefono, appunti e valutazione non vengono copiati nell'evento. Evitare di inserire dati del candidato nei campi pubblici "Selezionatori" e "Luogo/link".
@@ -49,3 +57,6 @@ Verifica dell'8 ottobre 2026: 31 test superati e build di produzione riuscita. N
 Prima di usare dati reali: verificare password errata e scadenza, richieste API bloccate, isolamento del database, import ripetuto senza duplicazioni, correzione nel foglio senza perdita di note, riga rimossa senza cancellazione, PDF, colloquio creato/spostato/annullato, assenza di identità nell'agenda e funzionamento del trigger a CRM chiuso.
 
 In caso di errore di sincronizzazione, correggere accesso Google o schema e attendere l'aggiornamento successivo. Lo snapshot importato viene salvato atomicamente. Un rollback del frontend non elimina candidature o ID nel foglio; non rimuovere colonne o tabelle per annullare un deploy. Per la cancellazione effettiva dei dati servono operazioni specifiche di gestione e conservazione, distinte dall'archivio reversibile dell'interfaccia.
+
+
+Verifica locale del recruiting semplificato (8 ottobre 2026): 32 test superati, controllo TypeScript e build riusciti. I test coprono migrazione degli stati, assegnazione automatica e conservazione dei reparti manuali, conflitti, privacy dell'agenda e annullamento del colloquio. La demo è stata verificata nel browser: accettazione e rifiuto con annullamento, cambio reparto, colloquio creato e annullato, elenco, Kanban e scheda mobile a 390 px senza overflow della pagina. La nuova migrazione è preparata nel repository: queste verifiche non attestano che sia stata applicata al database condiviso o distribuita in produzione.

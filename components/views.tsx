@@ -1,4 +1,6 @@
 "use client";
+import { DeliveryActions } from "./delivery-actions";
+import { QuickChoices } from "./quick-choices";
 import { CalendarSync } from "./calendar-sync";
 import { DriveView } from "./drive-view";
 import Link from "next/link";
@@ -1286,6 +1288,7 @@ export function SponsorsView({ edit }: Props) {
             <DialogDescription className="muted">
               {detail.type} · {detail.stage}
             </DialogDescription>
+            <QuickChoices label="Fase della trattativa" value={detail.stage} options={[...STAGES, 'Sospeso', 'Non concluso'].map(value => ({ value, label: value }))} disabled={busy} onChange={value => void change(detail, value)} />
             <div className="detail-callout">
               <Flag size={18} />
               <div>
@@ -1585,7 +1588,7 @@ export function EventsView({ edit }: Props) {
             <DialogDescription className="muted">
               {dateLabel(event.date)} · {event.location || "Luogo da definire"}
             </DialogDescription>
-            <Badge>{event.status}</Badge>
+            <QuickChoices label="Stato evento" value={event.status} options={['Idea','In preparazione','Confermato','Concluso','Annullato'].map(value => ({ value, label: value }))} disabled={busy} onChange={status => void put('events', { ...event, status, ...(event.type === 'Colloquio recruiting' ? { archived: status === 'Annullato' } : {}) })} />
             <p className="pre-line">{event.description}</p>
             <Button
               variant="outline"
@@ -1973,7 +1976,7 @@ export function AgendaView({ edit }: Props) {
       .filter((d) => !d.archived && d.season_id === season)
       .map((d) => ({
         ...d,
-        team_id: d.team_id || "management",
+        team_id: d.team_id || "",
         priority: "Media",
         collection: "events" as Collection,
       })),
@@ -2148,8 +2151,7 @@ export function AgendaView({ edit }: Props) {
           {items
             .filter((d) => !d.date || d.date.startsWith(month))
             .map((d) => (
-              <button
-                key={d.id}
+              <div className="deadline-action-row" key={d.id}><button
                 className="deadline-row"
                 onClick={() => edit(d.collection, d)}
               >
@@ -2166,7 +2168,7 @@ export function AgendaView({ edit }: Props) {
                 </div>
                 <Badge>{d.status}</Badge>
                 <span className="priority">{d.priority}</span>
-              </button>
+              </button>{d.collection === 'deliveries' && <DeliveryActions row={d as Delivery} />}</div>
             ))}
           {!items.some((d) => !d.date || d.date.startsWith(month)) && (
             <Empty text="Nessun impegno in questo mese." />
@@ -2579,6 +2581,7 @@ export function LibraryView({
             <DialogDescription className="muted">
               {contract.type} · {contract.status}
             </DialogDescription>
+            <QuickChoices label="Stato contratto" value={contract.status} options={['Bozza','Inviato','Firmato','Annullato'].map(value => ({ value, label: value }))} disabled={busy} onChange={status => void put('contracts', { ...contract, status, versions: [...(contract.versions || []), { at: contract.updated_at, url: contract.url, status: contract.status, notes: contract.notes }].slice(-30) })} />
             <p>
               Partner:{" "}
               {data.sponsors.find((s) => s.id === contract.sponsor_id)?.title ||
@@ -2644,19 +2647,8 @@ export function LibraryView({
             </DialogDescription>
             {!compose ? (
               <>
-                <div className="form-grid">
-                  {variables.map((k) => (
-                    <label key={k}>
-                      {k.replaceAll("_", " ")}
-                      <input
-                        value={vars[k] || ""}
-                        onChange={(e) =>
-                          setVars((v) => ({ ...v, [k]: e.target.value }))
-                        }
-                      />
-                    </label>
-                  ))}
-                </div>
+                <div className="form-grid">{variables.slice(0,3).map(k => <label key={k}>{k.replaceAll('_',' ')}<input value={vars[k] || ''} onChange={e => setVars(v => ({ ...v, [k]: e.target.value }))} /></label>)}</div>
+                {variables.length > 3 && <details className="progressive-section"><summary>Altre informazioni<span>{variables.slice(3).filter(k => !vars[k]).length} da completare</span></summary><div className="form-grid">{variables.slice(3).map(k => <label key={k}>{k.replaceAll('_',' ')}<input value={vars[k] || ''} onChange={e => setVars(v => ({ ...v, [k]: e.target.value }))} /></label>)}</div></details>}
                 <h3>Anteprima</h3>
                 <strong>{fill(template.subject)}</strong>
                 <p className="email-preview">{fill(template.body)}</p>

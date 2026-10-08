@@ -277,51 +277,12 @@ export function PageBlockEditor({
           intestazioni.
         </small>
       )}
-      {block?.type === "riunione" && (
-        <div className="meeting-fields">
-          <label>
-            Data
-            <input
-              type="date"
-              value={meeting.date}
-              onChange={(e) =>
-                onChange?.({ meeting: { ...meeting, date: e.target.value } })
-              }
-            />
-          </label>
-          <label>
-            Partecipanti
-            <input
-              placeholder="Nomi delle persone presenti"
-              value={meeting.attendees}
-              onChange={(e) =>
-                onChange?.({
-                  meeting: { ...meeting, attendees: e.target.value },
-                })
-              }
-            />
-          </label>
-          {(
-            [
-              ["agenda", "Ordine del giorno"],
-              ["minutes", "Verbale · cosa si è detto e fatto"],
-              ["decisions", "Decisioni prese"],
-              ["actions", "Prossime azioni · responsabili e scadenze"],
-            ] as const
-          ).map(([key, label]) => (
-            <label className="wide" key={key}>
-              {label}
-              <textarea
-                rows={key === "minutes" ? 5 : 3}
-                value={meeting[key]}
-                onChange={(e) =>
-                  onChange?.({ meeting: { ...meeting, [key]: e.target.value } })
-                }
-              />
-            </label>
-          ))}
-        </div>
-      )}
+      {block?.type === "riunione" && <>
+        <div className="meeting-fields"><label>Data<input type="date" value={meeting.date} onChange={e => onChange?.({ meeting: { ...meeting, date: e.target.value } })} /></label>
+        <label className="wide">Verbale<textarea rows={4} placeholder="Che cosa è stato discusso?" value={meeting.minutes} onChange={e => onChange?.({ meeting: { ...meeting, minutes: e.target.value } })} /></label></div>
+        <details className="progressive-section"><summary>Partecipanti e ordine del giorno<span>Apri</span></summary><div className="meeting-fields"><label>Partecipanti<input value={meeting.attendees} placeholder="Nomi delle persone presenti" onChange={e => onChange?.({ meeting: { ...meeting, attendees: e.target.value } })} /></label><label className="wide">Ordine del giorno<textarea rows={3} value={meeting.agenda} onChange={e => onChange?.({ meeting: { ...meeting, agenda: e.target.value } })} /></label></div></details>
+        <details className="progressive-section"><summary>Decisioni e prossime azioni<span>Apri</span></summary><div className="meeting-fields">{([['decisions','Decisioni prese'],['actions','Prossime azioni · responsabili e scadenze']] as const).map(([key,label]) => <label className="wide" key={key}>{label}<textarea rows={3} value={meeting[key]} onChange={e => onChange?.({ meeting: { ...meeting, [key]: e.target.value } })} /></label>)}</div></details>
+      </>}
     </div>
   );
 }

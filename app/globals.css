@@ -3,7 +3,7 @@
 .recruiting-gate form { display: grid; gap: 16px; }
 .recruiting-gate label { display: grid; gap: 8px; }
 .recruiting-alert { background: var(--primary-soft); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; justify-content: space-between; }
-.recruiting-stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+.recruiting-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
 .recruiting-stats .panel { padding: 20px; display: grid; gap: 8px; }
 .recruiting-stats strong { font-size: 30px; line-height: 1; }
 .recruiting-departments { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
@@ -2830,3 +2830,77 @@ tfoot {
 .drive-dragging { outline: 3px dashed var(--primary); outline-offset: 3px; }
 .drive-drop-overlay { position: absolute; inset: 0; z-index: 5; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; background: var(--card); opacity: .96; border-radius: var(--radius); pointer-events: none; color: var(--primary); min-height: 150px; }
 .drive-drop-overlay strong { font-size: 20px; }
+
+/* Recruiting: the candidate list is the working surface. */
+.recruiting-stats button { text-align: left; cursor: pointer; }
+.recruiting-stats button[aria-pressed=true] { outline: 2px solid var(--primary); outline-offset: 2px; }
+.recruiting-status { width: fit-content; white-space: nowrap; }
+.recruiting-status.pending { background: #fff1ce; color: #744900; }
+.recruiting-status.interview { background: #dfeeff; color: #164d8b; }
+.recruiting-status.accepted { background: #dff3e6; color: #20603a; }
+.recruiting-status.rejected { background: #ffe4e4; color: #933333; }
+.recruiting-list { display: grid; gap: 10px; }
+.recruiting-candidate { display: grid; grid-template-columns: minmax(180px,1.4fr) minmax(120px,.7fr) minmax(150px,1fr); gap: 16px; align-items: center; padding: 20px; }
+.recruiting-candidate small { display: block; color: var(--muted); overflow-wrap: anywhere; }
+.recruiting-candidate p { font-size: 13px; margin: 4px 0; }
+.recruiting-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.recruiting-candidate > .recruiting-actions { grid-column: 1 / -1; padding-top: 12px; border-top: 1px solid var(--border); }
+.recruiting-actions .recruiting-accept { color: #20603a; }
+.recruiting-actions .recruiting-reject { color: #933333; }
+.recruiting-date { display: block; color: var(--primary); font-size: 13px; margin-top: 8px; min-height: 32px; text-align: left; }
+.recruiting-team select { width: 100%; max-width: 240px; }
+.recruiting-selection { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 20px 0 12px; }
+.recruiting-filters summary { cursor: pointer; padding: 10px; }
+.recruiting-filter-options { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; }
+.recruiting-answers form { margin-top: 16px; }
+.recruiting-answers form .form-grid { margin-bottom: 12px; }
+html.dark .recruiting-status.pending { background: #493715; color: #ffdc91; }
+html.dark .recruiting-status.interview { background: #203d60; color: #b4d7ff; }
+html.dark .recruiting-status.accepted { background: #214833; color: #b6ecc9; }
+html.dark .recruiting-status.rejected { background: #562a2a; color: #ffc4c4; }
+html.dark .recruiting-actions .recruiting-accept { color: #b6ecc9; }
+html.dark .recruiting-actions .recruiting-reject { color: #ffc4c4; }
+@media (max-width:700px) {
+ .recruiting-candidate { grid-template-columns: minmax(0,1fr); gap: 12px; padding: 16px; }
+ .recruiting-team select { max-width: none; min-height: 44px; }
+ .recruiting-actions button, .recruiting-date { min-height: 44px; }
+ .recruiting-filters { width: 100%; }
+ .recruiting-filter-options { flex-direction: column; }
+ .recruiting-stats .badge { font-size: 12px; }
+}
+
+/* Progressive forms share one compact rhythm throughout the workspace. */
+.dialog-content.compact-editor { width: min(560px, calc(100vw - 24px)); }
+.compact-editor .record-form > .form-grid { margin-bottom: 20px; }
+.compact-editor input, .compact-editor select { min-height: 44px; min-width: 0; width: 100%; }
+.compact-editor textarea { min-width: 0; width: 100%; }
+.compact-editor input[name=title] { font-size: 18px; }
+.progressive-section { border-top: 1px solid var(--border); margin-top: 12px; }
+.progressive-section > summary { cursor: pointer; padding: 14px 0; font-size: 13px; font-weight: 600; min-height: 44px; }
+.progressive-section > summary span { float: right; color: var(--muted); font-size: 11px; font-weight: 400; margin-left: 12px; }
+.progressive-section > .form-grid, .progressive-section > .meeting-fields { padding: 4px 0 16px; }
+.quick-choices { border: 0; margin: 0; padding: 0; min-width: 0; }
+.quick-choices > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.quick-choices button { border: 1px solid var(--border); border-radius: 7px; padding: 8px 10px; min-height: 36px; font-size: 12px; color: var(--foreground); background: var(--card); }
+.quick-choices button[aria-pressed=true] { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+.quick-choices button[aria-pressed=true][data-tone=done] { color: #20603a; border-color: #629c78; background: #dff3e6; }
+.quick-choices button[aria-pressed=true][data-tone=stopped] { color: #933333; border-color: #c88b8b; background: #ffe4e4; }
+.dark .quick-choices button[aria-pressed=true][data-tone=done] { color: #b6ecc9; background: #214833; }
+.dark .quick-choices button[aria-pressed=true][data-tone=stopped] { color: #ffc4c4; background: #562a2a; }
+.quick-choices button:disabled { opacity: .6; cursor: default; }
+.deadline-action-row { display: flex; gap: 12px; align-items: center; border-bottom: 1px solid var(--border); }
+.deadline-action-row:last-child { border-bottom: 0; }
+.deadline-action-row > .deadline-row { flex: 1; min-width: 0; border-bottom: 0; }
+.delivery-quick-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding-right: 16px; }
+.detail-dialog > .quick-choices { margin: 20px 0; }
+@media(max-width:700px) {
+ .compact-editor .form-grid { grid-template-columns: minmax(0,1fr); }
+ .quick-choices button { min-height: 44px; }
+ .deadline-action-row { flex-wrap: wrap; gap: 0; padding-bottom: 12px; }
+ .deadline-action-row > .deadline-row { flex-basis: 100%; }
+ .delivery-quick-actions { padding: 0 16px; }
+ .progressive-section > summary span { float: none; display: inline-block; }
+}
+
+.editor-context { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; font-size: 12px; color: var(--muted); }
+.editor-context span { padding: 4px 8px; background: var(--muted-bg); border-radius: 6px; }

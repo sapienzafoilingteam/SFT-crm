@@ -73,12 +73,13 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   const team = TEAMS.find((t) => t.id === path[1]);
   const isManagement = section === "team" && team?.id === "management";
   const view = isManagement ? path[2] || "" : section;
-  const open: Edit = (collection, row, defaults, title) =>
+  const open: Edit = (collection, row, defaults, title) => {
+    const fresh = row ? row : newRecord(collection, season);
     setEditor({
       collection,
       row: row
         ? ({ ...row } as Record<string, unknown>)
-        : { ...newRecord(collection, season), ...defaults },
+        : { ...fresh, ...(team && (!isManagement || view === "pagina") && "team_id" in fresh ? { team_id: team.id } : {}), ...defaults },
       title:
         title ||
         (row
@@ -99,6 +100,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
               } as Record<string, string>
             )[collection] || "Nuovo elemento"),
     });
+  };
   const crumb =
     section === "home"
       ? "Home"

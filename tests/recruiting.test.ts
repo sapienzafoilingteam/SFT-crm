@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 import { createClient } from '@supabase/supabase-js';
-import { demoRecruiting, parseCandidate, recruitingCsv, RECRUITING_SHEET, interviewTitle, type Candidate } from '../lib/recruiting';
+import { candidateTeam, demoRecruiting, interviewEnd, recruitingStage, teamFromAnswer, parseCandidate, recruitingCsv, RECRUITING_SHEET, interviewTitle, type Candidate } from '../lib/recruiting';
 import { hashPassword, issueUnlock, verifyPassword, verifyUnlock } from '../lib/recruiting-security';
 import { candidateFields, interviewFields } from '../lib/recruiting-validation';
 import { syncRecruiting } from '../lib/recruiting-server';
@@ -37,6 +37,8 @@ test('all answers retain separate column identity, imported fields cannot be ove
   assert.equal(parsed.answers.filter(a => a.question === headers[12]).length,2);
   assert.deepEqual(parsed.attachments.map(a => a.id),['private_letter_123','private_cv_123']);
   assert.throws(() => candidateFields({ email: 'changed' }));
+  assert.throws(() => candidateFields({ owner: 'Unused' }));
+  assert.throws(() => candidateFields({ stage: 'Nuova' }));
   assert.throws(() => candidateFields({ due_date: '2026-02-31' }));
   assert.throws(() => candidateFields({ stage: 'Inventato' }));
   assert.deepEqual(candidateFields({ notes: 'private', stage: 'In valutazione' }),{ notes:'private',stage:'In valutazione' });
@@ -151,17 +153,41 @@ test('private database permissions, retry limits, atomic imports, conflict prote
     const importRows = (records: object[]) => db.query('select import_recruiting($1,$2)',[JSON.stringify(records),source.season_id]);
     await importRows([source]);
     let candidate = (await db.query<Candidate>('select * from recruiting_candidates')).rows[0];
+    await db.query('select update_recruiting($1,$2,$3,$4)',[candidate.id,candidate.version,JSON.stringify({stage:'Accettata',assigned_team:'foil',owner:'Historical owner'}),'Selector']);
+    await db.exec('reset role;');
+    await db.exec(await readFile('supabase/migrations/202610080003_recruiting_quick_actions.sql','utf8'));
+    await db.exec('set role service_role;');
+    candidate = (await db.query<Candidate>('select * from recruiting_candidates')).rows[0];
+    assert.equal(candidate.stage,'Accettato'); assert.equal(candidate.assigned_team,'foil'); assert.equal(candidate.owner,'Historical owner');
+    assert.match(JSON.stringify((await db.query('select * from recruiting_activities')).rows),/Accettata/);
+    // The quick actions and undo use exactly these states through the same RPC.
+    for (const stage of ['Rifiutato', 'Accettato', 'In valutazione', 'Accettato']) {
+      await db.query('select update_recruiting($1,$2,$3,$4)',[candidate.id,candidate.version,JSON.stringify({stage}),'Selector']);
+      const updated = (await db.query<Candidate>('select * from recruiting_candidates where id=$1',[candidate.id])).rows[0];
+      assert.equal(updated.stage,stage); assert.equal(updated.version,candidate.version+1);
+      const history = (await db.query<{text:string}>('select text from recruiting_activities where candidate_id=$1',[candidate.id])).rows;
+      assert.ok(history.some(activity => activity.text === `Stato: ${candidate.stage} → ${stage}`));
+      candidate = updated;
+    }
+    const freshSource = {...source,source_id:crypto.randomUUID(),requested_team:'Elettronica e Data Analysis, Materiali e Sostenibilità'};
+    await importRows([source,freshSource]);
+    const fresh = (await db.query<Candidate>('select * from recruiting_candidates where source_id=$1',[freshSource.source_id])).rows[0];
+    assert.equal(fresh.stage,'In valutazione'); assert.equal(fresh.assigned_team,'elettronica');
+    assert.equal((await db.query<{team:string}>('select recruiting_first_team($1) as team',['Cantiere, Foil'])).rows[0].team,teamFromAnswer('Cantiere, Foil'));
+    await db.query('delete from recruiting_candidates where id=$1',[fresh.id]);
+    candidate = (await db.query<Candidate>('select * from recruiting_candidates')).rows[0];
     await db.query('select update_recruiting($1,$2,$3,$4)',[candidate.id,candidate.version,JSON.stringify({notes:'Private notes',stage:'In valutazione'}),'Selector']);
     await assert.rejects(db.query('select update_recruiting($1,$2,$3,$4)',[candidate.id,1,JSON.stringify({notes:'Stale overwrite'}),'Selector']));
     await importRows([{...source,source_hash:'two',first_name:'Updated'}]);
     candidate = (await db.query<Candidate>('select * from recruiting_candidates')).rows[0];
-    assert.equal(candidate.first_name,'Updated'); assert.equal(candidate.notes,'Private notes'); assert.equal(candidate.stage,'In valutazione');
+    assert.equal(candidate.first_name,'Updated'); assert.equal(candidate.notes,'Private notes'); assert.equal(candidate.stage,'In valutazione'); assert.equal(candidate.assigned_team,'foil');
     await importRows([{...source,source_hash:'two',first_name:'Updated'}]);
     assert.equal((await db.query<Candidate>('select * from recruiting_candidates')).rows[0].version,candidate.version);
     await assert.rejects(importRows([{...source,source_hash:'three'}, {...source,source_id:'invalid',answers:{not:'array'}}]));
     assert.equal((await db.query<Candidate>('select * from recruiting_candidates')).rows[0].source_hash,'two');
     const id=crypto.randomUUID(), fields=interviewFields({team_id:'elettronica',date:'2026-10-08',start_time:'10:00',end_time:'11:00',interviewers:'Selector',location:'Room',status:'Confermato',notes:'Private interview',outcome:'Private evaluation'});
     await db.query('select save_recruiting_interview($1,$2,$3,$4,$5,$6)',[candidate.id,id,null,null,JSON.stringify(fields),'Selector']);
+    assert.equal((await db.query<Candidate>('select * from recruiting_candidates')).rows[0].stage,'Colloquio fissato');
     await assert.rejects(db.query('select save_recruiting_interview($1,$2,$3,$4,$5,$6)',[candidate.id,id,1,99,JSON.stringify({...fields,notes:'Lost note',start_time:'11:00',end_time:'12:00'}),'Selector']));
     assert.equal((await db.query<{notes:string}>('select notes from recruiting_interviews')).rows[0].notes,'Private interview');
     await db.exec('reset role; set role authenticated;');
@@ -175,6 +201,10 @@ test('private database permissions, retry limits, atomic imports, conflict prote
     assert.doesNotMatch(JSON.stringify(events.rows),/Updated|alex@example|Private notes|Private interview|Private evaluation/);
     assert.doesNotMatch(JSON.stringify((await db.query('select * from audit_log')).rows),/Candidate name must stay private|Private notes|Private interview|Private evaluation/);
     await db.exec('reset role; set role service_role;');
+    const currentInterview = (await db.query<{id:string;version:number}>('select * from recruiting_interviews')).rows[0];
+    const currentEvent = (await db.query<{version:number}>('select * from events')).rows[0];
+    await db.query('select save_recruiting_interview($1,$2,$3,$4,$5,$6)',[candidate.id,currentInterview.id,currentInterview.version,currentEvent.version,JSON.stringify({...fields,status:'Annullato'}),'Selector']);
+    assert.equal((await db.query<Candidate>('select * from recruiting_candidates')).rows[0].stage,'In valutazione');
     await importRows([]);
     candidate=(await db.query<Candidate>('select * from recruiting_candidates')).rows[0];
     assert.equal(candidate.source_missing,true); assert.equal(candidate.notes,'Private notes');
@@ -183,4 +213,21 @@ test('private database permissions, retry limits, atomic imports, conflict prote
     await db.query('select release_recruiting_sync($1)',[crypto.randomUUID()]);
     assert.equal((await db.query<{ok:boolean}>('select acquire_recruiting_sync($1) as ok',[crypto.randomUUID()])).rows[0].ok,false);
   } finally { await db.close(); }
+});
+
+
+test('first department follows preference order, manual assignment wins, legacy states and interview duration', () => {
+  assert.equal(teamFromAnswer('Elettronica e Data Analysis, Materiali e Sostenibilità'),'elettronica');
+  assert.equal(teamFromAnswer('Foil e Controllo di Volo, Scafo e terrazze'),'foil');
+  assert.equal(teamFromAnswer('Manufacturing e Cantiere; Elettronica'),'manufacturing');
+  assert.equal(teamFromAnswer('Shore Team e Logistica'),'shore');
+  assert.equal(teamFromAnswer('Altro'),'');
+  assert.equal(candidateTeam({assigned_team:'management',requested_team:'Elettronica, Materiali'}),'management');
+  assert.equal(recruitingStage('Accettata'),'Accettato');
+  assert.equal(recruitingStage('Non selezionata'),'Rifiutato');
+  assert.equal(recruitingStage('Ritirata'),'Rifiutato');
+  assert.equal(recruitingStage('Nuova'),'In valutazione');
+  assert.equal(interviewEnd('10:45'),'11:15');
+  assert.equal(interviewEnd('10:45',45),'11:30');
+  assert.equal(interviewEnd('23:45'),'');
 });
