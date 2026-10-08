@@ -1,4 +1,52 @@
 @import "tailwindcss";
+.recruiting-gate { max-width: 480px; margin: 48px auto; padding: 32px; display: grid; gap: 18px; }
+.recruiting-gate form { display: grid; gap: 16px; }
+.recruiting-gate label { display: grid; gap: 8px; }
+.recruiting-alert { background: var(--primary-soft); border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 16px; display: flex; align-items: center; gap: 16px; justify-content: space-between; }
+.recruiting-stats { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 12px; margin-bottom: 20px; }
+.recruiting-stats .panel { padding: 20px; display: grid; gap: 8px; }
+.recruiting-stats strong { font-size: 30px; line-height: 1; }
+.recruiting-departments { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.recruiting-departments button { display: flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--card); }
+.recruiting-departments button[aria-pressed=true] { border-color: var(--primary); background: var(--primary-soft); }
+.recruiting-toolbar { flex-wrap: wrap; }
+.recruiting-toolbar select { max-width: 240px; }
+.recruiting-sync-info { margin-bottom: 16px; font-size: 12px; }
+.recruiting-table { overflow-x: auto; position: relative; }
+.recruiting-table th { position: relative; }
+.recruiting-toolbar .search-box { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+.recruiting-table table { width: 100%; min-width: 800px; border-collapse: collapse; }
+.recruiting-table td, .recruiting-table th { padding: 16px; text-align: left; border-bottom: 1px solid var(--border); }
+.recruiting-table td small { display: block; color: var(--muted); margin-top: 4px; }
+.recruiting-name { color: var(--primary); font-weight: 600; text-align: left; min-height: 32px; overflow-wrap: anywhere; }
+.recruiting-kanban { display: flex; gap: 14px; overflow-x: auto; max-width: 100%; padding-bottom: 16px; }
+.recruiting-column { flex: 0 0 260px; padding: 16px; align-self: flex-start; }
+.recruiting-column h2 { font-size: 15px; display: flex; justify-content: space-between; margin-bottom: 16px; }
+.recruiting-column h2 span { color: var(--muted); }
+.recruiting-card { border: 1px solid var(--border); padding: 14px; border-radius: 8px; display: grid; gap: 8px; margin-top: 12px; }
+.recruiting-card select { width: 100%; }
+.dialog-content.recruiting-detail { width: min(800px,calc(100vw - 24px)); max-width: 800px; }
+.recruiting-contact, .recruiting-documents { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0; overflow-wrap: anywhere; }
+.recruiting-contact a { color: var(--primary); }
+.recruiting-section-title { font-size: 19px; margin: 28px 0 16px; }
+.recruiting-answers { border: 1px solid var(--border); border-radius: 8px; margin: 10px 0; padding: 12px 16px; }
+.recruiting-answers summary { cursor: pointer; font-weight: 600; min-height: 24px; }
+.recruiting-answers div { margin: 18px 0; }
+.recruiting-answers h3 { font-size: 13px; line-height: 1.6; color: var(--muted); white-space: pre-wrap; }
+.recruiting-answers p { margin-top: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.recruiting-section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin: 28px 0 16px; }
+.recruiting-section-heading h2 { font-size: 19px; }
+.recruiting-interview { width: 100%; text-align: left; border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: grid; gap: 4px; margin: 10px 0; overflow-wrap: anywhere; }
+.recruiting-activity { border-left: 2px solid var(--border); padding: 4px 14px; margin: 14px 0; }
+.recruiting-activity small { color: var(--muted); }
+.recruiting-pdf { width: 100%; height: 65vh; margin: 16px 0; border: 1px solid var(--border); }
+@media(max-width:700px) {
+  .recruiting-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .recruiting-stats .panel { padding: 14px; }
+  .recruiting-toolbar select { width: 100%; max-width: none; }
+  .recruiting-gate { margin: 20px auto; padding: 24px; }
+  .recruiting-alert { flex-wrap: wrap; }
+}
 @font-face {
   font-family: Kelson;
   src: url("/fonts/kelson-bold.woff") format("woff");

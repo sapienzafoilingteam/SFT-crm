@@ -29,6 +29,7 @@ Il progetto offre una modalità **Supabase**, con dati condivisi e account perso
 | Home | `/` | Link utili, icone configurabili, reparti, scadenze e quadro della stagione. |
 | Drive del team | `/drive` | File e cartelle del Drive condiviso, operazioni sui file e spazio Google utilizzato. |
 | Agenda e Delivery | `/agenda` | Calendario e lista di delivery ed eventi, modelli mensili e scadenze. |
+| Recruiting | `/recruiting` | Candidature dal Google Form, selezione completa e colloqui; login CRM e password aggiuntiva. |
 | Pagina reparto | `/team/<id>` | Obiettivi, blocchi, riunioni, report, scadenze e cartella Drive del reparto. |
 | Management · Panoramica | `/team/management` | Situazione operativa, sponsor, eventi, attività e file di Management. |
 | Management · Pagina del reparto | `/team/management/pagina` | Pagina componibile con gli stessi strumenti degli altri reparti. |
@@ -56,6 +57,14 @@ Il selettore di stagione cambia il contesto dei dati operativi. Sono configurate
 Ogni reparto dispone di una pagina componibile e di una cartella Drive associata. Management include anche le sezioni operative dedicate.
 
 ## Funzionalità
+
+### Recruiting
+
+La sezione Recruiting offre elenco e Kanban, ricerca e filtri, tutte le risposte del modulo, CV e lettera motivazionale, stati, responsabili, reparto assegnato, note, valutazioni, prossime azioni e scadenze, storico, archivio per stagione ed esportazione CSV dell'elenco filtrato. Le candidature vengono lette dal foglio Google e aggiornate automaticamente; valutazioni e note interne restano separate dalle risposte del form.
+
+I colloqui creano eventi nell'agenda condivisa con titolo **Colloquio recruiting · [Reparto]**, orari Europe/Rome, selezionatori e luogo/call. Nome, contatti e valutazioni del candidato rimangono nel recruiting. Sono gestiti modifiche, conclusione e annullamento; il collegamento Calendar, se configurato, esporta gli orari dei colloqui.
+
+Il database recruiting e le relative API richiedono la configurazione server; la pagina è protetta con password aggiuntiva al login. Lo scheduler a CRM chiuso deve essere installato. La demo contiene esclusivamente dati inventati. Attivazione, migrazione, password, collegamento Google e limiti sono descritti in [RECRUITING_SETUP.md](RECRUITING_SETUP.md).
 
 ### Home e collegamenti utili
 
@@ -106,6 +115,8 @@ Il componente **Scadenze** è presente nella Home, nelle pagine reparto e nella 
 - Stati: **Da fare → In preparazione → Da verificare → Consegnato / Pubblicato**.
 - Collegamento alla prova di consegna o pubblicazione.
 - Le attività completate e archiviate non compaiono tra le scadenze aperte.
+
+**Google Calendar:** è disponibile la sincronizzazione bidirezionale con il calendario principale di `sapienzafoilingteam@gmail.com`, previa migrazione e autorizzazione OAuth. Si avvia dall’agenda; per eseguirla anche a CRM chiuso serve lo scheduler autenticato. Configurazione, conflitti e limiti sono descritti in [GOOGLE_CALENDAR_SETUP.md](GOOGLE_CALENDAR_SETUP.md).
 
 **Agenda e Delivery** offre calendario mensile e vista lista, ricerca e filtri per tipo e reparto. Riunisce delivery ed eventi; gli eventi sono associati a Management. I verbali inseriti nelle pagine restano separati dal calendario.
 

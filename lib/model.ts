@@ -150,6 +150,9 @@ export interface Sponsor extends Base {
   activities: { at: string; text: string }[];
 }
 export interface EventRecord extends Base {
+  start_time?: string;
+  end_time?: string;
+  team_id?: string;
   title: string;
   type: string;
   status: string;

@@ -34,6 +34,7 @@ interface Context {
   busy: boolean;
   notice: (s: string) => void;
   ready: boolean;
+  refresh: () => Promise<void>;
 }
 const Ctx = createContext<Context | null>(null);
 export function useWorkspace() {
@@ -139,6 +140,12 @@ export function Provider({ children }: { children: ReactNode }) {
     },
     [busy, ready, data],
   );
+  const refresh = useCallback(async () => {
+    if (!live || saving.current) return;
+    saving.current = true; setBusy(true);
+    try { setData(withDefaultLinks(await loadRemote())); }
+    finally { saving.current = false; setBusy(false); }
+  }, []);
   const put = async <K extends Collection>(k: K, row: Workspace[K][number]) =>
     save((s) => {
       const rows = s[k] as Base[];
@@ -167,6 +174,7 @@ export function Provider({ children }: { children: ReactNode }) {
           busy,
           notice: setMessage,
           ready,
+          refresh,
         }}
       >
         {live && !ready ? (

@@ -1,4 +1,5 @@
 "use client";
+import { CalendarSync } from "./calendar-sync";
 import { DriveView } from "./drive-view";
 import Link from "next/link";
 import { linkIcon } from "./link-icons";
@@ -1972,7 +1973,7 @@ export function AgendaView({ edit }: Props) {
       .filter((d) => !d.archived && d.season_id === season)
       .map((d) => ({
         ...d,
-        team_id: "management",
+        team_id: d.team_id || "management",
         priority: "Media",
         collection: "events" as Collection,
       })),
@@ -2010,6 +2011,7 @@ export function AgendaView({ edit }: Props) {
           Nuova delivery
         </Button>
       </Heading>
+      <CalendarSync />
       <Toolbar search={query} setSearch={setQuery}>
         <select
           aria-label="Tipo agenda"
@@ -2022,6 +2024,7 @@ export function AgendaView({ edit }: Props) {
             "Blog post",
             "Instagram",
             "Eventi e riunioni",
+            "Colloquio recruiting",
             "Altro",
           ].map((t) => (
             <option key={t}>{t}</option>
@@ -2128,7 +2131,7 @@ export function AgendaView({ edit }: Props) {
                               key={d.id}
                               onClick={() => edit(d.collection, d)}
                             >
-                              <span>{d.type}</span>
+                              <span>{'start_time' in d && d.start_time ? d.start_time + ' · ' : ''}{d.type}</span>
                               {d.title}
                             </button>
                           ))}
@@ -2157,7 +2160,7 @@ export function AgendaView({ edit }: Props) {
                 <div>
                   <strong>{d.title}</strong>
                   <small>
-                    {d.type} ·{" "}
+                    {'start_time' in d && d.start_time ? d.start_time + ('end_time' in d && d.end_time ? '–' + d.end_time : '') + ' · ' : ''}{d.type} ·{" "}
                     {TEAMS.find((t) => t.id === d.team_id)?.short || "Team"}
                   </small>
                 </div>

@@ -15,6 +15,7 @@ export async function requireDriveMember(request: Request) {
   const { data: member, error: memberError } = await client.from('members').select('active').eq('id', user.id).maybeSingle();
   if (memberError) throw new ServerDriveError('Non riesco a verificare i permessi CRM.', 503);
   if (!member?.active) throw new ServerDriveError('Accesso consentito solo ai membri attivi.', 403);
+  return client;
 }
 export function driveConfigured() {
   return Boolean(process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET && process.env.GOOGLE_DRIVE_REFRESH_TOKEN);

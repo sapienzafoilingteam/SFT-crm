@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import {
@@ -27,6 +28,7 @@ import { live, supabase } from "@/lib/repository";
 import { Button } from "./ui/button";
 import { RecordEditor, newRecord } from "./record-editor";
 import { DriveView } from "./drive-view";
+const RecruitingView = dynamic(() => import("./recruiting-view").then(m => m.RecruitingView));
 import {
   HomeView,
   OverviewView,
@@ -102,6 +104,8 @@ export function WorkspaceApp({ path }: { path: string[] }) {
       ? "Home"
       : section === "agenda"
         ? "Agenda e Delivery"
+        : section === "recruiting"
+          ? "Recruiting"
         : section === "drive"
           ? "Drive del team"
           : section === "impostazioni"
@@ -112,6 +116,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   if (section === "home") content = <HomeView {...args} />;
   else if (section === "agenda") content = <AgendaView {...args} />;
   else if (section === "drive") content = <DriveView />;
+  else if (section === "recruiting") content = <RecruitingView />;
   else if (section === "impostazioni") content = <SettingsView {...args} />;
   else if (section === "team" && team) {
     if (!isManagement || view === "pagina")
@@ -208,6 +213,9 @@ export function WorkspaceApp({ path }: { path: string[] }) {
                 ).length
               }
             </span>
+          </Link>
+          <Link href="/recruiting" className={section === "recruiting" ? "nav-link active" : "nav-link"}>
+            <Users size={18} />Recruiting
           </Link>
           <div className="nav-caption">I NOSTRI SOTTOTEAM</div>
           {TEAMS.map((t) => (

@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { LINK_ICONS } from "./link-icons";
+import { interviewTitle } from "@/lib/recruiting";
 import {
   Collection,
   Workspace,
@@ -111,6 +112,7 @@ export function fieldsFor(k: Collection, data: Workspace): Field[] {
             "Evento con sponsor",
             "Attività promozionale",
             "Riunione",
+            "Colloquio recruiting",
           ]),
         },
         {
@@ -126,6 +128,9 @@ export function fieldsFor(k: Collection, data: Workspace): Field[] {
           ]),
         },
         date,
+        { key: "start_time", label: "Ora inizio · Europe/Rome", type: "time" },
+        { key: "end_time", label: "Ora fine · Europe/Rome", type: "time" },
+        team,
         { key: "location", label: "Luogo / link call" },
         {
           key: "description",
@@ -366,6 +371,9 @@ export function newRecord(
         type: "Evento team",
         status: "Idea",
         date: "",
+        start_time: "",
+        end_time: "",
+        team_id: "",
         location: "",
         description: "",
         sponsor_id: "",
@@ -457,7 +465,8 @@ export function RecordEditor({
   title: string;
 }) {
   const { data, put, busy } = useWorkspace();
-  const fields = fieldsFor(collection, data);
+  const recruitingEvent = collection === "events" && row.type === "Colloquio recruiting";
+  const fields = fieldsFor(collection, data).filter(f => !recruitingEvent || ["status","date","start_time","end_time","team_id","location","description"].includes(f.key)).map(f => recruitingEvent && f.key === "description" ? { ...f, label: "Selezionatori · visibili nell’agenda" } : recruitingEvent && ["date","start_time","end_time","team_id"].includes(f.key) ? { ...f, required: true } : f);
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       fields.map((f) => [
@@ -501,6 +510,11 @@ export function RecordEditor({
       }
       if (collection === "costs" && Number(patch.amount_cents) <= 0)
         throw new Error("Inserisci un costo maggiore di zero");
+      if (collection === "events") {
+        const start = String(patch.start_time || ""), end = String(patch.end_time || "");
+        if ((start || end) && (!start || !end || end <= start)) throw new Error("L’ora di fine deve seguire l’inizio nello stesso giorno.");
+        if (recruitingEvent) { patch.title = interviewTitle(String(patch.team_id || "")); patch.archived = patch.status === "Annullato"; }
+      }
       if (
         collection === "recurrences" &&
         (!Number.isInteger(patch.day) ||
@@ -564,7 +578,7 @@ export function RecordEditor({
       <DialogContent>
         <DialogTitle className="dialog-title">{title}</DialogTitle>
         <DialogDescription className="muted">
-          Compila i dettagli utili. Potrai aggiornarli in seguito.
+          {recruitingEvent ? "Qui modifichi i dati visibili nell’agenda. Appunti ed esito si gestiscono nella scheda recruiting protetta." : "Compila i dettagli utili. Potrai aggiornarli in seguito."}
         </DialogDescription>
         <form onSubmit={submit} className="record-form">
           <div className="form-grid">

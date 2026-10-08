@@ -1,6 +1,7 @@
 import { configuredTeamFolder } from '@/lib/drive-team-folders';
 import { driveTarget } from '@/lib/drive-proxy-policy';
 import { driveConfigured, googleDriveToken, requireDriveMember, ServerDriveError } from '@/lib/drive-server';
+import { recruitingDriveAccess, touchesProtectedFile } from '@/lib/recruiting-drive-policy';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 function failure(error: unknown) {
@@ -27,7 +28,23 @@ export async function POST(request: Request) {
     catch { throw new ServerDriveError('Operazione non consentita.', 400); }
     if (input.body !== undefined && (typeof input.body !== 'string' || input.method === 'GET'))
       throw new ServerDriveError('Richiesta non valida.', 400);
+    const recruiting = await recruitingDriveAccess(request);
+    if (!recruiting.unlocked && touchesProtectedFile(target, input.body, recruiting.ids))
+      throw new ServerDriveError('Sblocca il recruiting per accedere a questo documento.', 423);
+    const fileList = target.pathname === '/drive/v3/files' && input.method === 'GET';
+    if (fileList && !recruiting.unlocked) {
+      target.searchParams.set('fields', (target.searchParams.get('fields') || 'nextPageToken,files(*)') + ',files(id,parents)');
+    }
     const token = await googleDriveToken();
+    const directFile = target.pathname.match(/\/files\/([\w-]+)/)?.[1];
+    if (directFile && !recruiting.unlocked && (process.env.RECRUITING_PASSWORD_HASH || process.env.SUPABASE_SERVICE_ROLE_KEY)) {
+      const meta = await fetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(directFile)}?fields=parents`, {
+        headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(8000),
+      });
+      if (!meta.ok) throw new ServerDriveError('File non disponibile o permessi non verificabili.', 403);
+      const parents: string[] = (await meta.json()).parents || [];
+      if (parents.some(id => recruiting.ids.has(id))) throw new ServerDriveError('Sblocca il recruiting per accedere a questo documento.', 423);
+    }
     const headers = new Headers({ Authorization: `Bearer ${token}` });
     if (input.body !== undefined) headers.set('Content-Type', 'application/json');
     if (target.pathname.startsWith('/upload/')) {
@@ -42,6 +59,11 @@ export async function POST(request: Request) {
       throw new ServerDriveError(message, response.status === 401 ? 503 : response.status);
     }
     const outgoing = new Headers({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+    if (fileList && !recruiting.unlocked) {
+      const result = await response.json();
+      result.files = (result.files || []).filter((file: { id: string; parents?: string[] }) => !recruiting.ids.has(file.id) && !file.parents?.some(id => recruiting.ids.has(id)));
+      return Response.json(result, { headers: outgoing });
+    }
     outgoing.set('Content-Type', response.headers.get('Content-Type') || 'application/octet-stream');
     const location = response.headers.get('Location');
     if (location && target.pathname.startsWith('/upload/')) {
