@@ -22,6 +22,8 @@ import {
 } from "@/lib/repository";
 import { Button } from "./ui/button";
 import { AuthPanel } from "./auth-panel";
+import { LegalLinks } from "./legal-page";
+import { PublicHome } from "./public-home";
 interface Context {
   data: Workspace;
   season: string;
@@ -42,7 +44,7 @@ export function useWorkspace() {
   if (!c) throw new Error("Provider mancante");
   return c;
 }
-export function Provider({ children }: { children: ReactNode }) {
+export function Provider({ children, publicHome = false }: { children: ReactNode; publicHome?: boolean }) {
   const [data, setData] = useState<Workspace>(() => createMock());
   const [season, setSeason] = useState(SEASONS[0].id);
   const [ready, setReady] = useState(false);
@@ -178,7 +180,7 @@ export function Provider({ children }: { children: ReactNode }) {
         }}
       >
         {live && !ready ? (
-          <div className="login">
+          publicHome && problem !== "SET_PASSWORD" ? <PublicHome /> : <div className="login">
             <img src="/logo.svg" alt="Sapienza Foiling Team" />
             {problem === "LOGIN" || problem === "SET_PASSWORD" ? (
               <AuthPanel
@@ -210,6 +212,7 @@ export function Provider({ children }: { children: ReactNode }) {
                 )}
               </>
             )}
+            <LegalLinks />
           </div>
         ) : (
           children

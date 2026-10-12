@@ -28,6 +28,7 @@ import { live, supabase } from "@/lib/repository";
 import { Button } from "./ui/button";
 import { RecordEditor, newRecord } from "./record-editor";
 import { DriveView } from "./drive-view";
+import { LegalLinks } from "./legal-page";
 const RecruitingView = dynamic(() => import("./recruiting-view").then(m => m.RecruitingView));
 import {
   HomeView,
@@ -359,6 +360,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           <footer className="page-footer">
             <span>SAPIENZA FOILING TEAM</span>
             <span>Progettiamo. Costruiamo. Navighiamo.</span>
+            <LegalLinks />
           </footer>
         </main>
       </div>
