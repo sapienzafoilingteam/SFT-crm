@@ -1,14 +1,14 @@
 'use client';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { CalendarDays, Download, FileText, LockKeyhole, Search, Users } from 'lucide-react';
-import { live, supabase } from '@/lib/repository';
-import { TEAMS, base, type EventRecord } from '@/lib/model';
-import { RECRUITING_STATES, candidateTeam, demoRecruiting, interviewEnd, recruitingStage, recruitingCsv, submissionTime, type Candidate, type RecruitingData, type RecruitingInterview } from '@/lib/recruiting';
+import { TEAMS,base,type EventRecord } from '@/lib/model';
+import { RECRUITING_STATES,candidateTeam,demoRecruiting,interviewEnd,recruitingCsv,recruitingStage,submissionTime,type Candidate,type RecruitingData,type RecruitingInterview } from '@/lib/recruiting';
 import { interviewFields } from '@/lib/recruiting-validation';
+import { live,supabase } from '@/lib/repository';
+import { useViewState } from '@/lib/view-state';
+import { CalendarDays,Download,FileText,LockKeyhole,Search,Users } from 'lucide-react';
+import { useCallback,useEffect,useRef,useState,type ReactNode } from 'react';
 import { useWorkspace } from './provider';
-import { CalendarSync } from './calendar-sync';
 import { Button } from './ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from './ui/dialog';
+import { Dialog,DialogContent,DialogDescription,DialogTitle } from './ui/dialog';
 
 const emptyData: RecruitingData = { candidates: [], activities: [], interviews: [], last_sync: null, sync_error: null };
 // Only invented demo records survive client navigation; real candidates never use this store.
@@ -24,21 +24,23 @@ export function RecruitingView() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [query, setQuery] = useState(''), [team, setTeam] = useState(''), [stage, setStage] = useState(''), [degree, setDegree] = useState(''), [year, setYear] = useState('');
+  const [query, setQuery] = useViewState(`recruiting:${season}:query`, ''), [team, setTeam] = useViewState(`recruiting:${season}:team`, ''), [stage, setStage] = useViewState(`recruiting:${season}:stage`, ''), [degree, setDegree] = useViewState(`recruiting:${season}:degree`, ''), [year, setYear] = useViewState(`recruiting:${season}:year`, '');
   const [undo, setUndo] = useState<{ id: string; stage: Candidate['stage']; version: number } | null>(null);
-  const [archive, setArchive] = useState(false), [mode, setMode] = useState('lista');
+  const [archive, setArchive] = useState(false), [mode, setMode] = useViewState(`recruiting:${season}:mode`, 'lista');
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [interview, setInterview] = useState<{ candidate: Candidate; existing?: RecruitingInterview } | null>(null);
   const [preview, setPreview] = useState<{ url: string; title: string } | null>(null);
   useEffect(() => { if (!live && unlocked) demoSession = data; }, [data, unlocked]);
+  const lastLoad = useRef(0);
+  const readController = useRef<AbortController | null>(null);
   const loading = useRef(false), mounted = useRef(true);
   const generation = useRef(0);
   const clear = useCallback(() => { generation.current++; setUnlocked(false); setData(emptyData); setSelected(null); setInterview(null); setPreview(null); setUndo(null); setPassword(''); }, []);
-  const api = useCallback(async (path: string, method = 'GET', body?: object) => {
+  const api = useCallback(async (path: string, method = 'GET', body?: object, signal?: AbortSignal) => {
     const currentGeneration = generation.current;
     const session = await supabase?.auth.getSession();
     if (!session?.data.session) { clear(); throw new Error('Accedi al CRM per usare il recruiting.'); }
-    const response = await fetch('/api/recruiting' + path, { method, cache: 'no-store', headers: { Authorization: `Bearer ${session.data.session.access_token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
+    const response = await fetch('/api/recruiting' + path, { method, signal, cache: 'no-store', headers: { Authorization: `Bearer ${session.data.session.access_token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) }, ...(body ? { body: JSON.stringify(body) } : {}) });
     if ([401, 423].includes(response.status)) clear();
     const result = await response.json();
     if (currentGeneration !== generation.current) throw new Error('Sessione recruiting terminata. Sblocca di nuovo la pagina.');
@@ -48,18 +50,19 @@ export function RecruitingView() {
   const load = useCallback(async (sync = false) => {
     if (!live || loading.current) return;
     loading.current = true;
+    const controller = new AbortController(); readController.current = controller;
     try {
       // Show the stored snapshot first even if Google is temporarily unavailable.
-      const stored = await api('?season=' + season);
+      const stored = await api('?season=' + season, 'GET', undefined, controller.signal);
       if (!mounted.current) return;
-      setData({ ...stored, candidates: stored.candidates.map((c: Candidate) => ({ ...c, stage: recruitingStage(c.stage) })) }); setUnlocked(true); setError('');
+      setData({ ...stored, candidates: stored.candidates.map((c: Candidate) => ({ ...c, stage: recruitingStage(c.stage) })) }); setUnlocked(true); setError(''); lastLoad.current = Date.now();
       if (sync) {
-        try { await api('/sync', 'POST'); }
-        catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : 'Aggiornamento non riuscito.'); }
-        const updated = await api('?season=' + season);
-        if (mounted.current) setData({ ...updated, candidates: updated.candidates.map((c: Candidate) => ({ ...c, stage: recruitingStage(c.stage) })) });
+        try { const result = await api('/sync', 'POST', undefined, controller.signal); if (result.skipped) return; if (result.changed === false) { setData(previous => ({ ...previous, last_sync: result.synced_at, sync_error: null })); return; } }
+        catch (e) { if (mounted.current && !controller.signal.aborted) setError(e instanceof Error ? e.message : 'Aggiornamento non riuscito.'); }
+        const updated = await api('?season=' + season, 'GET', undefined, controller.signal);
+        if (mounted.current && !controller.signal.aborted) setData({ ...updated, candidates: updated.candidates.map((c: Candidate) => ({ ...c, stage: recruitingStage(c.stage) })) });
       }
-    } catch (e) { if (mounted.current) setError(e instanceof Error ? e.message : 'Recruiting non disponibile.'); }
+    } catch (e) { if (mounted.current && !controller.signal.aborted) setError(e instanceof Error ? e.message : 'Recruiting non disponibile.'); }
     finally { loading.current = false; }
   }, [api, season]);
   useEffect(() => { generation.current++; loading.current = false; setSelected(null); setInterview(null); setPreview(null); setUndo(null); if (live) setData(emptyData); }, [season]);
@@ -67,12 +70,12 @@ export function RecruitingView() {
     mounted.current = true;
     if (live) void load(true);
     const subscription = supabase?.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') clear(); }).data.subscription;
-    return () => { mounted.current = false; subscription?.unsubscribe(); };
+    return () => { mounted.current = false; readController.current?.abort(); subscription?.unsubscribe(); };
   }, [load, clear]);
   useEffect(() => {
     if (!live || !unlocked) return;
     const timer = setInterval(() => { if (document.visibilityState === 'visible') void load(true); }, 60000);
-    const focus = () => void load(true);
+    const focus = () => { if (Date.now() - lastLoad.current > 30000) void load(true); };
     window.addEventListener('focus', focus);
     return () => { clearInterval(timer); window.removeEventListener('focus', focus); };
   }, [load, unlocked]);
@@ -113,7 +116,6 @@ export function RecruitingView() {
     <div className="page-heading"><div><span className="eyebrow">LE PERSONE, IL PROSSIMO TEAM</span><h1>Recruiting</h1><p>Candidature, selezione e colloqui della stagione.</p></div>{unlocked && <div className="heading-actions"><Button variant="outline" disabled={busy} onClick={exportCsv}><Download size={16} /> Esporta elenco</Button><Button variant="outline" onClick={() => void run(async () => { if (live) await api('/unlock', 'DELETE'); clear(); })}><LockKeyhole size={16} /> Blocca</Button></div>}</div>
     {error && <div className="recruiting-alert" role="alert">{error}<Button size="sm" variant="outline" disabled={busy} onClick={() => void load(true)}>Riprova</Button></div>}
     {!unlocked ? <div className="panel recruiting-gate"><LockKeyhole size={32} /><h2>Accesso al recruiting</h2><p className="muted">Le candidature e le valutazioni sono riservate ai selezionatori.</p>{live ? <form onSubmit={e => { e.preventDefault(); void run(async () => { await api('/unlock', 'POST', { password }); setPassword(''); await load(true); }); }}><Field label="Password recruiting"><input required type="password" autoComplete="off" maxLength={256} value={password} onChange={e => setPassword(e.target.value)} /></Field><Button disabled={busy || !password} type="submit">{busy ? 'Verifica…' : 'Sblocca recruiting'}</Button></form> : <><p className="muted">Modalità demo: esclusivamente dati fittizi. La password protegge i dati reali nella modalità condivisa.</p><Button onClick={() => { setData(demoSession || demoRecruiting()); setUnlocked(true); }}>Apri demo recruiting</Button></>}</div> : <>
-      {live && <CalendarSync />}
       {undo && <div className="recruiting-alert" role="status"><span>Stato aggiornato.</span><Button size="sm" variant="outline" disabled={busy} onClick={() => void run(async () => {
         const c = data.candidates.find(c => c.id === undo.id);
         if (!c || c.version !== undo.version) throw new Error('La scheda è cambiata. Aprila per aggiornare lo stato.');
@@ -140,7 +142,7 @@ export function RecruitingView() {
       {!rows.length && <div className="panel empty"><Users size={24} /><p>Nessuna candidatura per questi filtri.</p></div>}
       <Dialog open={Boolean(selectedCandidate)} onOpenChange={v => { if (!v) setSelected(null); }}><DialogContent className="recruiting-detail">{selectedCandidate && <CandidateDetail key={selectedCandidate.id} candidate={selectedCandidate} data={renderedData} busy={busy} error={error} save={fields => void change(selectedCandidate, fields)} interview={existing => { setInterview({ candidate: selectedCandidate, existing }); setSelected(null); }} attachment={(id,title) => void attachment(selectedCandidate, id, title)} />}</DialogContent></Dialog>
       <Dialog open={Boolean(interview)} onOpenChange={v => { if (!v) setInterview(null); }}><DialogContent>{interview && <InterviewEditor key={interview.existing?.id || 'new'} candidate={interview.candidate} existing={interview.existing} busy={busy} externalError={error} save={values => void run(async () => {
-        if (live) { await api('/interviews', 'POST', { candidate_id: interview.candidate.id, ...(interview.existing ? { id: interview.existing.id, version: interview.existing.version, event_version: interview.existing.event.version } : {}), ...values }); await refresh(); await load(); }
+        if (live) { await api('/interviews', 'POST', { candidate_id: interview.candidate.id, ...(interview.existing ? { id: interview.existing.id, version: interview.existing.version, event_version: interview.existing.event.version } : {}), ...values }); await refresh(['events']); await load(); }
         else {
           const fields = interviewFields(values), event = { ...(interview.existing?.event || { ...base(season), type: 'Colloquio recruiting', checklist: [], sponsor_id: '', document_url: '', recap: '' }), ...fields, archived: fields.status === 'Annullato' } as EventRecord;
           if (!(await put('events', event))) throw new Error('Colloquio non salvato.');

@@ -1,4 +1,5 @@
-import { randomUUID } from 'node:crypto';
+import { googleTokens } from './server-token-cache';
+import { createHash, randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServerDriveError } from './drive-server';
 import { direction, googleBody, googleDate, googleHash, googleId, importId, localHash, pullFields,
@@ -9,6 +10,7 @@ export function calendarConfigured() {
 }
 async function calendarToken() {
   if (!calendarConfigured()) throw new ServerDriveError('Completa l’autorizzazione Google Calendar dell’account del team.', 503);
+  return googleTokens.get([process.env.GOOGLE_DRIVE_CLIENT_ID!, process.env.GOOGLE_DRIVE_CLIENT_SECRET!, process.env.GOOGLE_CALENDAR_REFRESH_TOKEN!], async () => {
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(8000), headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ client_id: process.env.GOOGLE_DRIVE_CLIENT_ID!, client_secret: process.env.GOOGLE_DRIVE_CLIENT_SECRET!,
@@ -16,8 +18,10 @@ async function calendarToken() {
   if (!response.ok) throw new ServerDriveError('Rinnova il collegamento Google Calendar del team.', 503);
   const result = await response.json();
   if (!result.access_token) throw new ServerDriveError('Google Calendar non disponibile.', 503);
-  return result.access_token as string;
+  return result;
+  });
 }
+const calendarFeeds = new Map<string, { token: string; events: Map<string, GoogleEvent> }>();
 export async function syncCalendar(client: SupabaseClient, background = false) {
   const started = Date.now();
   const lock = randomUUID();
@@ -55,16 +59,25 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
     if (dbResults.some(r => r.error)) throw new ServerDriveError('Impossibile leggere l’agenda o i collegamenti Calendar.', 503);
     const rows = { events: dbResults[0].data as unknown as AgendaRow[], deliveries: dbResults[1].data as unknown as AgendaRow[] };
     const links = dbResults[2].data as unknown as CalendarLink[];
+    const rowIndex = { events: new Map(rows.events.map(row => [row.id, row])), deliveries: new Map(rows.deliveries.map(row => [row.id, row])) };
     const seasons = dbResults[3].data as { id: string; starts_on: string; ends_on: string }[];
-    const remote = new Map<string, GoogleEvent>();
+    const feedKey = createHash('sha256').update(JSON.stringify([CALENDAR_ACCOUNT, process.env.GOOGLE_CALENDAR_REFRESH_TOKEN, process.env.GOOGLE_DRIVE_CLIENT_ID, process.env.GOOGLE_DRIVE_CLIENT_SECRET, process.env.NEXT_PUBLIC_SUPABASE_URL])).digest('hex');
+    const cachedFeed = calendarFeeds.get(feedKey);
+    let remote = new Map(cachedFeed?.events), syncToken = cachedFeed?.token;
     let page = '';
-    do {
+    while (true) {
       if (Date.now() - started > 25000) throw new ServerDriveError('Calendario troppo grande per questa richiesta. Nessun dato è stato modificato.', 503);
-      const response = await google('?' + new URLSearchParams({ maxResults: '2500', showDeleted: 'true', singleEvents: 'false', ...(page ? { pageToken: page } : {}) })) as { items?: GoogleEvent[]; nextPageToken?: string } | null;
+      const response = await google('?' + new URLSearchParams({ maxResults: '2500', showDeleted: 'true', singleEvents: 'false', ...(syncToken ? { syncToken } : {}), ...(page ? { pageToken: page } : {}) })) as { items?: GoogleEvent[]; nextPageToken?: string; nextSyncToken?: string } | null;
+      if (!response && syncToken) { calendarFeeds.delete(feedKey); remote = new Map(); syncToken = undefined; page = ''; continue; }
       if (!response) throw new ServerDriveError('Calendario del team non trovato.', 503);
       for (const event of response.items || []) remote.set(event.id, event);
       page = response.nextPageToken || '';
-    } while (page);
+      if (!page && response.nextSyncToken) {
+        calendarFeeds.clear(); // One team calendar per deployment; no unbounded cache.
+        calendarFeeds.set(feedKey, { token: response.nextSyncToken, events: new Map(remote) });
+      }
+      if (!page) break;
+    }
     async function remember(table: AgendaTable, row: AgendaRow, event: GoogleEvent) {
       const { error } = await client.from('calendar_links').upsert({ calendar_id: CALENDAR_ACCOUNT, google_id: event.id,
         collection: table, record_id: row.id, local_hash: localHash(table, row), google_hash: googleHash(event) }, { onConflict: 'calendar_id,google_id' });
@@ -87,7 +100,7 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
     // Existing links first: never interpret absence in a paginated list as deletion.
     for (const link of links) {
       if (!budget()) break;
-      const row = rows[link.collection].find(r => r.id === link.record_id);
+      const row = rowIndex[link.collection].get(link.record_id);
       if (!row) { result.conflicts.push('Voce CRM mancante: ' + link.record_id); continue; }
       let event = remote.get(link.google_id);
       if (!event) event = await google('/' + encodeURIComponent(link.google_id)) as GoogleEvent | null || { id: link.google_id, status: 'cancelled' };
@@ -106,12 +119,13 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
       } else if (action === 'push') {
         if (row.archived) {
           if (event.status !== 'cancelled') await google('/' + encodeURIComponent(event.id), 'DELETE', undefined, event.etag);
+          remote.set(event.id, { id: event.id, status: 'cancelled' });
           await remember(link.collection, row, { id: event.id, status: 'cancelled' }); result.archived++;
         } else if (event.status === 'cancelled' || !row.date) {
           result.conflicts.push(row.title + ' (ripristino o data da risolvere)');
         } else {
           const saved = await google('/' + encodeURIComponent(event.id), 'PATCH', googleBody(link.collection, row, event), event.etag) as GoogleEvent;
-          await remember(link.collection, row, saved); result.updated++;
+          remote.set(saved.id, saved); await remember(link.collection, row, saved); result.updated++;
         }
       }
     }
@@ -130,7 +144,7 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
         (table === 'events' && (event.location || '') !== (row as import('./model').EventRecord).location)) {
         result.conflicts.push(row.title + ' (collegamento da verificare)'); continue;
       }
-      await remember(table, row, event); linkedGoogle.add(id); result.exported++;
+      remote.set(event.id, event); await remember(table, row, event); linkedGoogle.add(id); result.exported++;
     }
     for (const event of remote.values()) {
       if (!budget()) break;
@@ -142,7 +156,7 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
       // An orphaned SFT event must not become an unrelated duplicate CRM event.
       if (event.extendedProperties?.private?.sft_record) { result.conflicts.push(event.summary || event.id); continue; }
       const id = importId(CALENDAR_ACCOUNT, event.id);
-      const existing = rows.events.find(r => r.id === id);
+      const existing = rowIndex.events.get(id);
       const fields = pullFields('events', event);
       const row = { id, season_id: season.id, version: 1, updated_at: new Date().toISOString(),
         title: '', type: 'Evento team', status: 'Confermato', date, location: '', description: '', checklist: [], sponsor_id: null,
@@ -151,6 +165,8 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
       if (!existing) await apply('events', row, {}, true);
       await remember('events', existing || row, event); result.imported++;
     }
+    const completedFeed = calendarFeeds.get(feedKey);
+    if (completedFeed) completedFeed.events = new Map(remote);
     return result;
   } finally { await client.rpc('release_calendar_sync', { lock_token: lock }); }
 }

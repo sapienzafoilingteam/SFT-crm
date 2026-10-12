@@ -1,37 +1,38 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { driveStatus,driveStorage,DriveStorage,sharedDriveClient } from "@/lib/drive-browser";
+import { DemoFile,driveDemo } from "@/lib/drive-demo";
 import {
-  FolderOpen,
-  FileText,
-  Upload,
-  Plus,
-  Download,
-  Pencil,
-  Trash2,
-  Search,
-  ArrowUpRight,
-  ChevronRight,
-  LayoutGrid,
-  List,
-  RefreshCw,
-  Eye,
+DRIVE_FOLDER,
+DriveError,
+DriveFile,
+GOOGLE_PREFIX,
+} from "@/lib/google-drive";
+import { live } from "@/lib/repository";
+import { useViewState } from "@/lib/view-state";
+import {
+ArrowUpRight,
+ChevronRight,
+Download,
+Eye,
+FileText,
+FolderOpen,
+LayoutGrid,
+List,
+Pencil,
+Plus,
+RefreshCw,
+Search,
+Trash2,
+Upload,
 } from "lucide-react";
+import { useEffect,useRef,useState } from "react";
 import { Button } from "./ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogDescription,
+Dialog,
+DialogContent,
+DialogDescription,
+DialogTitle,
 } from "./ui/dialog";
-import { live } from "@/lib/repository";
-import { sharedDriveClient, driveStatus, driveStorage, DriveStorage } from "@/lib/drive-browser";
-import {
-  DriveError,
-  DriveFile,
-  DRIVE_FOLDER,
-  GOOGLE_PREFIX,
-} from "@/lib/google-drive";
-import { driveDemo, DemoFile } from "@/lib/drive-demo";
 
 const rootId = process.env.NEXT_PUBLIC_GOOGLE_DRIVE_ROOT_ID || "root";
 function storageBytes(value?: string) {
@@ -65,17 +66,18 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(!demo);
   const [storage, setStorage] = useState<DriveStorage | null>(null);
-  const [path, setPath] = useState([
+  const [path, setPath] = useViewState(`drive:${team?.id || "root"}:path`, [
     { id: demo ? (team ? `demo-${team.id}` : "demo-root") : rootId, name: team?.name || "Drive del team" },
   ]);
   const folder = path[path.length - 1];
   const [rows, setRows] = useState<DriveFile[]>([]);
+  const metadataCache = useRef(new Map<string, DriveFile>());
   const [folderMeta, setFolderMeta] = useState<DriveFile | null>(null);
   const [demoFiles, setDemoFiles] = useState<DemoFile[]>(driveDemo);
   const demoBlobs = useRef(new Map<string, Blob>());
   const [inputSearch, setInputSearch] = useState("");
   const [search, setSearch] = useState("");
-  const [grid, setGrid] = useState(false);
+  const [grid, setGrid] = useViewState(`drive:${team?.id || "root"}:grid`, false);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -108,21 +110,21 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
   }, [inputSearch]);
   useEffect(() => {
     if (demo) return;
-    let active = true;
-    driveStatus(team?.id).then(value => { if (active) {
-      if (team && value.folderId) setPath([{ id: value.folderId, name: team.name }]);
+    let active = true; const controller = new AbortController();
+    driveStatus(team?.id, controller.signal).then(value => { if (active) {
+      if (team && value.folderId) setPath(current => current[0]?.id === value.folderId ? current : [{ id: value.folderId!, name: team.name }]);
       setReady(value.connected);
     } })
       .catch(e => { if (active) setError(e.message); })
       .finally(() => { if (active) setChecking(false); });
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [demo, team?.id, team?.name]);
   useEffect(() => {
     if (!ready || team) return;
-    let active = true;
-    driveStorage().then(value => { if (active) setStorage(value); })
+    let active = true; const controller = new AbortController();
+    driveStorage(controller.signal).then(value => { if (active) setStorage(value); })
       .catch(() => { if (active) setStorage(null); });
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [ready, refresh, team]);
   useEffect(
     () => () => {
@@ -135,6 +137,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
     setSearch("");
     setPageToken("");
     setPreview(null);
+    setRows([]); setFolderMeta(null);
   }, [folder.id]);
   useEffect(() => {
     if (demo) {
@@ -158,11 +161,12 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
     let active = true;
     setLoading(true);
     setError("");
-    setRows([]);
     setPageToken("");
-    setFolderMeta(null);
-    const client = sharedDriveClient();
-    Promise.all([client.metadata(folder.id), client.list(folder.id, search)])
+    const controller = new AbortController();
+    const client = sharedDriveClient(controller.signal);
+    const cachedMeta = metadataCache.current.get(folder.id);
+    const metadata = cachedMeta ? Promise.resolve(cachedMeta) : client.metadata(folder.id).then(value => { metadataCache.current.set(folder.id, value); return value; });
+    Promise.all([metadata, client.list(folder.id, search)])
       .then(([metadata, result]) => {
         if (active) {
           setFolderMeta(metadata);
@@ -180,7 +184,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
         if (active) setLoading(false);
       });
     return () => {
-      active = false;
+      active = false; controller.abort();
     };
   }, [demo, ready, folder.id, search, refresh, demoFiles]);
   async function perform(action: () => Promise<void>) {
@@ -285,7 +289,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
         if (count) setNotice(`${count} file caricati prima dell’interruzione. Gli altri non sono stati caricati.`);
         throw error;
       } finally {
-        setRefresh((n) => n + 1);
+        setRefresh((n) => { metadataCache.current.clear(); return n + 1; });
         if (uploadInput.current) uploadInput.current.value = "";
         if (replaceInput.current) replaceInput.current.value = "";
         replaceTarget.current = null;
@@ -350,7 +354,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
         if (current.kind === "trash") await api.trash(current.file!.id);
       }
       setDialog(null);
-      setRefresh((n) => n + 1);
+      setRefresh((n) => { metadataCache.current.clear(); return n + 1; });
       setNotice(
         current.kind === "trash"
           ? (demo ? "Elemento rimosso dalla demo." : "Elemento spostato nel cestino di Drive.")
@@ -559,7 +563,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
                 size="icon"
                 disabled={busy || loading}
                 aria-label="Aggiorna cartella"
-                onClick={() => setRefresh((n) => n + 1)}
+                onClick={() => setRefresh((n) => { metadataCache.current.clear(); return n + 1; })}
               >
                 <RefreshCw size={16} />
               </Button>
@@ -593,12 +597,14 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
               placeholder="Cerca in questa cartella…"
             />
           </div>
-          {loading ? (
+          {loading && <p className="muted" role="status">Aggiornamento dei file…</p>}
+          {loading && !rows.length ? (
             <div className="empty" role="status">
               Caricamento dei file…
             </div>
           ) : rows.length ? (
             <div
+              aria-busy={loading}
               className={
                 grid ? "drive-files drive-grid" : "drive-files drive-list"
               }

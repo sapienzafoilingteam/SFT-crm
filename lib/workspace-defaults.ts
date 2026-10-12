@@ -1,7 +1,7 @@
 import { SEASONS, TEAMS, Workspace } from "./model";
 
 // Only confirmed destinations are prefilled. Missing URLs remain editable placeholders.
-export function withDefaultLinks(workspace: Workspace): Workspace {
+export function withDefaultLinks(workspace: Workspace, seasonId?: string): Workspace {
   const resources = [
     {
       title: "Sito del team",
@@ -38,6 +38,7 @@ export function withDefaultLinks(workspace: Workspace): Workspace {
   ];
   const additions = SEASONS.flatMap((season, s) =>
     resources.flatMap((resource, i) => {
+      if (seasonId && season.id !== seasonId) return [];
       // Keep the original positions so IDs of existing defaults remain stable.
       if (resource.title === "Drive del reparto") return [];
       const id = `00000000-0000-4000-9000-${String(s * 100 + i + 1).padStart(12, "0")}`;

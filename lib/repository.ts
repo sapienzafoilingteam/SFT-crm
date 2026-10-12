@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-import { COLLECTIONS, Workspace, Base } from "./model";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { COLLECTIONS, Workspace, Base, Collection } from "./model";
 // Capture callback intent before the SDK consumes the URL fragment.
 export const initialAuthMode =
   typeof window !== "undefined"
@@ -31,53 +31,40 @@ export function loadMock(fallback: Workspace): Workspace {
     return fallback;
   }
 }
-export async function loadRemote(): Promise<Workspace> {
+export function emptyWorkspace(): Workspace {
+  return Object.fromEntries(COLLECTIONS.map(k => [k, []])) as unknown as Workspace;
+}
+export async function verifyWorkspaceAccess() {
   if (!supabase) throw new Error("Configura URL e chiave pubblica Supabase.");
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("LOGIN");
-  const { data: member, error: memberError } = await supabase
-    .from("members")
-    .select("active")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (memberError)
-    throw new Error(
-      `Non riesco a verificare l’abilitazione al CRM (${memberError.code || "connessione"}). Verifica che la migrazione sia stata applicata al progetto collegato.`,
-    );
-  if (!member)
-    throw new Error(
-      "Account verificato, ma non ancora abilitato al CRM. Aggiungi questo utente alla tabella members nel progetto Supabase collegato.",
-    );
-  if (!member.active)
-    throw new Error(
-      "Il tuo account è registrato nel CRM ma disattivato. Imposta active = true nella tabella members.",
-    );
-  const results = await Promise.all(
-    COLLECTIONS.map(async (k) => {
-      const { data, error } = await supabase!
-        .from(k)
-        .select("*")
-        .order("updated_at", { ascending: false });
+  const { data: { user }, error } = await supabase.auth.getUser();
+  if (error || !user) throw new Error("LOGIN");
+  const { data: member, error: memberError } = await supabase.from("members").select("active").eq("id", user.id).maybeSingle();
+  if (memberError) throw new Error("Non riesco a verificare l’abilitazione al CRM. Riprova.");
+  if (!member?.active) throw new Error("Account non abilitato al CRM. Contatta il responsabile del team.");
+  return user;
+}
+export async function loadRemote(collections: readonly Collection[] = COLLECTIONS, season?: string): Promise<Partial<Workspace>> {
+  if (!supabase) throw new Error("Configurazione Supabase mancante.");
+  return loadCollections(supabase, collections, season);
+}
+export async function loadCollections(client: SupabaseClient, collections: readonly Collection[], season?: string): Promise<Partial<Workspace>> {
+  const results = await Promise.all(collections.map(async k => {
+    const rows: Record<string, unknown>[] = [];
+    let total: number | null = null;
+    for (let offset = 0; ;) {
+      let query = client.from(k).select("*", offset === 0 ? { count: "exact" } : {}).order("id").range(offset, offset + 499);
+      if (season) query = query.eq("season_id", season);
+      const { data, error, count } = await query;
+      if (offset === 0) total = count;
       if (error) throw error;
-      return [
-        k,
-        data?.map((row) =>
-          Object.fromEntries(
-            Object.entries(row).map(([key, value]) => [
-              key,
-              value === null &&
-              ["team_id", "sponsor_id", "event_id"].includes(key)
-                ? ""
-                : value,
-            ]),
-          ),
-        ),
-      ] as const;
-    }),
-  );
-  return Object.fromEntries(results) as unknown as Workspace;
+      rows.push(...(data || []).map(row => Object.fromEntries(Object.entries(row).map(([key, value]) => [key,
+        value === null && ["team_id", "sponsor_id", "event_id"].includes(key) ? "" : value]))));
+      offset += data?.length || 0;
+      if (!data?.length || (total !== null ? offset >= total : data.length < 500)) break;
+    }
+    return [k, rows.sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)))] as const;
+  }));
+  return Object.fromEntries(results) as Partial<Workspace>;
 }
 export async function persist(next: Workspace, previous: Workspace) {
   if (!live) {

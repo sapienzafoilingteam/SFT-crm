@@ -42,6 +42,33 @@ Il progetto offre una modalità **Supabase**, con dati condivisi e account perso
 
 Il selettore di stagione cambia il contesto dei dati operativi. Sono configurate le stagioni **2026 / 2027** e **2025 / 2026**. Le cartelle Google Drive sono condivise tra stagioni: cambiare stagione non cambia la destinazione dei file.
 
+
+### Navigazione e caricamento dei dati
+
+Il provider e la struttura del workspace vivono nel layout condiviso, sopra il segmento dinamico. Cambiare pagina conserva stagione e dati già caricati; filtri e preferenze delle viste restano in memoria durante la sessione. Le notifiche hanno uno stato separato e non provocano il rendering dell’intero workspace.
+
+Ogni modulo dichiara le proprie raccolte. Le letture Supabase filtrano per stagione e percorrono tutte le pagine dell’API con ordinamento stabile; le raccolte includono gli elementi archiviati per consentire il ripristino; l’archivio completo della stagione viene preparato quando si apre il relativo pannello. Le richieste contemporanee alla stessa raccolta vengono accorpate. Un errore mantiene la raccolta ricaricabile; risposte precedenti al logout non possono ripopolare la cache. I refresh senza cambiamenti conservano i riferimenti dei dati, e le risposte avviate prima di un salvataggio non sovrascrivono versioni locali più recenti.
+
+Gli aggiornamenti in background riguardano solo le raccolte già caricate. Il Realtime è usato quando disponibile, con polling visibile ogni minuto e aggiornamento al focus dopo 30 secondi come alternativa. La nuova architettura non richiede migrazioni. Per attivare il Realtime verificare la publication nel progetto Supabase; il polling continua a funzionare anche senza publication.
+
+Drive riutilizza i metadati della cartella durante le ricerche e mantiene la lista visibile durante gli aggiornamenti. Le richieste di lettura vengono interrotte all’uscita dalla vista. Il server verifica utente e membro una sola volta per richiesta; i controlli vengono ripetuti sulle richieste successive. I token Google restano sul server, vengono riutilizzati fino a un minuto prima della scadenza e invalidati dalla rotazione delle credenziali. Le cache server sono per istanza: un avvio a freddo può ripetere il rinnovo.
+
+Recruiting legge attività e colloqui dei soli candidati della stagione ed eventi dei soli colloqui rilevanti. Dopo l’importazione da Sheets rilegge lo snapshot solo se i dati della fonte sono cambiati. Calendar ha un unico coordinatore nell’interfaccia, non dipende dai salvataggi degli altri moduli e aggiorna solo eventi/delivery nel workspace. La lettura Google usa `syncToken` quando disponibile e riparte da una lettura completa se il token scade, secondo la [documentazione Google](https://developers.google.com/workspace/calendar/api/guides/sync). La sincronizzazione a freddo resta completa.
+
+L’esportazione in Impostazioni carica esplicitamente tutte le raccolte e tutte le stagioni: il backup non è limitato ai dati presenti nella cache della pagina. Storage e Recruiting conservano i propri vincoli e backup separati.
+
+Per un’anteprima demo isolata dal server Supabase già aperto:
+
+```bash
+CRM_BUILD_DIR=.next-demo NEXT_PUBLIC_DATA_MODE=demo npm run dev -- --port 3107
+```
+
+Per validare una build senza sovrascrivere la directory del server di sviluppo:
+
+```bash
+CRM_BUILD_DIR=.next-check npm run build
+```
+
 ### Reparti
 
 | Reparto | Identificativo |
@@ -402,7 +429,9 @@ I test usano Postgres in memoria e risposte Google simulate: non sostituiscono l
 | `app/` | Layout, routing Next.js e stili globali. |
 | `app/api/drive/route.ts` | API server Drive protetta dalla sessione CRM. |
 | `components/workspace-app.tsx` | Navigazione e composizione delle pagine. |
-| `components/views.tsx` | Home, reparti, sponsor, eventi, agenda, bilancio e librerie. |
+| `components/workspace-root.tsx` | Struttura persistente nel layout, instradamento client e pagine pubbliche. |
+| `components/views/` | Moduli separati di Home, reparti, sponsor, eventi, agenda, bilancio e librerie, caricati su richiesta. |
+| `components/views.tsx` | Esportazioni compatibili dei moduli. |
 | `components/page-block-editor.tsx` | Editor a blocchi e menu `/`. |
 | `components/drive-view.tsx` | Gestore Drive principale e incorporato nei reparti. |
 | `components/deadlines.tsx` | Scadenze della Home e dei reparti. |
@@ -412,7 +441,10 @@ I test usano Postgres in memoria e risposte Google simulate: non sostituiscono l
 | `components/link-icons.tsx` | Icone configurabili dei collegamenti. |
 | `components/ui/` | Componenti locali shadcn/ui, con Button e Dialog basati su Radix. |
 | `lib/model.ts` | Tipi, reparti, stagioni, importi, CSV e ricorrenze. |
-| `lib/repository.ts` | Persistenza demo/Supabase e allegati Storage. |
+| `lib/repository.ts` | Persistenza demo/Supabase, letture paginate per stagione e allegati Storage. |
+| `lib/workspace-resources.ts` | Cache in memoria per stagione, deduplicazione delle letture e invalidazione al logout. |
+| `lib/view-state.ts` | Preferenze di navigazione e filtri in memoria, cancellati al logout. |
+| `lib/server-token-cache.ts` | Token OAuth Google sul server, con scadenza e rinnovi accorpati. |
 | `lib/workspace-defaults.ts` | Collegamenti iniziali mancanti, senza sovrascrivere quelli esistenti. |
 | `lib/mock.ts`, `lib/drive-demo.ts` | Dati dimostrativi CRM e Drive. |
 | `lib/google-drive.ts` | Operazioni REST ed export Google Drive. |
@@ -437,7 +469,7 @@ Il prototipo originale è conservato in `index.html`, `app.js` e `styles.css`, c
 ## Limiti attuali
 
 - Editor a blocchi semplice, senza collaborazione simultanea carattere per carattere, formule o database componibili alla Notion.
-- I dati condivisi vengono caricati all'apertura; non è presente una sottoscrizione Realtime alle modifiche degli altri membri. Ricaricare per vedere aggiornamenti effettuati da un altro utente.
+- Gli aggiornamenti Realtime richiedono che le raccolte siano incluse nella publication Supabase. È sempre attivo un aggiornamento delle sole raccolte caricate al ritorno sulla finestra e ogni minuto mentre è visibile; non è collaborazione simultanea carattere per carattere.
 - Inviti, attivazioni e revoche dalla console Supabase; nessuna gestione utenti completa nell'interfaccia.
 - Nessuna sincronizzazione Gmail, invio email automatico, firma elettronica o invio automatico delle delivery ai canali social/SuMoth.
 - Il bilancio tiene traccia dei costi; gli importi sponsor restano separati dagli incassi effettivi.

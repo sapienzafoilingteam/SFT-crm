@@ -121,6 +121,7 @@ test('sync assigns durable sheet IDs, preserves duplicate submissions, is repeat
     if (path === 'acquire_recruiting_sync') return Response.json(true);
     if (path === 'release_recruiting_sync') return Response.json(null);
     if (path === 'import_recruiting') { snapshots.push(JSON.parse(String(init?.body)).records); return Response.json(null); }
+    if (path === 'recruiting_candidates') return Response.json((snapshots.at(-1) || []).map((record, index) => ({ ...record, id: String(index), source_missing: false })));
     if (path === 'recruiting_drive_files') return Response.json((init?.method || 'GET') === 'GET' ? [] : null);
     if (path === 'recruiting_sync') return Response.json((init?.method || 'GET') === 'GET' ? {last_sync:null} : null);
     throw new Error('Unexpected request');
@@ -128,8 +129,9 @@ test('sync assigns durable sheet IDs, preserves duplicate submissions, is repeat
   try {
     const client = createClient('https://crm.test','test',{auth:{persistSession:false}});
     const first = await syncRecruiting(client,true);
-    assert.equal(first.count,2); assert.notEqual(rows[1][32],rows[2][32]);
-    await syncRecruiting(client,true);
+    assert.equal(first.count,2); assert.equal(first.changed, true); assert.notEqual(rows[1][32],rows[2][32]);
+    const unchanged = await syncRecruiting(client,true);
+    assert.equal(unchanged.changed, false);
     assert.equal(writeCount,1); assert.deepEqual(snapshots[0],snapshots[1]);
     rows[2][32]=rows[1][32];
     await assert.rejects(syncRecruiting(client,true),/duplicati/); assert.equal(snapshots.length,2);

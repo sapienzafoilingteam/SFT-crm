@@ -2,13 +2,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { live, supabase } from '@/lib/repository';
 import { useWorkspace } from './provider';
-export function CalendarSync() {
-  const { data, busy, refresh } = useWorkspace();
-  const [configured, setConfigured] = useState(false);
-  const [message, setMessage] = useState('');
-  const inFlight = useRef(false);
-  const busyRef = useRef(busy);
+export function CalendarSync({ enabled = true }: { enabled?: boolean }) {
+  const { data, busy, refresh, isLoaded } = useWorkspace();
+  const [configured, setConfigured] = useState(false), [message, setMessage] = useState('');
+  const inFlight = useRef(false), busyRef = useRef(busy), lastRun = useRef(0);
   busyRef.current = busy;
+  const available = enabled && isLoaded(['events', 'deliveries']);
   const signature = [...data.events, ...data.deliveries].map(r => `${r.id}:${r.version}`).sort().join('|');
   const request = useCallback(async (method: string) => {
     const { data: session } = await supabase!.auth.getSession();
@@ -20,34 +19,32 @@ export function CalendarSync() {
   }, []);
   const sync = useCallback(async () => {
     if (inFlight.current || busyRef.current) return;
-    inFlight.current = true;
+    inFlight.current = true; lastRun.current = Date.now();
     try {
       const result = await request('POST');
-      if (result.imported || result.updated || result.archived) await refresh();
-      setMessage(result.conflicts.length
-        ? `Conflitti: ${result.conflicts.join(', ')}. Uniforma i dati sui due calendari per risolverli.`
-        : '');
+      if (result.imported || result.updated || result.archived) await refresh(['events', 'deliveries']);
+      setMessage(result.conflicts.length ? `Conflitti: ${result.conflicts.join(', ')}. Uniforma i dati sui due calendari per risolverli.` : '');
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Sincronizzazione non riuscita.'); }
     finally { inFlight.current = false; }
   }, [request, refresh]);
   useEffect(() => {
-    if (!live || !supabase) return;
+    if (!live || !supabase || !available || configured) return;
     let cancelled = false;
-    request('GET').then(result => {
-      if (!cancelled) { setConfigured(result.configured); if (!result.configured) setMessage('Collega Google Calendar per attivare la sincronizzazione.'); }
-    }).catch(error => { if (!cancelled) setMessage(error.message); });
+    request('GET').then(result => { if (!cancelled) { setConfigured(result.configured); if (!result.configured) setMessage('Collega Google Calendar per attivare la sincronizzazione.'); } }).catch(error => { if (!cancelled) setMessage(error.message); });
     return () => { cancelled = true; };
-  }, [request]);
+  }, [request, available, configured]);
   useEffect(() => {
-    if (!configured || busy) return;
-    const timer = setTimeout(() => void sync(), 1500);
+    if (!configured || !available) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const run = () => { if (busyRef.current || inFlight.current) { timer = setTimeout(run, 1000); return; } void sync(); };
+    timer = setTimeout(run, Math.max(1500, 5000 - (Date.now() - lastRun.current)));
     return () => clearTimeout(timer);
-  }, [configured, busy, signature, sync]);
+  }, [configured, available, signature, sync]);
   useEffect(() => {
-    if (!configured) return;
+    if (!configured || !available) return;
     const timer = setInterval(() => { if (document.visibilityState === 'visible') void sync(); }, 60000);
     return () => clearInterval(timer);
-  }, [configured, sync]);
-  if (!live || !message) return null;
+  }, [configured, available, sync]);
+  if (!live || !enabled || !message) return null;
   return <p className="muted" role="alert" style={{ marginBottom: 16 }}>{message}</p>;
 }

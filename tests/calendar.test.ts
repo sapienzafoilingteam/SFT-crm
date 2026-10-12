@@ -80,6 +80,7 @@ test('sync paginates, pulls, pushes, archives, imports and reruns without duplic
   const links = [link, { ...link, record_id: rows.events[1].id, google_id: 'second', local_hash: localHash('events', rows.events[1]), google_hash: googleHash({ ...remote[1], summary: 'Old' }) },
     { ...link, record_id: rows.events[2].id, google_id: 'third', local_hash: localHash('events', rows.events[2]), google_hash: googleHash(event) }];
   const writes: string[] = [];
+  let deltaReads = 0, expiredCursor = false;
   globalThis.fetch = async (input, init) => {
     const url = new URL(String(input)); const method = init?.method || 'GET';
     if (url.hostname === 'oauth2.googleapis.com') return Response.json({ access_token: 'secret-access' });
@@ -89,7 +90,12 @@ test('sync paginates, pulls, pushes, archives, imports and reruns without duplic
         assert.equal(new Headers(init?.headers).get('If-Match'), 'v1');
         Object.assign(remote[0], JSON.parse(String(init?.body))); writes.push('google'); return Response.json(remote[0]);
       }
-      return Response.json(url.searchParams.has('pageToken') ? { items: remote.slice(2) } : { items: remote.slice(0,2), nextPageToken: 'two' });
+      if (url.searchParams.has('syncToken')) {
+        deltaReads++;
+        if (expiredCursor) { expiredCursor = false; return Response.json({ error: 'expired' }, { status: 410 }); }
+        return Response.json({ items: [], nextSyncToken: 'cursor-two' });
+      }
+      return Response.json(url.searchParams.has('pageToken') ? { items: remote.slice(2), nextSyncToken: 'cursor-one' } : { items: remote.slice(0,2), nextPageToken: 'two' });
     }
     const table = url.pathname.split('/').at(-1)!;
     if (table === 'events' && method === 'PATCH') {
@@ -124,12 +130,13 @@ test('sync paginates, pulls, pushes, archives, imports and reruns without duplic
     const second = await syncCalendar(client);
     assert.equal(second.imported + second.updated + second.exported + second.archived, 0);
     assert.equal(writes.length, count);
-    assert.equal(rows.events.length, 4);
+    assert.equal(rows.events.length, 4); assert.equal(deltaReads, 1);
+    expiredCursor = true;
     remote[1].summary = 'Background update';
     const third = await syncCalendar(client, true);
     assert.equal(third.updated, 1);
     assert.equal(rows.events[1].title, 'Background update');
-    assert.equal(writes.at(-1), 'background');
+    assert.equal(writes.at(-1), 'background'); assert.equal(deltaReads, 2, 'expired Google cursor falls back to a complete paginated feed');
   } finally { globalThis.fetch = original; names.forEach((n,i) => before[i] === undefined ? delete process.env[n] : process.env[n] = before[i]); }
 });
 

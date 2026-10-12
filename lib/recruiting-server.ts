@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import { googleDriveToken, requireDriveMember, ServerDriveError } from './drive-server';
+import { googleDriveToken, requireMemberAccess, ServerDriveError } from './drive-server';
 import { RECRUITING_COOKIE, verifyUnlock } from './recruiting-security';
 import { RECRUITING_SHEET, RECRUITING_TAB, parseCandidate, type RecruitingData, type Candidate, type RecruitingActivity, type RecruitingInterview } from './recruiting';
 import { SEASONS } from './model';
@@ -12,10 +12,7 @@ export function recruitingAdmin() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 export async function recruitingMember(request: Request) {
-  const client = await requireDriveMember(request);
-  const token = (request.headers.get('authorization') || '').slice(7);
-  const { data: { user }, error } = await client.auth.getUser(token);
-  if (error || !user) throw new ServerDriveError('Sessione scaduta. Accedi di nuovo.', 401);
+  const { user, token } = await requireMemberAccess(request);
   return { user, token };
 }
 export function recruitingSecrets() {
@@ -30,29 +27,40 @@ export async function requireRecruiting(request: Request) {
   if (!verifyUnlock(cookie, member.user.id, member.token, hash, secret)) throw new ServerDriveError('Sblocca il recruiting con la password.', 423);
   return { ...member, admin: recruitingAdmin() };
 }
-export async function readAll(client: SupabaseClient, table: string, column = 'id', value?: string) {
+export async function readAll(client: SupabaseClient, table: string, column = 'id', value?: string | readonly string[], fields = '*') {
   const rows: Record<string, unknown>[] = [];
   for (let offset = 0; ; offset += 1000) {
-    let query = client.from(table).select('*').order('id').range(offset, offset + 999);
-    if (value !== undefined) query = query.eq(column, value);
+    let query = client.from(table).select(fields).order('id').range(offset, offset + 999);
+    if (value !== undefined) query = Array.isArray(value) ? query.in(column, [...value]) : query.eq(column, value);
     const result = await query;
     if (result.error) throw new ServerDriveError('Database recruiting non disponibile: verifica la migrazione e la configurazione.', 503);
-    rows.push(...result.data);
+    rows.push(...result.data as unknown as Record<string, unknown>[]);
     if (result.data.length < 1000) return rows;
   }
 }
 export async function loadRecruiting(admin: SupabaseClient, season: string): Promise<RecruitingData> {
   const candidates = await readAll(admin, 'recruiting_candidates', 'season_id', season) as unknown as Candidate[];
-  const ids = new Set(candidates.map(c => c.id));
+  const ids = candidates.map(c => c.id);
+  // Bound IN filters to keep the REST URL below infrastructure limits.
+  async function related(table: string, column: string, values: string[]) {
+    const chunks: string[][] = [];
+    for (let offset = 0; offset < values.length; offset += 80) chunks.push(values.slice(offset, offset + 80));
+    const records: Record<string, unknown>[] = [];
+    for (let offset = 0; offset < chunks.length; offset += 4) {
+      const results = await Promise.all(chunks.slice(offset, offset + 4).map(chunk => readAll(admin, table, column, chunk)));
+      records.push(...results.flat());
+    }
+    return records;
+  }
   const [activities, interviews, sync] = await Promise.all([
-    readAll(admin, 'recruiting_activities'), readAll(admin, 'recruiting_interviews'), admin.from('recruiting_sync').select('last_sync,error').eq('id', true).single(),
+    related('recruiting_activities', 'candidate_id', ids), related('recruiting_interviews', 'candidate_id', ids),
+    admin.from('recruiting_sync').select('last_sync,error').eq('id', true).single(),
   ]);
   if (sync.error) throw new ServerDriveError('Stato della sincronizzazione non disponibile.', 503);
-  const relevant = interviews.filter(i => ids.has(String(i.candidate_id)));
-  const events = relevant.length ? await readAll(admin, 'events') : [];
+  const events = await related('events', 'id', [...new Set(interviews.map(i => String(i.event_id)))]);
   const byId = new Map(events.map(e => [e.id, e]));
-  return { candidates, activities: activities.filter(a => ids.has(String(a.candidate_id))) as unknown as RecruitingActivity[],
-    interviews: relevant.map(i => ({ ...i, event: byId.get(i.event_id) })).filter(i => i.event) as unknown as RecruitingInterview[],
+  return { candidates, activities: activities as unknown as RecruitingActivity[],
+    interviews: interviews.map(i => ({ ...i, event: byId.get(i.event_id) })).filter(i => i.event) as unknown as RecruitingInterview[],
     last_sync: sync.data.last_sync, sync_error: sync.data.error };
 }
 function columnName(index: number) {
@@ -144,9 +152,16 @@ export async function syncRecruiting(admin: SupabaseClient, force = false) {
     if (folderFailure?.status === 'rejected') throw folderFailure.reason;
     const protectedFiles = await admin.from('recruiting_drive_files').upsert([...protectedIds].map(file_id => ({ file_id })), { onConflict: 'file_id' });
     if (protectedFiles.error) throw new ServerDriveError('Protezione dei documenti recruiting non disponibile. Importazione sospesa.', 503);
+    const previous = await readAll(admin, 'recruiting_candidates', 'season_id', season, 'id,source_id,source_hash,source_missing');
+    const previousBySource = new Map(previous.map(record => [String(record.source_id), record]));
+    const incomingSources = new Set(candidates.map(record => record.source_id));
+    const changed = candidates.some(record => {
+      const old = previousBySource.get(record.source_id);
+      return !old || old.source_hash !== record.source_hash || old.source_missing;
+    }) || previous.some(record => !record.source_missing && !incomingSources.has(String(record.source_id)));
     const imported = await admin.rpc('import_recruiting', { records: candidates, season, headers_hash: headerHash });
     if (imported.error) throw new ServerDriveError('Importazione non riuscita. I dati precedenti sono stati conservati.', 503);
-    return { skipped: false, count: candidates.length };
+    return { skipped: false, changed: Boolean(changed), synced_at: new Date().toISOString(), count: candidates.length };
   } catch (error) {
     const message = error instanceof ServerDriveError ? error.message : 'Sincronizzazione recruiting non riuscita. Riprova.';
     await admin.from('recruiting_sync').update({ error: message }).eq('id', true);

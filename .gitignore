@@ -15,3 +15,6 @@ screenshots/
 client_secret*.json
 secrets/
 supabase/.temp/
+
+# Isolated demo and validation builds
+.next-*/

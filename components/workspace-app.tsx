@@ -1,46 +1,45 @@
 "use client";
-import Link from "next/link";
-import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
+import { Collection,SEASONS,TEAMS } from "@/lib/model";
+import { newRecord } from "@/lib/new-record";
+import { live,supabase } from "@/lib/repository";
+import { routeCollections } from '@/lib/workspace-resources';
 import {
-  Home,
-  CalendarDays,
-  FolderOpen,
-  Settings,
-  ChevronRight,
-  ChevronDown,
-  Sun,
-  Moon,
-  Menu,
-  X,
-  Anchor,
-  ArrowUpRight,
-  Layers,
-  LogOut,
-  Search,
-  Compass,
-  Users,
+ArrowUpRight,
+CalendarDays,
+ChevronDown,
+ChevronRight,
+Compass,
+FolderOpen,
+Home,
+LogOut,
+Menu,
+Moon,
+Settings,
+Sun,
+Users,
+X
 } from "lucide-react";
-import { useWorkspace } from "./provider";
-import { TEAMS, SEASONS, Collection, Workspace } from "@/lib/model";
-import { live, supabase } from "@/lib/repository";
-import { Button } from "./ui/button";
-import { RecordEditor, newRecord } from "./record-editor";
-import { DriveView } from "./drive-view";
+import { useTheme } from "next-themes";
+import dynamic from "next/dynamic";
+import Link from "next/link";
+import { useEffect,useMemo,useRef,useState } from "react";
+import { CalendarSync } from "./calendar-sync";
 import { LegalLinks } from "./legal-page";
+import { useWorkspace } from "./provider";
+import { Button } from "./ui/button";
+const DriveView = dynamic(() => import("./drive-view").then(m => m.DriveView), { loading: () => <div className="empty" role="status">Caricamento Drive…</div> });
 const RecruitingView = dynamic(() => import("./recruiting-view").then(m => m.RecruitingView));
-import {
-  HomeView,
-  OverviewView,
-  TeamView,
-  SponsorsView,
-  EventsView,
-  CostsView,
-  AgendaView,
-  LibraryView,
-  SettingsView,
-} from "./views";
+const ViewLoading = () => <div className="empty" role="status">Caricamento della pagina…</div>;
+const RecordEditor = dynamic(() => import('./record-editor').then(m => m.RecordEditor));
+const HomeView = dynamic(() => import("./views/home").then(m => m.HomeView), { loading: ViewLoading });
+const OverviewView = dynamic(() => import("./views/overview").then(m => m.OverviewView), { loading: ViewLoading });
+const TeamView = dynamic(() => import("./views/team").then(m => m.TeamView), { loading: ViewLoading });
+const SponsorsView = dynamic(() => import("./views/sponsors").then(m => m.SponsorsView), { loading: ViewLoading });
+const EventsView = dynamic(() => import("./views/events").then(m => m.EventsView), { loading: ViewLoading });
+const CostsView = dynamic(() => import("./views/costs").then(m => m.CostsView), { loading: ViewLoading });
+const AgendaView = dynamic(() => import("./views/agenda").then(m => m.AgendaView), { loading: ViewLoading });
+const LibraryView = dynamic(() => import("./views/library").then(m => m.LibraryView), { loading: ViewLoading });
+const SettingsView = dynamic(() => import("./views/settings").then(m => m.SettingsView), { loading: ViewLoading });
 export type Edit = (
   k: Collection,
   row?: object,
@@ -57,7 +56,18 @@ const management = [
   ["bilancio", "Bilancio"],
 ];
 export function WorkspaceApp({ path }: { path: string[] }) {
-  const { data, season, setSeason, ready } = useWorkspace();
+  const { data, season, setSeason, ready, ensure, isLoaded, notice } = useWorkspace();
+  const routeKey = path.join('/');
+  const currentView = useRef(routeKey + season); currentView.current = routeKey + season;
+  const required = useMemo(() => routeCollections(routeKey.split('/').filter(Boolean)), [routeKey]);
+  const [loadError, setLoadError] = useState('');
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    if (!ready) return;
+    let active = true; setLoadError('');
+    void ensure(required).catch(error => { if (active) setLoadError(error.message); });
+    return () => { active = false; };
+  }, [ready, required, season, ensure, retry]);
   const { resolvedTheme, setTheme } = useTheme();
   const [mobile, setMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -68,13 +78,19 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   } | null>(null);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
+    setEditor(null);
     setMobile(false);
-  }, [path.join("/")]);
+  }, [path.join("/"), season]);
   const section = path[0] || "home";
   const team = TEAMS.find((t) => t.id === path[1]);
   const isManagement = section === "team" && team?.id === "management";
   const view = isManagement ? path[2] || "" : section;
   const open: Edit = (collection, row, defaults, title) => {
+    if (!isLoaded([collection, 'sponsors', 'events'])) {
+      const requestedView = currentView.current;
+      void ensure([collection, 'sponsors', 'events']).then(() => { if (requestedView === currentView.current && isLoaded([collection, 'sponsors', 'events'])) open(collection, row, defaults, title); }).catch(error => notice(error.message));
+      return;
+    }
     const fresh = row ? row : newRecord(collection, season);
     setEditor({
       collection,
@@ -330,6 +346,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           </div>
         </header>
         <main id="main">
+          <CalendarSync enabled={section === "agenda" || section === "recruiting"} />
           <div className="page-context">
             <span>
               <Compass size={14} /> STAGIONE{" "}
@@ -352,11 +369,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
               ))}
             </div>
           )}
-          {ready ? (
-            content
-          ) : (
-            <div className="empty">Preparazione del workspace…</div>
-          )}
+          {loadError ? <div className="empty" role="alert"><p>{loadError}</p><Button onClick={() => setRetry(n => n + 1)}>Riprova</Button></div> : ready && isLoaded(required) ? <div key={routeKey + season}>{content}</div> : <ViewLoading />}
           <footer className="page-footer">
             <span>SAPIENZA FOILING TEAM</span>
             <span>Progettiamo. Costruiamo. Navighiamo.</span>
