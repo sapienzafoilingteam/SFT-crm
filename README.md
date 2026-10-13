@@ -81,7 +81,7 @@ CRM_BUILD_DIR=.next-check npm run build
 | Elettronica e Software | `elettronica` |
 | Shore Team e Logistica | `shore` |
 
-Ogni reparto dispone di una pagina componibile e di una cartella Drive associata. Management include anche le sezioni operative dedicate.
+Ogni reparto dispone di una pagina componibile e di una cartella Drive associata. Management include anche le sezioni operative dedicate. Nella Home e nelle pagine reparto sono disponibili i link ai report S1 e S2 consegnati nella stagione 2025/2026 e la prossima riunione comune, ogni mercoledì dalle 15:00 alle 19:00 (ora di Roma).
 
 ## Funzionalità
 
@@ -104,15 +104,19 @@ Il database recruiting e le relative API richiedono la configurazione server; la
 
 Il vecchio collegamento configurabile **Drive del reparto** è stato rimosso dall'interfaccia: i file sono gestiti direttamente nella sezione **File del reparto**.
 
+### Richieste di funzionalità CRM
+
+La sezione **Richieste CRM** (`/richieste-crm`) consente di descrivere un problema e proporre una funzionalità agli sviluppatori, indicando nome, reparto e priorità. Il team può filtrare le richieste per stato, aggiornarle e lasciare una risposta. Le richieste sono condivise con i membri del CRM nella stagione selezionata; vengono conservate nella raccolta `reports` di Elettronica con un contenuto strutturato e tenute separate dai report ordinari. Non viene inviata una notifica esterna o creata automaticamente una issue GitHub.
+
 ### Pagine dei reparti ed editor a blocchi
 
-Ogni pagina raccoglie la descrizione del lavoro, gli obiettivi, gli aggiornamenti e le risorse del reparto.
+Ogni pagina raccoglie la descrizione del lavoro, gli obiettivi, gli aggiornamenti e le risorse del reparto. **Nuova sottopagina** crea una pagina dentro quella corrente; ogni sottopagina può contenere blocchi e altre sottopagine. Il percorso sopra i contenuti consente di tornare ai livelli precedenti. Dalla modifica della pagina padre si può rinominare o rimuovere una sottopagina. La gerarchia è salvata nei blocchi JSON della pagina del reparto e inclusa nelle revisioni: il ripristino riguarda l’intero reparto, comprese le sottopagine. Il salvataggio mantiene il controllo di versione del reparto e non richiede migrazioni.
 
 L'editor comprende nove tipi di blocco: **titolo, testo, elenco, checklist, link, tabella, immagine, richiamo e riunione**. Le immagini si inseriscono tramite URL; le tabelle sono blocchi semplici, senza formule da foglio di calcolo.
 
 Per modificare una pagina:
 
-1. Apri il reparto e premi **Modifica pagina**.
+1. Apri il reparto e premi **Modifica pagina** accanto ai contenuti, oppure **Modifica** sul singolo blocco o **Modifica riepilogo**.
 2. Digita `/` all'inizio di un blocco o di una nuova riga per aprire il menu dei tipi di contenuto. Puoi filtrarlo scrivendo, per esempio, `/riunione`.
 3. Usa le frecce e Invio per selezionare; Esc chiude il menu. Nei titoli, paragrafi e checklist, Invio aggiunge un blocco e Maiusc+Invio va a capo nello stesso blocco.
 4. Riordina, duplica o rimuovi i blocchi usando i controlli dell'editor.
@@ -146,6 +150,8 @@ Il componente **Scadenze** è presente nella Home, nelle pagine reparto e nella 
 **Google Calendar:** è disponibile la sincronizzazione bidirezionale con il calendario principale di `sapienzafoilingteam@gmail.com`, previa migrazione e autorizzazione OAuth. Si avvia dall’agenda; per eseguirla anche a CRM chiuso serve lo scheduler autenticato. Configurazione, conflitti e limiti sono descritti in [GOOGLE_CALENDAR_SETUP.md](GOOGLE_CALENDAR_SETUP.md).
 
 **Agenda e Delivery** offre calendario mensile e vista lista, ricerca e filtri per tipo e reparto. Riunisce delivery ed eventi; gli eventi sono associati a Management. I verbali inseriti nelle pagine restano separati dal calendario.
+
+La riunione dei reparti è una ricorrenza settimanale condivisa della stagione 2026/2027, dal 14 ottobre 2026: compare nel calendario e nella lista anche filtrando per un singolo reparto. Le occorrenze sono calcolate per il mese visualizzato, senza creare duplicati nel database. La sincronizzazione automatica esporta questa ricorrenza su Google Calendar come un’unica serie settimanale, con ID stabile e fuso Europe/Rome. Eventuali modifiche o cancellazioni della serie su Google vengono segnalate come conflitti, senza sovrascriverle.
 
 I **modelli mensili** definiscono titolo, tipo di contenuto, giorno del mese, reparto e priorità. **Prepara il mese** mostra le attività da generare e le crea dopo conferma, senza duplicare quelle già generate. I giorni vengono adattati ai mesi più brevi; modificare un modello non riscrive le delivery dei mesi già preparati. La generazione è avviata dall'utente, senza un processo automatico in background.
 
@@ -458,13 +464,13 @@ I test usano Postgres in memoria e risposte Google simulate: non sostituiscono l
 
 Tecnologie: **Next.js App Router, React, TypeScript, Tailwind CSS, Radix/shadcn/ui, Lucide, next-themes e Supabase JS**. Google Drive viene chiamato tramite REST. Per i test si usano Node.js, tsx e PGlite.
 
-Documenti complementari: [piano del CRM](PIANO_CRM_SFT.md), [configurazione Supabase](SUPABASE_SETUP.md), [configurazione Drive](GOOGLE_DRIVE_SETUP.md), [deploy](DEPLOYMENT.md) e [verifiche iniziali](VERIFICA.md). Il piano e i resoconti iniziali possono descrivere fasi precedenti: per le funzionalità attuali fare riferimento a questo README e al codice.
+Documenti complementari: [piano del CRM](docs/archive/PIANO_CRM_SFT.md), [configurazione Supabase](SUPABASE_SETUP.md), [configurazione Drive](GOOGLE_DRIVE_SETUP.md), [deploy](DEPLOYMENT.md) e [verifiche iniziali](docs/archive/VERIFICA.md). Il piano e i resoconti iniziali possono descrivere fasi precedenti: per le funzionalità attuali fare riferimento a questo README e al codice.
 
-### Prototipo e script separati
+### Materiale storico e script separati
 
-Il prototipo originale è conservato in `index.html`, `app.js` e `styles.css`, con [README_PROTOTIPO.md](README_PROTOTIPO.md) e avvio Windows `Avvia-Prototipo.bat`. Non viene usato dalle pagine Next.js e i suoi dati non vengono migrati automaticamente.
+Il prototipo HTML originale, sostituito dal CRM Next.js, è stato rimosso dalla cartella di lavoro ed è recuperabile dalla cronologia Git. I suoi dati nei browser non vengono migrati automaticamente. Il piano iniziale e il resoconto della prima verifica sono conservati in `docs/archive/`.
 
-`SFT_Gmail_Drive_Sync.gs` è uno script Google Apps Script separato per elaborare email e allegati sponsor. La sua presenza nella repository **non significa che sia attivo**: richiede una configurazione autonoma su Google e non è collegato alla persistenza Supabase del CRM. La dashboard attuale non usa questo script per aggiornare automaticamente trattative o documenti.
+`scripts/legacy/SFT_Gmail_Drive_Sync.gs` è uno script Google Apps Script separato per elaborare email e allegati sponsor. La sua presenza nella repository **non significa che sia attivo**: richiede una configurazione autonoma su Google e non è collegato alla persistenza Supabase del CRM. La dashboard attuale non usa questo script per aggiornare automaticamente trattative o documenti.
 
 ## Limiti attuali
 

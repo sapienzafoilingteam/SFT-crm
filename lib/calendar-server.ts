@@ -1,3 +1,4 @@
+import { recurringCalendarSeries, syncRecurringCalendarSeries } from './calendar-recurring';
 import { googleTokens } from './server-token-cache';
 import { createHash, randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -8,7 +9,7 @@ export const CALENDAR_ACCOUNT = 'sapienzafoilingteam@gmail.com';
 export function calendarConfigured() {
   return Boolean(process.env.GOOGLE_CALENDAR_REFRESH_TOKEN && process.env.GOOGLE_DRIVE_CLIENT_ID && process.env.GOOGLE_DRIVE_CLIENT_SECRET);
 }
-async function calendarToken() {
+export async function calendarToken() {
   if (!calendarConfigured()) throw new ServerDriveError('Completa l’autorizzazione Google Calendar dell’account del team.', 503);
   return googleTokens.get([process.env.GOOGLE_DRIVE_CLIENT_ID!, process.env.GOOGLE_DRIVE_CLIENT_SECRET!, process.env.GOOGLE_CALENDAR_REFRESH_TOKEN!], async () => {
   const response = await fetch('https://oauth2.googleapis.com/token', {
@@ -36,6 +37,7 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
       const response = await fetch(endpoint + path, { method, cache: 'no-store', signal: AbortSignal.timeout(8000),
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', ...(etag ? { 'If-Match': etag } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}) });
+      if (response.status === 410 && method === 'GET' && path.startsWith('/')) return { id: decodeURIComponent(path.slice(1)), status: 'cancelled' };
       if ((response.status === 404 || response.status === 410) && method === 'GET') return null;
       if ((response.status === 404 || response.status === 410) && method === 'DELETE') return null;
       if (response.status === 412) throw new ServerDriveError('Evento modificato durante la sincronizzazione. Riprova.', 409);
@@ -97,6 +99,18 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
       return record;
     }
     const budget = () => { if (Date.now() - started > 40000) { result.pending = true; return false; } return true; };
+    if (budget()) {
+      const recurring = await syncRecurringCalendarSeries(
+        recurringCalendarSeries.filter(series => seasons.some(season => season.id === series.seasonId)),
+        {
+          get: async id => await google('/' + encodeURIComponent(id)) as GoogleEvent | null,
+          create: async event => await google('', 'POST', event) as GoogleEvent | null,
+        },
+      );
+      result.exported += recurring.exported;
+      result.conflicts.push(...recurring.conflicts);
+      recurring.events.forEach(event => remote.set(event.id, event));
+    }
     // Existing links first: never interpret absence in a paginated list as deletion.
     for (const link of links) {
       if (!budget()) break;
@@ -148,7 +162,7 @@ export async function syncCalendar(client: SupabaseClient, background = false) {
     }
     for (const event of remote.values()) {
       if (!budget()) break;
-      if (linkedGoogle.has(event.id) || event.status === 'cancelled') continue;
+      if (linkedGoogle.has(event.id) || event.status === 'cancelled' || event.extendedProperties?.private?.sft_series) continue;
       if (event.recurrence || event.recurringEventId || (event.eventType && event.eventType !== 'default')) { result.skipped++; continue; }
       const date = googleDate(event);
       const season = seasons.find(s => date && s.starts_on <= date && date <= s.ends_on);

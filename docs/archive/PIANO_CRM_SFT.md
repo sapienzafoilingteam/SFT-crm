@@ -1,3 +1,5 @@
+> Documento storico del 1 ottobre 2026. Per lo stato attuale consultare il [README del CRM](../../README.md).
+
 # Sapienza Foiling Team — Dashboard stagionale e CRM
 
 **Data:** 1 ottobre 2026  
@@ -404,4 +406,4 @@ Schema SQL e repository Supabase sono inclusi; il progetto reale non è stato cr
 
 Scelte deliberate: editor a blocchi semplici, contratto finale tramite documenti/link del team, inviti dalla console Supabase, stagioni configurate nel codice, nessuna sincronizzazione Gmail né importazione automatica del prototipo. La migrazione dei dati reali resta un passaggio separato: il vecchio sito e gli allegati locali sono stati preservati.
 
-Vedi `README.md` per avvio e funzionalità e `VERIFICA.md` per il riepilogo dei controlli effettuati.
+Vedi `../../README.md` per avvio e funzionalità e `VERIFICA.md` per il riepilogo dei controlli effettuati.

@@ -34,7 +34,7 @@ const options = (arr: string[]) =>
   arr.map((value) => ({ value, label: value }));
 const team: Field = {
   key: "team_id",
-  label: "Sottoteam",
+  label: "Reparto",
   type: "select",
   options: [
     { value: "", label: "Tutto il team" },

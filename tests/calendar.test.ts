@@ -86,6 +86,14 @@ test('sync paginates, pulls, pushes, archives, imports and reruns without duplic
     if (url.hostname === 'oauth2.googleapis.com') return Response.json({ access_token: 'secret-access' });
     if (url.hostname === 'www.googleapis.com') {
       assert.equal(new Headers(init?.headers).get('Authorization'), 'Bearer secret-access');
+      if (method === 'POST') {
+        const created = { ...JSON.parse(String(init?.body)), etag: 'series-v1' };
+        remote.push(created); writes.push('series'); return Response.json(created);
+      }
+      if (method === 'GET' && url.pathname.split('/').at(-1) !== 'events') {
+        const found = remote.find(event => event.id === url.pathname.split('/').at(-1));
+        return found ? Response.json(found) : Response.json({}, { status: 404 });
+      }
       if (method === 'PATCH') {
         assert.equal(new Headers(init?.headers).get('If-Match'), 'v1');
         Object.assign(remote[0], JSON.parse(String(init?.body))); writes.push('google'); return Response.json(remote[0]);
@@ -124,7 +132,7 @@ test('sync paginates, pulls, pushes, archives, imports and reruns without duplic
     const client = createClient('https://crm.test', 'test', { auth: { persistSession: false } });
     const first = await syncCalendar(client);
     assert.equal(first.updated, 2); assert.equal(first.archived, 1); assert.equal(first.imported, 1);
-    assert.equal(first.conflicts.length, 0);
+    assert.equal(first.conflicts.length, 0); assert.equal(first.exported, 1, 'the department meeting is exported as one native recurring master');
     assert.equal(rows.events[1].title, 'Google changed'); assert.equal(rows.events[2].archived, true);
     const count = writes.length;
     const second = await syncCalendar(client);
@@ -150,4 +158,35 @@ test('background endpoint requires an exact secret and fails closed without cred
     assert.equal(response.status, 503);
     assert.doesNotMatch(await response.text(), /test-secret/);
   } finally { previous === undefined ? delete process.env.CRON_SECRET : process.env.CRON_SECRET = previous; }
+});
+
+test('a deleted recurring master returned as HTTP 410 is not recreated by automatic sync', async () => {
+  const original = globalThis.fetch;
+  const names = ['GOOGLE_CALENDAR_REFRESH_TOKEN', 'GOOGLE_DRIVE_CLIENT_ID', 'GOOGLE_DRIVE_CLIENT_SECRET'];
+  const before = names.map(name => process.env[name]);
+  names.forEach(name => process.env[name] = 'deleted-series-test');
+  let creates = 0;
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input)), method = init?.method || 'GET';
+    if (url.hostname === 'oauth2.googleapis.com') return Response.json({ access_token: 'test-access' });
+    if (url.hostname === 'www.googleapis.com') {
+      if (method === 'POST') { creates++; return Response.json({}); }
+      if (url.pathname.endsWith('/events')) return Response.json({ items: [] });
+      return Response.json({}, { status: 410 });
+    }
+    const table = url.pathname.split('/').at(-1);
+    if (table === 'acquire_calendar_sync') return Response.json(true);
+    if (table === 'release_calendar_sync') return Response.json(null);
+    if (table === 'seasons') return Response.json([{ id: row.season_id, starts_on: '2026-09-01', ends_on: '2027-08-31' }]);
+    return Response.json([]);
+  };
+  try {
+    const result = await syncCalendar(createClient('https://crm.test', 'test', { auth: { persistSession: false } }));
+    assert.equal(result.conflicts.length, 1);
+    assert.equal(result.exported, 0);
+    assert.equal(creates, 0);
+  } finally {
+    globalThis.fetch = original;
+    names.forEach((name, i) => before[i] === undefined ? delete process.env[name] : process.env[name] = before[i]);
+  }
 });

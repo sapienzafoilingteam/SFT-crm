@@ -103,10 +103,13 @@ export interface Block {
     | "tabella"
     | "immagine"
     | "richiamo"
-    | "riunione";
+    | "riunione"
+    | "pagina";
   content: string;
   url?: string;
   checked?: boolean;
+  blocks?: Block[];
+  summary?: string;
   meeting?: {
     date: string;
     attendees: string;

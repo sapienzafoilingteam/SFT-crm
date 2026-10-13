@@ -1,32 +1,34 @@
 "use client";
 import {
-SEASONS,
-TEAMS,
-dateLabel,
-safeUrl
+  SEASONS,
+  TEAMS,
+  dateLabel,
+  safeUrl
 } from "@/lib/model";
 import {
-Anchor,
-ArrowRight,
-ArrowUpRight,
-CalendarDays,
-Cpu,
-FileText,
-FolderOpen,
-Leaf,
-Megaphone,
-MoreHorizontal,
-Plus,
-Waves,
-Wind,
-Wrench
+  Anchor,
+  ArrowRight,
+  ArrowUpRight,
+  CalendarDays,
+  Cpu,
+  FileText,
+  FolderOpen,
+  Leaf,
+  Megaphone,
+  MoreHorizontal,
+  Plus,
+  Waves,
+  Wind,
+  Wrench
 } from "lucide-react";
 import Link from "next/link";
+import { DepartmentResources } from "../department-resources";
 import { Deadlines } from "../deadlines";
 import { linkIcon } from "../link-icons";
 import { useWorkspace } from "../provider";
 import { Button } from "../ui/button";
-import { Empty,SectionTitle,type Props } from "./shared";
+import { Empty, SectionTitle, type Props } from "./shared";
+import { readRequest } from "@/lib/feature-requests";
 const teamIcons = [Waves, Megaphone, Leaf, Wrench, Wind, Cpu, Anchor];
 export function HomeView({ edit }: Props) {
   const { data, season } = useWorkspace();
@@ -34,12 +36,12 @@ export function HomeView({ edit }: Props) {
     (x) => !x.archived && x.season_id === season && !x.team_id,
   );
   const reports = data.reports
-    .filter((x) => !x.archived && x.season_id === season)
+    .filter((x) => !x.archived && x.season_id === season && !readRequest(x))
     .slice(0, 3);
   return (
     <>
       <SectionTitle title="Risorse del team">
-        <Link href="/drive" className="text-link"><FolderOpen size={15}/>Drive del team</Link>
+        <Link href="/drive" className="text-link"><FolderOpen size={15} />Drive del team</Link>
         <Button variant="ghost" size="sm" onClick={() => edit("links")}>
           <Plus size={14} />
           Aggiungi link
@@ -74,7 +76,7 @@ export function HomeView({ edit }: Props) {
           );
         })}
       </div>
-      <SectionTitle title="I nostri sottoteam">
+      <SectionTitle title="I nostri reparti">
         <span className="muted">Sette reparti. Un unico progetto.</span>
       </SectionTitle>
       <div className="team-grid">
@@ -109,6 +111,7 @@ export function HomeView({ edit }: Props) {
                 <h3>{t.name}</h3>
                 <p>{page?.summary || t.description}</p>
               </Link>
+              <DepartmentResources compact />
               <div className="team-card-foot">
                 <Link href={"/team/" + t.id}>
                   <span className="team-dot" style={{ background: t.color }} />

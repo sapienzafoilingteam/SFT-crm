@@ -15,6 +15,7 @@ Mail,
 Plus
 } from "lucide-react";
 import Link from "next/link";
+import { DepartmentResources } from "../department-resources";
 import { Deadlines } from "../deadlines";
 import { DriveView } from "../drive-view";
 import { useWorkspace } from "../provider";
@@ -43,6 +44,7 @@ export function OverviewView({ edit }: Props) {
           Nuovo evento
         </Button>
       </Heading>
+      <DepartmentResources />
       <div className="stats-grid">
         <div className="stat">
           <span>Sponsor in pipeline</span>

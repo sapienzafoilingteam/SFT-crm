@@ -1,3 +1,5 @@
+> Documento storico del 1 ottobre 2026. Per lo stato attuale consultare il [README del CRM](../../README.md).
+
 # Verifica della prima interfaccia — 1 ottobre 2026
 
 ## Controlli automatici

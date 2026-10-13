@@ -6,6 +6,7 @@ TEAMS,
 dateLabel,
 monthlyDeliveries
 } from "@/lib/model";
+import { departmentMeetingsForMonth, isDepartmentMeeting } from "@/lib/department-resources";
 import { useViewState } from "@/lib/view-state";
 import {
 CalendarDays,
@@ -36,6 +37,7 @@ export function AgendaView({ edit }: Props) {
     if (window.matchMedia("(max-width:600px)").matches) setMode("lista");
   }, []);
   const [month, setMonth] = useViewState(`agenda:${season}:month`, () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()).slice(0, 7));
+  const [meetingDetail, setMeetingDetail] = useState<ReturnType<typeof departmentMeetingsForMonth>[number] | null>(null);
   const [generate, setGenerate] = useState(false);
   const [modelView, setModelView] = useState(false);
   const [y, m] = month.split("-").map(Number);
@@ -50,6 +52,7 @@ export function AgendaView({ edit }: Props) {
     ...data.deliveries
       .filter((d) => !d.archived && d.season_id === season)
       .map((d) => ({ ...d, collection: "deliveries" as Collection })),
+    ...departmentMeetingsForMonth(season, month).map(d => ({ ...d, priority: "Media", collection: "events" as Collection })),
     ...data.events
       .filter((d) => !d.archived && d.season_id === season)
       .map((d) => ({
@@ -66,9 +69,9 @@ export function AgendaView({ edit }: Props) {
           (type === "Eventi e riunioni"
             ? d.collection === "events"
             : d.type === type)) &&
-        (!team || d.team_id === team),
+        (!team || d.team_id === team || isDepartmentMeeting(d.id)),
     )
-    .sort((a, b) => a.date.localeCompare(b.date)), [data.deliveries, data.events, season, query, type, team]);
+    .sort((a, b) => a.date.localeCompare(b.date)), [data.deliveries, data.events, season, month, query, type, team]);
   const byDate = useMemo(() => { const index = new Map<string, typeof items>(); for (const item of items) { const rows = index.get(item.date) || []; rows.push(item); index.set(item.date, rows); } return index; }, [items]);
   const pending = monthlyDeliveries(data, season, month);
   const moveMonth = (delta: number) => {
@@ -209,9 +212,9 @@ export function AgendaView({ edit }: Props) {
                                 (d.collection === "events" ? "event" : "")
                               }
                               key={d.id}
-                              onClick={() => edit(d.collection, d)}
+                              onClick={() => isDepartmentMeeting(d.id) ? setMeetingDetail(d as NonNullable<typeof meetingDetail>) : edit(d.collection, d)}
                             >
-                              <span>{'start_time' in d && d.start_time ? d.start_time + ' · ' : ''}{d.type}</span>
+                              <span>{isDepartmentMeeting(d.id) ? '15:00–19:00 · Ogni mercoledì' : ('start_time' in d && d.start_time ? d.start_time + ' · ' : '') + d.type}</span>
                               {d.title}
                             </button>
                           ))}
@@ -230,7 +233,7 @@ export function AgendaView({ edit }: Props) {
             .map((d) => (
               <div className="deadline-action-row" key={d.id}><button
                 className="deadline-row"
-                onClick={() => edit(d.collection, d)}
+                onClick={() => isDepartmentMeeting(d.id) ? setMeetingDetail(d as NonNullable<typeof meetingDetail>) : edit(d.collection, d)}
               >
                 <div className="date-box">
                   <strong>{d.date.slice(8) || "—"}</strong>
@@ -240,7 +243,7 @@ export function AgendaView({ edit }: Props) {
                   <strong>{d.title}</strong>
                   <small>
                     {'start_time' in d && d.start_time ? d.start_time + ('end_time' in d && d.end_time ? '–' + d.end_time : '') + ' · ' : ''}{d.type} ·{" "}
-                    {TEAMS.find((t) => t.id === d.team_id)?.short || "Team"}
+                    {isDepartmentMeeting(d.id) ? "Tutti i reparti · Ogni mercoledì" : TEAMS.find((t) => t.id === d.team_id)?.short || "Team"}
                   </small>
                 </div>
                 <Badge>{d.status}</Badge>
@@ -268,6 +271,14 @@ export function AgendaView({ edit }: Props) {
           Modelli mensili
         </Button>
       </div>
+      <Dialog open={!!meetingDetail} onOpenChange={open => { if (!open) setMeetingDetail(null); }}>
+        <DialogContent>
+          <DialogTitle className="dialog-title">Riunione dei reparti</DialogTitle>
+          <DialogDescription className="muted">Ogni mercoledì, dalle 15:00 alle 19:00 · Ora di Roma</DialogDescription>
+          {meetingDetail && <p>{dateLabel(meetingDetail.date)} · 15:00–19:00</p>}
+          <p>Riunione settimanale di tutti i reparti.</p>
+        </DialogContent>
+      </Dialog>
       <Dialog open={generate} onOpenChange={setGenerate}>
         <DialogContent>
           <DialogTitle className="dialog-title">
