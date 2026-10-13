@@ -110,23 +110,19 @@ La sezione **Richieste CRM** (`/richieste-crm`) consente di descrivere un proble
 
 ### Pagine dei reparti ed editor a blocchi
 
-Ogni pagina raccoglie la descrizione del lavoro, gli obiettivi, gli aggiornamenti e le risorse del reparto. **Nuova sottopagina** crea una pagina dentro quella corrente; ogni sottopagina può contenere blocchi e altre sottopagine. Il percorso sopra i contenuti consente di tornare ai livelli precedenti. Dalla modifica della pagina padre si può rinominare o rimuovere una sottopagina. La gerarchia è salvata nei blocchi JSON della pagina del reparto e inclusa nelle revisioni: il ripristino riguarda l’intero reparto, comprese le sottopagine. Il salvataggio mantiene il controllo di versione del reparto e non richiede migrazioni.
+Le pagine sono sempre modificabili direttamente. Scrivi `/` all’inizio di un blocco o di una nuova riga per aprire il menu, filtra digitando il nome dell’elemento e scegli con le frecce e Invio, oppure con un clic. Esc chiude il menu. Invio continua con un nuovo blocco; Maiusc+Invio va a capo nello stesso blocco.
 
-L'editor comprende nove tipi di blocco: **titolo, testo, elenco, checklist, link, tabella, immagine, richiamo e riunione**. Le immagini si inseriscono tramite URL; le tabelle sono blocchi semplici, senza formule da foglio di calcolo.
+Sono disponibili **titolo, testo, elenco, checklist, link, tabella, immagine, richiamo, riunione e sottopagina**. Le checklist hanno caselle cliccabili accanto al testo; le tabelle mostrano subito celle modificabili, con controlli per righe e colonne. Le immagini si inseriscono tramite URL. Le tabelle sono semplici, senza formule da foglio di calcolo.
 
-Per modificare una pagina:
+`/sottopagina` inserisce una pagina interna: scrivi il titolo e aprila dalla freccia accanto. Le sottopagine possono contenere altre sottopagine; il percorso sopra i contenuti permette di tornare ai livelli precedenti. Il menu sul margine di ogni blocco permette di spostarlo, duplicarlo o eliminarlo.
 
-1. Apri il reparto e premi **Modifica pagina** accanto ai contenuti, oppure **Modifica** sul singolo blocco o **Modifica riepilogo**.
-2. Digita `/` all'inizio di un blocco o di una nuova riga per aprire il menu dei tipi di contenuto. Puoi filtrarlo scrivendo, per esempio, `/riunione`.
-3. Usa le frecce e Invio per selezionare; Esc chiude il menu. Nei titoli, paragrafi e checklist, Invio aggiunge un blocco e Maiusc+Invio va a capo nello stesso blocco.
-4. Riordina, duplica o rimuovi i blocchi usando i controlli dell'editor.
-5. Premi **Salva pagina**, disponibile sia all'inizio sia in fondo alla pagina.
+Le modifiche sono salvate automaticamente dopo una breve pausa e lo stato è visibile sopra la pagina. I salvataggi sono sequenziali e conservano anche quanto digitato durante una richiesta. In caso di errore la bozza resta nel browser: si può riprovare e recuperarla alla riapertura. Il controllo di versione impedisce di sovrascrivere gli aggiornamenti di altri membri; una bozza relativa a una versione precedente si può scaricare per confrontarla.
 
-La pagina conserva le **ultime 20 revisioni**, consultabili e ripristinabili. Il ripristino conserva anche la versione sostituita. L'editor avvisa quando si tenta di uscire con modifiche non salvate.
+La gerarchia è salvata nei blocchi JSON e non richiede migrazioni. Le **ultime 20 revisioni** raggruppano le modifiche vicine nel tempo; il ripristino riguarda l’intero reparto, comprese le sottopagine, e conserva la versione sostituita. Il browser avvisa prima di chiudere se ci sono ancora modifiche da salvare.
 
 ### Riunioni e report
 
-Il pulsante **Nuova riunione** e il blocco `/riunione` permettono di registrare:
+Il comando **`/riunione`** inserisce un verbale con:
 
 - Titolo, data e partecipanti.
 - Ordine del giorno e verbale.

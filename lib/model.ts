@@ -108,6 +108,7 @@ export interface Block {
   content: string;
   url?: string;
   checked?: boolean;
+  table?: string[][];
   blocks?: Block[];
   summary?: string;
   meeting?: {

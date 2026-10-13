@@ -20,8 +20,8 @@ interface State {
 }
 interface Actions {
     setSeason: (season: string) => void;
-    save: (fn: (data: Workspace) => Workspace) => Promise<boolean>;
-    put: <K extends Collection>(key: K, row: Workspace[K][number]) => Promise<boolean>;
+    save: (fn: (data: Workspace) => Workspace, options?: { silent?: boolean }) => Promise<boolean>;
+    put: <K extends Collection>(key: K, row: Workspace[K][number], options?: { silent?: boolean }) => Promise<boolean>;
     notice: (message: string) => void;
     refresh: (keys?: readonly Collection[]) => Promise<void>;
     ensure: (keys: readonly Collection[]) => Promise<void>;
@@ -183,7 +183,7 @@ export function Provider({ children, publicHome = false, inactive = false }: {
         const poll = setInterval(focus, 60000);
         return () => { clearTimeout(timer); clearInterval(poll); window.removeEventListener('focus', focus); void supabase!.removeChannel(channel); };
     }, [ready, inactive, season, refresh, resources]);
-    const save = useCallback(async (fn: (data: Workspace) => Workspace) => {
+    const save = useCallback(async (fn: (data: Workspace) => Workspace, options?: { silent?: boolean }) => {
         if (saving.current || !authorized.current)
             return false;
         saving.current = true;
@@ -208,7 +208,7 @@ export function Provider({ children, publicHome = false, inactive = false }: {
                 dataRef.current = merged;
                 setData(merged);
             }
-            notice('Modifiche salvate');
+            if (!options?.silent) notice('Modifiche salvate');
             return true;
         }
         catch (error) {
@@ -220,7 +220,7 @@ export function Provider({ children, publicHome = false, inactive = false }: {
             setBusy(false);
         }
     }, [publish, resources]);
-    const put = useCallback(<K extends Collection>(key: K, row: Workspace[K][number]) => {
+    const put = useCallback(<K extends Collection>(key: K, row: Workspace[K][number], options?: { silent?: boolean }) => {
         const current = (dataRef.current[key] as Base[]).find(record => record.id === row.id);
         if (current && current.version !== row.version) {
             notice('Questo elemento è stato aggiornato. Riapri i dettagli prima di salvare.');
@@ -230,7 +230,7 @@ export function Provider({ children, publicHome = false, inactive = false }: {
             const rows = previous[key] as Base[], found = rows.find(r => r.id === row.id);
             const updated = { ...row, version: found ? found.version + 1 : 1, updated_at: new Date().toISOString() };
             return { ...previous, [key]: found ? rows.map(r => r.id === row.id ? updated : r) : [updated, ...rows] };
-        });
+        }, options);
     }, [save]);
     const isLoaded = useCallback((keys: readonly Collection[]) => !live || resources.has(activeSeason.current, keys), [resources]);
     const actions = useMemo(() => ({ setSeason, ensure, refresh, save, put, notice, isLoaded }), [setSeason, ensure, refresh, save, put, isLoaded]);
