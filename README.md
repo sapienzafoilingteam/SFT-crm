@@ -78,7 +78,7 @@ CRM_BUILD_DIR=.next-check npm run build
 | Materiali e Sostenibilità | `materiali` |
 | Manufacturing e Cantiere | `manufacturing` |
 | Foil e Controllo di Volo | `foil` |
-| Elettronica e Data Analysis | `elettronica` |
+| Elettronica e Software | `elettronica` |
 | Shore Team e Logistica | `shore` |
 
 Ogni reparto dispone di una pagina componibile e di una cartella Drive associata. Management include anche le sezioni operative dedicate.
@@ -480,3 +480,7 @@ Il prototipo originale è conservato in `index.html`, `app.js` e `styles.css`, c
 ## Contribuire
 
 Mantenere separati dati demo e dati reali, non versionare credenziali e documentare eventuali nuove variabili o migrazioni. Per modifiche al comportamento eseguire i controlli pertinenti e verificare l'interfaccia coinvolta. Aggiornare questo README quando cambiano funzionalità, permessi o configurazione; distinguere sempre ciò che è implementato da ciò che è previsto nel piano.
+
+### Progetti di Elettronica e Software
+
+Il reparto include il collegamento a https://github.com/sapienzafoilingteam e quattro pagine interne in `/team/elettronica/progetti/`: `sito-web`, `firmware-elettronica`, `telemetry-lab` e `crm`. Ogni pagina contiene obiettivi, stato documentato, comando di clonazione, suggerimenti per contribuire e README. I README pubblici vengono letti da GitHub con cache di un’ora; in caso di errore viene mostrata una copia del 13 ottobre 2026, esplicitamente segnalata. Le sintesi sono datate e non implicano verifiche hardware o della configurazione online.

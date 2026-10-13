@@ -24,7 +24,7 @@ export function answerGroup(index: number) {
   if (index < 18) return 'Materiali e sostenibilità';
   if (index < 22) return 'Manufacturing e cantiere';
   if (index < 26) return 'Foil e controllo di volo';
-  if (index < 29) return 'Elettronica e data analysis';
+  if (index < 29) return 'Elettronica e Software';
   return 'Altre risposte';
 }
 export function teamFromAnswer(value: string) {
@@ -75,6 +75,6 @@ export function recruitingCsv(candidates: Candidate[]) {
   return '\uFEFF' + [fields.map(([label]) => csvCell(label)).join(';'), ...candidates.map(c => fields.map(([,key]) => csvCell(c[key])).join(';'))].join('\r\n');
 }
 export function demoRecruiting(): RecruitingData {
-  const c = parseCandidate(['Data','Nome','Cognome','Email','Telefono','Corso','Anno','Provenienza','Esperienze veliche','Lettera','CV','Reparto'], ['08/10/2026 10:00','Alex','Esempio','alex@example.invalid','','Ingegneria elettronica','2','Presentazione in università','Corso di vela','','','Elettronica e Data Analysis'], 'demo-1', '00000000-0000-4000-8000-000000000001');
+  const c = parseCandidate(['Data','Nome','Cognome','Email','Telefono','Corso','Anno','Provenienza','Esperienze veliche','Lettera','CV','Reparto'], ['08/10/2026 10:00','Alex','Esempio','alex@example.invalid','','Ingegneria elettronica','2','Presentazione in università','Corso di vela','','','Elettronica e Software'], 'demo-1', '00000000-0000-4000-8000-000000000001');
   return { candidates: [{ ...c, id: '10000000-0000-4000-8000-000000000001', source_hash: '', source_missing: false, stage: 'In valutazione', owner: '', assigned_team: teamFromAnswer(c.requested_team), next_action: '', due_date: '', notes: '', evaluation: '', archived: false, version: 1, updated_at: new Date().toISOString() }], activities: [], interviews: [], last_sync: null, sync_error: null };
 }

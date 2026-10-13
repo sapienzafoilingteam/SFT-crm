@@ -13,6 +13,7 @@ export function routeCollections(path: readonly string[]): Collection[] {
         return [...common, 'links'];
     if (section !== 'team')
         return common;
+    if (path[1] === 'elettronica' && path[2] === 'progetti') return common;
     if (path[1] !== 'management' || path[2] === 'pagina')
         return [...common, 'pages', 'reports', 'links'];
     const modules: Record<string, Collection[]> = {

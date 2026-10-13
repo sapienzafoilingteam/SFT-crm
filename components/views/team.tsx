@@ -22,6 +22,7 @@ RotateCcw,
 Trash2
 } from "lucide-react";
 import { useEffect,useState } from "react";
+import { SoftwareProjects } from "../software-projects";
 import { Deadlines } from "../deadlines";
 import { DriveView } from "../drive-view";
 import { MeetingBlock,PageBlockEditor,makeBlock } from "../page-block-editor";
@@ -190,6 +191,7 @@ export function TeamView({
           </>
         )}
       </Heading>
+      {team.id === "elettronica" && <SoftwareProjects />}
       <div className="team-resources">
         {data.links
           .filter(

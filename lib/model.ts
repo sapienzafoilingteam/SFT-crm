@@ -45,9 +45,9 @@ export const TEAMS = [
   },
   {
     id: "elettronica",
-    name: "Elettronica e Data Analysis",
+    name: "Elettronica e Software",
     short: "Elettronica",
-    description: "Misurare, comprendere, migliorare.",
+    description: "Elettronica di bordo, telemetria e strumenti software del team.",
     color: "#81769c",
     icon: "cpu",
   },

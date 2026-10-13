@@ -1,4 +1,5 @@
 "use client";
+import { PROJECTS, findProject, projectPath } from '@/lib/software-projects';
 import { Collection,SEASONS,TEAMS } from "@/lib/model";
 import { newRecord } from "@/lib/new-record";
 import { live,supabase } from "@/lib/repository";
@@ -31,6 +32,7 @@ const DriveView = dynamic(() => import("./drive-view").then(m => m.DriveView), {
 const RecruitingView = dynamic(() => import("./recruiting-view").then(m => m.RecruitingView));
 const ViewLoading = () => <div className="empty" role="status">Caricamento della pagina…</div>;
 const RecordEditor = dynamic(() => import('./record-editor').then(m => m.RecordEditor));
+const SoftwareProjectPage = dynamic(() => import("./software-projects").then(m => m.SoftwareProjectPage), { loading: ViewLoading });
 const HomeView = dynamic(() => import("./views/home").then(m => m.HomeView), { loading: ViewLoading });
 const OverviewView = dynamic(() => import("./views/overview").then(m => m.OverviewView), { loading: ViewLoading });
 const TeamView = dynamic(() => import("./views/team").then(m => m.TeamView), { loading: ViewLoading });
@@ -83,6 +85,8 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   }, [path.join("/"), season]);
   const section = path[0] || "home";
   const team = TEAMS.find((t) => t.id === path[1]);
+  const isSoftwareProject = section === "team" && team?.id === "elettronica" && path[2] === "progetti";
+  const softwareProject = isSoftwareProject ? findProject(path[3] || "") : undefined;
   const isManagement = section === "team" && team?.id === "management";
   const view = isManagement ? path[2] || "" : section;
   const open: Edit = (collection, row, defaults, title) => {
@@ -129,7 +133,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           ? "Drive del team"
           : section === "impostazioni"
             ? "Impostazioni"
-            : team?.name || "Pagina non trovata";
+            : (softwareProject ? `${team?.name} / ${softwareProject.title}` : team?.name) || "Pagina non trovata";
   const args = { edit: open };
   let content;
   if (section === "home") content = <HomeView {...args} />;
@@ -138,7 +142,8 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   else if (section === "recruiting") content = <RecruitingView />;
   else if (section === "impostazioni") content = <SettingsView {...args} />;
   else if (section === "team" && team) {
-    if (!isManagement || view === "pagina")
+    if (isSoftwareProject) content = <SoftwareProjectPage key={path[3]} slug={path[3] || ""} />;
+    else if (!isManagement || view === "pagina")
       content = <TeamView team={team} {...args} />;
     else if (view === "") content = <OverviewView {...args} />;
     else if (view === "sponsor") content = <SponsorsView {...args} />;
@@ -245,8 +250,9 @@ export function WorkspaceApp({ path }: { path: string[] }) {
               >
                 <span className="team-dot" style={{ background: t.color }} />
                 <span>{t.name}</span>
-                {t.id === "management" && <ChevronDown size={12} />}
+                {["management", "elettronica"].includes(t.id) && <ChevronDown size={12} />}
               </Link>
+              {t.id === "elettronica" && team?.id === "elettronica" && <div className="subnav"><Link className={!isSoftwareProject ? "selected" : ""} href="/team/elettronica">Pagina del reparto</Link>{PROJECTS.map(project => <Link key={project.slug} className={softwareProject?.slug === project.slug ? "selected" : ""} href={projectPath(project)}>{project.title}</Link>)}</div>}
               {t.id === "management" && isManagement && (
                 <div className="subnav">
                   {management.map(([p, label]) => (
