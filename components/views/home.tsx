@@ -103,7 +103,7 @@ export function HomeView({ edit }: Props) {
             <article className="team-card" key={t.id}>
               <Link href={"/team/" + t.id} className="team-card-main">
                 <div className="team-card-top">
-                  <div className="team-icon" style={{ color: t.color }}>
+                  <div className="team-icon">
                     <Icon size={22} />
                   </div>
                   <ArrowUpRight size={17} />
@@ -114,7 +114,7 @@ export function HomeView({ edit }: Props) {
               <DepartmentResources compact />
               <div className="team-card-foot">
                 <Link href={"/team/" + t.id}>
-                  <span className="team-dot" style={{ background: t.color }} />
+                  <span className="team-dot" />
                   Pagina
                 </Link>
                 <Link href={"/team/" + t.id + (t.id === "management" ? "/pagina" : "") + "#file-reparto"}>

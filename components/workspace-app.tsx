@@ -252,7 +252,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
                 href={"/team/" + t.id}
                 className={"nav-team " + (team?.id === t.id ? "active" : "")}
               >
-                <span className="team-dot" style={{ background: t.color }} />
+                <span className="team-dot" />
                 <span>{t.name}</span>
                 {["management", "elettronica"].includes(t.id) && <ChevronDown size={12} />}
               </Link>

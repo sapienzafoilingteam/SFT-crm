@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./sft-workspace.css";
 import { WorkspaceRoot } from "@/components/workspace-root";
 export const metadata: Metadata = {
   title: "SFT · Workspace",

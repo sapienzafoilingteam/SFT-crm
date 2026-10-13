@@ -1,0 +1,84 @@
+/* Shared SFT operational compositions. Editorial styling stays on the homepage. */
+@font-face { font-family: "Geist Mono"; src: url("/fonts/geist-mono.woff") format("woff"); font-weight: 100 900; font-display: swap; }
+body { font-family: var(--font-sans); }
+h1 { font-size: clamp(30px, 3.2vw, 40px); }
+h2, .section-title h2 { font-family: var(--font-display); font-weight: 700; font-size: 24px; }
+h3 { font-size: 16px; }
+.btn { min-height: 44px; border-radius: 8px; font-size: 14px; font-weight: 600; transition: background 180ms, border-color 180ms, color 180ms; }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }
+.btn-primary:hover { background: color-mix(in srgb, var(--primary) 88%, var(--foreground)); border-color: transparent; }
+.btn-danger { color: var(--destructive-foreground); }
+.btn-sm { min-height: 36px; padding: 8px 12px; font-size: 12px; }
+.btn-icon, .icon-button, .dialog-close { width: 44px; height: 44px; min-height: 44px; }
+input, select, textarea { border-color: var(--input); border-radius: 8px; min-height: 44px; }
+input[type="checkbox"] { min-height: auto; }
+input::placeholder, textarea::placeholder { color: var(--muted-foreground); opacity: 1; }
+input[aria-invalid="true"], textarea[aria-invalid="true"], select[aria-invalid="true"] { border-color: var(--destructive); }
+.search-box { border-color: var(--input); border-radius: 8px; min-width: min(200px, 100%); }
+.search-box:focus-within { outline: 2px solid var(--ring); outline-offset: 2px; }
+.search-box input:focus-visible { outline: none; }
+.search-box input, .toolbar select { font-size: 14px; }
+.page-heading { gap: 24px; margin-bottom: 32px; flex-wrap: wrap; }
+.page-heading > div:first-child { min-width: 0; flex: 1 1 280px; }
+.page-heading p { font-size: 16px; max-width: 65ch; }
+.eyebrow, .nav-caption, .page-context { font-size: 12px; }
+.nav-link, .nav-team { font-size: 14px; min-height: 44px; border-radius: 8px; }
+.nav-link.active:hover, .nav-team.active { background: var(--sidebar-accent); color: var(--sidebar-accent-foreground); }
+.subnav a { font-size: 13px; min-height: 36px; display: flex; align-items: center; }
+.brand { color: var(--primary); }
+.brand img { width: 36px; height: 48px; }
+.dark .brand img, .dark .public-brand img, .dark .login > img { content: url("/brand/sft-white.svg"); }
+.brand small { font-size: 12px; }
+.season-switch { background: var(--card); }
+.season-switch select { min-height: 32px; }
+.panel, .quick-link, .recruiting-card, .recruiting-column, .resource-preview-card { border-radius: 10px; box-shadow: none; }
+.team-icon { color: var(--primary); }
+.team-dot { background: var(--primary); }
+.team-page-banner { border-left-color: var(--primary); }
+.home-hero { border-radius: 24px; background: var(--sft-burgundy); }
+.hero-copy p { font-size: 16px; max-width: 55ch; }
+.hero-copy .eyebrow, .hero-link, .hero-bottom { font-size: 12px; }
+.hero-copy h1 { font-size: clamp(32px, 3.4vw, 48px); }
+.section-title { margin-top: 32px; margin-bottom: 16px; flex-wrap: wrap; }
+.section-title .muted { font-size: 12px; }
+.badge, .deadline-row .badge { font-size: 12px; padding: 4px 8px; border-radius: 8px; }
+.stat strong, .recruiting-stats strong, .cost-summary strong { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+table { font-size: 14px; }
+th { font-size: 12px; font-weight: 600; }
+tbody tr:hover { background: var(--muted); }
+.table-scroll, .recruiting-table { max-width: 100%; overscroll-behavior-x: contain; }
+.table-sub { font-size: 12px; }
+.management-tabs a { min-height: 44px; font-size: 14px; }
+.segmented button { min-height: 36px; }
+.dialog-content { background: var(--popover); color: var(--popover-foreground); border-radius: 10px; box-shadow: var(--sft-shadow-floating); padding: 32px; scroll-padding-block: 24px; }
+.dialog-close { top: 12px; right: 12px; justify-content: center; align-items: center; }
+.dialog-title { padding-right: 44px; }
+.dialog-footer { position: sticky; bottom: -32px; background: var(--popover); padding-bottom: 16px; z-index: 1; }
+.form-grid { gap: 24px; }
+.form-error { color: var(--destructive); font-size: 14px; }
+.empty { color: var(--muted-foreground); font-size: 16px; }
+.empty svg { color: var(--primary); }
+.public-brand, .public-home h1, .public-home h2, .public-home h3 { font-family: var(--font-display); }
+.public-home footer { background: var(--sft-carbon); }
+.public-access { border-radius: 8px; }
+.public-access-primary { color: var(--primary-foreground); }
+.public-hero-visual { border-radius: 24px; }
+.public-entry { border-radius: 10px; }
+.document-block-actions > div, .slash-menu { box-shadow: var(--sft-shadow-floating); }
+@media (max-width: 800px) {
+  input:not([type="checkbox"]), select, textarea, .search-box input, .toolbar select { font-size: 16px; }
+  .btn-sm, .segmented button, .quick-choices button, .recruiting-departments button, .subnav a { min-height: 44px; }
+  .dialog-content { padding: 24px; max-height: calc(100dvh - 24px); }
+  .dialog-footer { bottom: -24px; }
+  .page-heading { gap: 16px; margin-bottom: 24px; }
+  .page-heading > div:first-child { flex: 0 1 auto; width: 100%; }
+  .heading-actions { width: 100%; }
+  .heading-actions .btn { flex: 1 1 auto; }
+  .toolbar { gap: 12px; }
+  .toolbar .search-box { flex-basis: 100%; }
+  .hero-copy p, .public-features p, .public-entry p, .public-google-copy p { font-size: 16px; }
+  .document-block-actions > summary { opacity: 1; min-width: 44px; min-height: 44px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}

@@ -89,7 +89,7 @@ export function DepartmentPage({ team }: { team: (typeof TEAMS)[number] }) {
       const url = URL.createObjectURL(new Blob([JSON.stringify(recovery, null, 2)], { type: 'application/json' }));
       const link = document.createElement('a'); link.href = url; link.download = `${team.id}-bozza.json`; link.click(); URL.revokeObjectURL(url);
     }}>Scarica la bozza</Button></div>}
-    <div className="team-page-banner" style={{ borderLeftColor: team.color }}>
+    <div className="team-page-banner">
       <span className="eyebrow">{path.length ? 'RIEPILOGO DELLA PAGINA' : 'DIREZIONE DELLA STAGIONE'}</span>
       <textarea ref={summaryInput} className="notion-input" rows={1} aria-label="Riepilogo del reparto" placeholder="Riepilogo del reparto…" value={summary} onChange={e => changePage({ summary: e.target.value })} />
     </div>
