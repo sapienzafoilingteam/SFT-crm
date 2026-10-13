@@ -245,6 +245,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           <Link href="/recruiting" className={section === "recruiting" ? "nav-link active" : "nav-link"}>
             <Users size={18} />Recruiting
           </Link>
+          <a href="/design-system/index.html" className="nav-link"><span aria-hidden="true">✳</span>Design system</a>
           <div className="nav-caption">I NOSTRI REPARTI</div>
           {TEAMS.map((t) => (
             <div key={t.id}>

@@ -17,6 +17,7 @@ MoreHorizontal,
 Plus,
 Upload
 } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { useWorkspace } from "../provider";
 import { QuickChoices } from "../quick-choices";
@@ -129,6 +130,7 @@ export function LibraryView({
           </button>
         ))}
       </div>
+      {mode === "templates" && <p><Link href="/design-system/index.html">Apri il design system completo →</Link></p>}
       <Toolbar search={query} setSearch={setQuery} />
       {tab === "contratti" ? (
         <div className="panel table-scroll">

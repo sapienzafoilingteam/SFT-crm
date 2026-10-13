@@ -1,0 +1,196 @@
+[
+  {
+    "id": "update",
+    "width": 1080,
+    "height": 1350,
+    "svg": "templates/update.svg",
+    "png": "templates/update.png",
+    "photo": "brand/photos/workshop.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "IL LAVORO",
+        "PRIMA DEL",
+        "VOLO"
+      ],
+      "body": [
+        "Progettazione, costruzione e test.",
+        "Un aggiornamento dal team."
+      ],
+      "kicker": "AGGIORNAMENTO DI PROGETTO"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "recruiting",
+    "width": 1080,
+    "height": 1350,
+    "svg": "templates/recruiting.svg",
+    "png": "templates/recruiting.png",
+    "photo": "brand/photos/team.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "PROGETTA.",
+        "COSTRUISCI.",
+        "NAVIGA."
+      ],
+      "body": [
+        "Scopri i reparti del team e",
+        "come contribuire al progetto."
+      ],
+      "kicker": "DENTRO SAPIENZA FOILING TEAM"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "technical",
+    "width": 1080,
+    "height": 1350,
+    "svg": "templates/technical.svg",
+    "png": "templates/technical.png",
+    "photo": "brand/photos/boat-detail.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "COME",
+        "FUNZIONA",
+        "IL FOIL"
+      ],
+      "body": [
+        "Una spiegazione, un diagramma,",
+        "un dettaglio del progetto."
+      ],
+      "kicker": "DAL PROGETTO ALL’ACQUA"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "event",
+    "width": 1080,
+    "height": 1350,
+    "svg": "templates/event.svg",
+    "png": "templates/event.png",
+    "photo": "brand/photos/boat-flight.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "IL TEAM",
+        "SULL’ACQUA"
+      ],
+      "body": [
+        "Titolo dell’evento",
+        "Data e luogo da confermare"
+      ],
+      "kicker": "EVENTI E REGATE"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "sponsor",
+    "width": 1080,
+    "height": 1350,
+    "svg": "templates/sponsor.svg",
+    "png": "templates/sponsor.png",
+    "photo": "brand/photos/sail-partners.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "INSIEME",
+        "AL TEAM"
+      ],
+      "body": [
+        "Nome del partner",
+        "Descrizione della collaborazione"
+      ],
+      "kicker": "PARTNER E COLLABORAZIONI"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "carousel-body",
+    "width": 1080,
+    "height": 1350,
+    "svg": "templates/carousel-body.svg",
+    "png": "templates/carousel-body.png",
+    "photo": "brand/photos/boat-detail.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "UN DETTAGLIO",
+        "ALLA VOLTA"
+      ],
+      "body": [
+        "Spiega qui un passaggio del progetto.",
+        "Una sola idea per slide.",
+        "Aggiungi una fonte se usi dati tecnici."
+      ],
+      "kicker": "DENTRO IL PROGETTO"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "story",
+    "width": 1080,
+    "height": 1920,
+    "svg": "templates/story.svg",
+    "png": "templates/story.png",
+    "photo": "brand/photos/workshop.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "DAL PROGETTO",
+        "AL TEST"
+      ],
+      "body": [
+        "Un passaggio del lavoro del team.",
+        "Scopri l’aggiornamento."
+      ],
+      "kicker": "SAPIENZA FOILING TEAM"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "presentation",
+    "width": 1920,
+    "height": 1080,
+    "svg": "templates/presentation.svg",
+    "png": "templates/presentation.png",
+    "photo": "brand/photos/boat-flight.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "SAPIENZA",
+        "FOILING TEAM"
+      ],
+      "body": [
+        "Progettazione, costruzione e navigazione.",
+        "Presentazione del team."
+      ],
+      "kicker": "IL PROGETTO"
+    },
+    "canva_status": "not_created"
+  },
+  {
+    "id": "presentation-content",
+    "width": 1920,
+    "height": 1080,
+    "svg": "templates/presentation-content.svg",
+    "png": "templates/presentation-content.png",
+    "photo": "brand/photos/workshop.jpg",
+    "version": "1.0.0",
+    "texts": {
+      "title": [
+        "COME",
+        "LAVORIAMO"
+      ],
+      "body": [
+        "Un obiettivo concreto.",
+        "Il lavoro svolto dal reparto.",
+        "Il prossimo passo del progetto."
+      ],
+      "kicker": "DENTRO LA SQUADRA"
+    },
+    "canva_status": "not_created"
+  }
+]
