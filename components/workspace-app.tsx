@@ -1,29 +1,30 @@
 "use client";
 import { PROJECTS, findProject, projectPath } from '@/lib/software-projects';
-import { Collection,SEASONS,TEAMS } from "@/lib/model";
+import { Collection, SEASONS, TEAMS } from "@/lib/model";
 import { newRecord } from "@/lib/new-record";
-import { live,supabase } from "@/lib/repository";
+import { live, supabase } from "@/lib/repository";
 import { routeCollections } from '@/lib/workspace-resources';
 import {
-ArrowUpRight,
-CalendarDays,
-ChevronDown,
-ChevronRight,
-Compass,
-FolderOpen,
-Home,
-LogOut,
-Menu,
-Moon,
-Settings,
-Sun,
-Users,
-X
+  ArrowUpRight,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  Compass,
+  FolderOpen,
+  Home,
+  Lightbulb,
+  LogOut,
+  Menu,
+  Moon,
+  Settings,
+  Sun,
+  Users,
+  X
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect,useMemo,useRef,useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarSync } from "./calendar-sync";
 import { LegalLinks } from "./legal-page";
 import { useWorkspace } from "./provider";
@@ -41,6 +42,7 @@ const EventsView = dynamic(() => import("./views/events").then(m => m.EventsView
 const CostsView = dynamic(() => import("./views/costs").then(m => m.CostsView), { loading: ViewLoading });
 const AgendaView = dynamic(() => import("./views/agenda").then(m => m.AgendaView), { loading: ViewLoading });
 const LibraryView = dynamic(() => import("./views/library").then(m => m.LibraryView), { loading: ViewLoading });
+const FeatureRequestsView = dynamic(() => import("./views/feature-requests").then(m => m.FeatureRequestsView), { loading: ViewLoading });
 const SettingsView = dynamic(() => import("./views/settings").then(m => m.SettingsView), { loading: ViewLoading });
 export type Edit = (
   k: Collection,
@@ -106,37 +108,39 @@ export function WorkspaceApp({ path }: { path: string[] }) {
         (row
           ? "Modifica dettagli"
           : (
-              {
-                sponsors: "Nuova trattativa",
-                events: "Nuovo evento",
-                costs: "Aggiungi costo",
-                deliveries: "Nuova delivery",
-                reports: "Nuovo report",
-                templates: "Nuovo template",
-                contracts: "Nuovo contratto",
-                documents: "Nuova risorsa",
-                links: "Nuovo link",
-                offers: "Nuova offerta",
-                recurrences: "Nuovo modello mensile",
-              } as Record<string, string>
-            )[collection] || "Nuovo elemento"),
+            {
+              sponsors: "Nuova trattativa",
+              events: "Nuovo evento",
+              costs: "Aggiungi costo",
+              deliveries: "Nuova delivery",
+              reports: "Nuovo report",
+              templates: "Nuovo template",
+              contracts: "Nuovo contratto",
+              documents: "Nuova risorsa",
+              links: "Nuovo link",
+              offers: "Nuova offerta",
+              recurrences: "Nuovo modello mensile",
+            } as Record<string, string>
+          )[collection] || "Nuovo elemento"),
     });
   };
   const crumb =
     section === "home"
       ? "Home"
+      : section === "richieste-crm" ? "Richieste di sviluppo"
       : section === "agenda"
         ? "Agenda e Delivery"
         : section === "recruiting"
           ? "Recruiting"
-        : section === "drive"
-          ? "Drive del team"
-          : section === "impostazioni"
-            ? "Impostazioni"
-            : (softwareProject ? `${team?.name} / ${softwareProject.title}` : team?.name) || "Pagina non trovata";
+          : section === "drive"
+            ? "Drive del team"
+            : section === "impostazioni"
+              ? "Impostazioni"
+              : (softwareProject ? `${team?.name} / ${softwareProject.title}` : team?.name) || "Pagina non trovata";
   const args = { edit: open };
   let content;
   if (section === "home") content = <HomeView {...args} />;
+  else if (section === "richieste-crm") content = <FeatureRequestsView />;
   else if (section === "agenda") content = <AgendaView {...args} />;
   else if (section === "drive") content = <DriveView />;
   else if (section === "recruiting") content = <RecruitingView />;
@@ -270,24 +274,6 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           ))}
         </nav>
         <div className="sidebar-bottom">
-          <Link
-            href="/impostazioni"
-            className={
-              "nav-link " + (section === "impostazioni" ? "active" : "")
-            }
-          >
-            <Settings size={18} />
-            Impostazioni
-          </Link>
-          <a
-            href="https://sapienzafoilingteam.com"
-            target="_blank"
-            rel="noreferrer"
-            className="nav-link"
-          >
-            <ArrowUpRight size={18} />
-            Sito del team
-          </a>
           <div className="profile">
             <div className="avatar">SF</div>
             <div>
@@ -326,10 +312,33 @@ export function WorkspaceApp({ path }: { path: string[] }) {
             <span>{crumb}</span>
           </div>
           <div className="top-actions">
-            <span className="mode-badge">
-              <span />
-              {live ? "Connesso" : "Modalità demo"}
-            </span>
+          <Link
+            href="/impostazioni"
+            className={
+              "topbar-link " + (section === "impostazioni" ? "active" : "")
+            }
+          >
+            <Settings size={16} />
+            Impostazioni
+          </Link>
+          <Link
+            href="/richieste-crm"
+            className={
+              "topbar-link " + (section === "richieste-crm" ? "active" : "")
+            }
+          >
+            <Lightbulb size={16} />
+            Richieste di sviluppo
+          </Link>
+          <a
+            href="https://sapienzafoilingteam.com"
+            target="_blank"
+            rel="noreferrer"
+            className="topbar-link"
+          >
+            <ArrowUpRight size={16} />
+            Sito del team
+          </a>
             <Button
               variant="ghost"
               size="icon"
@@ -348,7 +357,6 @@ export function WorkspaceApp({ path }: { path: string[] }) {
                 <Moon size={18} />
               )}
             </Button>
-            <div className="avatar small">SF</div>
           </div>
         </header>
         <main id="main">
@@ -379,6 +387,35 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           <footer className="page-footer">
             <span>SAPIENZA FOILING TEAM</span>
             <span>Progettiamo. Costruiamo. Navighiamo.</span>
+            <nav className="footer-actions" aria-label="Collegamenti del workspace">
+          <Link
+            href="/impostazioni"
+            className={
+              "footer-link " + (section === "impostazioni" ? "active" : "")
+            }
+          >
+            <Settings size={16} />
+            Impostazioni
+          </Link>
+          <Link
+            href="/richieste-crm"
+            className={
+              "footer-link " + (section === "richieste-crm" ? "active" : "")
+            }
+          >
+            <Lightbulb size={16} />
+            Richieste di sviluppo
+          </Link>
+          <a
+            href="https://sapienzafoilingteam.com"
+            target="_blank"
+            rel="noreferrer"
+            className="footer-link"
+          >
+            <ArrowUpRight size={16} />
+            Sito del team
+          </a>
+            </nav>
             <LegalLinks />
           </footer>
         </main>

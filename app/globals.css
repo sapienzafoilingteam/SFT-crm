@@ -556,18 +556,26 @@ select {
 .top-actions {
   gap: 15px;
 }
-.mode-badge {
-  display: flex;
+.topbar-link,
+.footer-link {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10px;
+  gap: 7px;
+  min-height: 44px;
   color: var(--muted);
+  white-space: nowrap;
 }
-.mode-badge span {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #b18b50;
+.topbar-link:hover,
+.topbar-link.active,
+.footer-link:hover,
+.footer-link.active {
+  color: var(--primary);
+}
+.topbar-link:focus-visible,
+.footer-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 4px;
 }
 main {
   max-width: 1560px;
@@ -626,6 +634,9 @@ main {
   padding: 22px 0;
   margin-top: 45px;
   letter-spacing: 1px;
+}
+.footer-actions {
+  display: none;
 }
 .page-footer span:last-child {
   letter-spacing: 0;
@@ -2136,8 +2147,11 @@ tfoot {
     z-index: 29;
   }
   .topbar {
-    height: 59px;
-    padding: 0 18px;
+    min-height: 59px;
+    height: auto;
+    padding: 7px 18px;
+    flex-wrap: wrap;
+    gap: 0 16px;
   }
   .crumb-root {
     display: none;
@@ -2146,14 +2160,37 @@ tfoot {
     font-size: 11px;
     gap: 7px;
   }
-  .top-actions {
-    gap: 6px;
-  }
-  .mode-badge {
-    font-size: 8px;
-  }
-  .avatar.small {
+  .topbar-link {
     display: none;
+  }
+  .page-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    margin-top: 32px;
+    padding: 24px 0;
+    font-size: 11px;
+  }
+  .footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    font-size: 13px;
+    letter-spacing: 0;
+  }
+  .page-footer .legal-links {
+    flex-wrap: wrap;
+    gap: 12px 20px;
+  }
+  .page-footer .legal-links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .top-actions {
+    gap: 12px;
+    margin-left: auto;
+    flex-wrap: wrap;
   }
   main {
     padding: 19px 18px 0;
@@ -2423,9 +2460,7 @@ tfoot {
   .cost-summary strong {
     font-size: 25px;
   }
-  .page-footer {
-    font-size: 7px;
-  }
+
   .compact-stats {
     gap: 12px;
     font-size: 10px;
@@ -3033,3 +3068,13 @@ html.dark .recruiting-actions .recruiting-reject { color: #ffc4c4; }
 @media (max-width: 700px) { .software-project-grid, .software-project-summary { grid-template-columns: 1fr; } .software-project-page .panel, .software-project-card { padding: 18px; } .software-clone-command { align-items: flex-start; flex-direction: column; } }
 
 .software-project-clone > [role="status"] { display: block; margin-top: 10px; font-size: 13px; }
+
+.feature-form { display: grid; gap: 16px; margin-top: 16px; }
+.feature-form label, .request-filter { display: grid; gap: 6px; font-size: 14px; }
+.feature-form input, .feature-form textarea, .feature-form select, .request-filter select { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--card); color: inherit; min-width: 0; }
+.feature-form textarea { min-height: 100px; resize: vertical; }
+.request-filter { max-width: 280px; margin-bottom: 20px; }
+.request-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 600px) {
+  .feature-form button { white-space: normal; height: auto; min-height: 44px; }
+}

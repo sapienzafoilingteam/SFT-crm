@@ -5,6 +5,7 @@ export function routeCollections(path: readonly string[]): Collection[] {
     const common: Collection[] = ['deliveries'];
     if (section === 'home')
         return [...common, 'links', 'pages', 'reports'];
+    if (section === 'richieste-crm') return [...common, 'reports'];
     if (section === 'agenda')
         return [...common, 'events', 'recurrences'];
     if (section === 'recruiting')
