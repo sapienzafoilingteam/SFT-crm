@@ -38,7 +38,6 @@ export function HomeView({ edit }: Props) {
     .slice(0, 3);
   return (
     <>
-      <section className="dashboard-intro" aria-labelledby="dashboard-title"><div><span className="eyebrow">IL WORKSPACE DEL TEAM</span><h1 id="dashboard-title">Il lavoro della squadra,<br />a portata di mano.</h1><p>Ritrova i reparti, consulta gli ultimi report e organizza le prossime attività della stagione.</p></div><Link href="/agenda" className="dashboard-summary"><strong>{data.deliveries.filter(d => d.season_id === season && !d.archived && d.status !== 'Consegnato / Pubblicato').length}</strong><span>scadenze aperte <ArrowUpRight size={14} /></span></Link></section>
       <SectionTitle title="Risorse del team">
         <Link href="/drive" className="text-link"><FolderOpen size={15}/>Drive del team</Link>
         <Button variant="ghost" size="sm" onClick={() => edit("links")}>
