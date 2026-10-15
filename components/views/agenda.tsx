@@ -3,8 +3,7 @@ import {
 Collection,
 Delivery,
 TEAMS,
-dateLabel,
-monthlyDeliveries
+dateLabel
 } from "@/lib/model";
 import { departmentMeetingsForMonth, isDepartmentMeeting } from "@/lib/department-resources";
 import { useViewState } from "@/lib/view-state";
@@ -12,7 +11,7 @@ import {
 CalendarDays,
 ChevronLeft,
 ChevronRight,
-Copy,
+CalendarPlus,
 List,
 Plus
 } from "lucide-react";
@@ -28,7 +27,7 @@ DialogTitle,
 } from "../ui/dialog";
 import { Badge,Empty,Heading,Toolbar,type Props } from "./shared";
 export function AgendaView({ edit }: Props) {
-  const { data, season, save, busy, notice } = useWorkspace();
+  const { data, season } = useWorkspace();
   const [query, setQuery] = useViewState(`agenda:${season}:query`, "");
   const [type, setType] = useViewState(`agenda:${season}:type`, "Tutti");
   const [team, setTeam] = useViewState(`agenda:${season}:team`, "");
@@ -38,7 +37,6 @@ export function AgendaView({ edit }: Props) {
   }, []);
   const [month, setMonth] = useViewState(`agenda:${season}:month`, () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()).slice(0, 7));
   const [meetingDetail, setMeetingDetail] = useState<ReturnType<typeof departmentMeetingsForMonth>[number] | null>(null);
-  const [generate, setGenerate] = useState(false);
   const [modelView, setModelView] = useState(false);
   const [y, m] = month.split("-").map(Number);
   const first = new Date(y, m - 1, 1);
@@ -73,7 +71,6 @@ export function AgendaView({ edit }: Props) {
     )
     .sort((a, b) => a.date.localeCompare(b.date)), [data.deliveries, data.events, season, month, query, type, team]);
   const byDate = useMemo(() => { const index = new Map<string, typeof items>(); for (const item of items) { const rows = index.get(item.date) || []; rows.push(item); index.set(item.date, rows); } return index; }, [items]);
-  const pending = monthlyDeliveries(data, season, month);
   const moveMonth = (delta: number) => {
     const next = new Date(y, m - 1 + delta, 1);
     setMonth(
@@ -87,15 +84,25 @@ export function AgendaView({ edit }: Props) {
         title="Agenda e Delivery"
         description="Report, contenuti, eventi e riunioni. Una vista condivisa su cosa fare."
       >
-        <Button variant="outline" onClick={() => setGenerate(true)}>
-          <Copy size={15} />
-          Prepara il mese
+        <Button variant="outline" asChild>
+          <a
+            href="https://calendar.google.com/calendar/u/1?cid=c2FwaWVuemFmb2lsaW5ndGVhbUBnbWFpbC5jb20"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-describedby="calendar-subscribe-help"
+          >
+            <CalendarPlus size={15} />
+            Aggiungi il calendario del team
+          </a>
         </Button>
         <Button onClick={() => edit("deliveries")}>
           <Plus size={16} />
           Nuova delivery
         </Button>
       </Heading>
+      <p id="calendar-subscribe-help" className="muted">
+        Apri Google Calendar con il tuo account personale e aggiungi il calendario di sapienzafoilingteam@gmail.com per vedere gli impegni SFT e i loro aggiornamenti anche sul telefono e sul computer. Il calendario è pubblico: non serve richiedere accesso.
+      </p>
       <Toolbar search={query} setSearch={setQuery}>
         <select
           aria-label="Tipo agenda"
@@ -277,62 +284,6 @@ export function AgendaView({ edit }: Props) {
           <DialogDescription className="muted">Ogni mercoledì, dalle 15:00 alle 19:00 · Ora di Roma</DialogDescription>
           {meetingDetail && <p>{dateLabel(meetingDetail.date)} · 15:00–19:00</p>}
           <p>Riunione settimanale di tutti i reparti.</p>
-        </DialogContent>
-      </Dialog>
-      <Dialog open={generate} onOpenChange={setGenerate}>
-        <DialogContent>
-          <DialogTitle className="dialog-title">
-            Prepara le delivery del mese
-          </DialogTitle>
-          <DialogDescription className="muted">
-            Crea gli impegni dal modello. Le voci già generate non verranno
-            duplicate.
-          </DialogDescription>
-          <label>
-            Mese
-            <input
-              type="month"
-              value={month}
-              onChange={(e) => {
-                if (e.target.value) setMonth(e.target.value);
-              }}
-            />
-          </label>
-          {pending.length ? (
-            pending.map((d) => (
-              <div className="task-row" key={d.id}>
-                <div>
-                  <strong>{d.title}</strong>
-                  <small>{d.type}</small>
-                </div>
-                <span>{dateLabel(d.date)}</span>
-              </div>
-            ))
-          ) : (
-            <Empty text="Tutte le delivery dei modelli sono già presenti, oppure non ci sono modelli per questa stagione." />
-          )}
-          <div className="dialog-footer">
-            <Button variant="outline" onClick={() => setGenerate(false)}>
-              Annulla
-            </Button>
-            <Button
-              disabled={busy || !pending.length}
-              onClick={async () => {
-                if (
-                  await save((s) => ({
-                    ...s,
-                    deliveries: [
-                      ...monthlyDeliveries(s, season, month),
-                      ...s.deliveries,
-                    ],
-                  }))
-                )
-                  setGenerate(false);
-              }}
-            >
-              Crea {pending.length} delivery
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
       <Dialog open={modelView} onOpenChange={setModelView}>
