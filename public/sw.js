@@ -1,5 +1,5 @@
 /* Bump the version whenever the public offline page changes. Never cache CRM or API responses. */
-const CACHE = 'sft-public-offline-v1';
+const CACHE = 'sft-public-offline-v2';
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['/offline.html', '/pwa/offline.js'])));
 });

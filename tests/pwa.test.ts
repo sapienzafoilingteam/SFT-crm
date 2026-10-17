@@ -18,7 +18,7 @@ function worker() {
     },
     caches: {
       open: async () => ({ addAll: async (paths: string[]) => { cached.push(...paths); } }),
-      keys: async () => ['sft-public-offline-v0', 'sft-public-offline-v1', 'other-app'],
+      keys: async () => ['sft-public-offline-v0', 'sft-public-offline-v2', 'other-app'],
       delete: async (name: string) => { deleted.push(name); return true; },
       match: async () => fallback,
     },

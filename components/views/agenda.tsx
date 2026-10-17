@@ -236,7 +236,7 @@ export function AgendaView({ edit }: Props) {
           </div>
         </div>
       ) : (
-        <div className="panel">
+        <div className="panel agenda-list">
           {items
             .filter((d) => !d.date || d.date.startsWith(month))
             .map((d, index, visible) => (

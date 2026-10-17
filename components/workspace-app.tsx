@@ -30,6 +30,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useNavigationAppearance } from "@/lib/navigation-appearance";
 import { useMobile } from "@/lib/use-mobile";
 import { MOBILE_TABS, mobileTab, mobileParent } from "@/lib/mobile-navigation";
+import { BrandLockup } from "./brand-lockup";
 import { CalendarSync } from "./calendar-sync";
 import { LegalLinks } from "./legal-page";
 import { useWorkspace } from "./provider";
@@ -208,13 +209,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
         />
       )}
       <aside className={"sidebar " + (mobile ? "open" : "")}>
-        <Link href="/" className="brand">
-          <img src="/logo.svg" alt="" />
-          <div>
-            SAPIENZA<span>FOILING TEAM</span>
-            <small>TEAM WORKSPACE</small>
-          </div>
-        </Link>
+        <Link href="/" className="brand" aria-label="Sapienza Foiling Team — Home"><BrandLockup /></Link>
         <button
           className="mobile-close btn-icon"
           aria-label="Chiudi menu"
@@ -335,7 +330,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
       </nav>
       <div className="main-shell">
         <header className="mobile-topbar">
-          {parent ? <Link href={parent} scroll={false} aria-label={parent === '/reparti' ? 'Torna ai reparti' : parent === '/altro' ? 'Torna ad Altro' : 'Torna al reparto'}><ChevronLeft size={22} /><span>Indietro</span></Link> : <Link href="/" scroll={false} className="mobile-brand" aria-label="SFT Home"><img src="/logo.svg" alt="" /><span>SFT</span></Link>}
+          {parent ? <Link href={parent} scroll={false} aria-label={parent === '/reparti' ? 'Torna ai reparti' : parent === '/altro' ? 'Torna ad Altro' : 'Torna al reparto'}><ChevronLeft size={22} /><span>Indietro</span></Link> : <Link href="/" scroll={false} className="mobile-brand" aria-label="SFT Home"><BrandLockup /></Link>}
           <span className="mobile-page-title">{crumb}</span>
           <span className="mobile-header-season">{SEASONS.find(s => s.id === season)?.name}</span>
         </header>

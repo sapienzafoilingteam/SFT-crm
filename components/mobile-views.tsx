@@ -22,7 +22,7 @@ export function MobileHome({ edit }: { edit: Edit }) {
   const todayItems = [...data.deliveries, ...data.events].filter(d => !d.archived && d.season_id === season && d.date === today);
   const todayCount = todayItems.length + departmentMeetingsForMonth(season, today.slice(0, 7)).filter(d => d.date === today).length;
   return <div className="mobile-home">
-    <div className="mobile-welcome"><img src="/logo.svg" alt="Sapienza Foiling Team" /><div><span>SAPIENZA FOILING TEAM</span><h1>Il tuo workspace</h1><p>{dateLabel(today)} · Stagione {SEASONS.find(s => s.id === season)?.name}</p></div></div>
+    <div className="mobile-welcome"><div><h1>Il tuo workspace</h1><p>{dateLabel(today)} · Stagione {SEASONS.find(s => s.id === season)?.name}</p></div></div>
     <section className="mobile-today"><div><span>Oggi</span><strong>{todayCount ? `${todayCount} ${todayCount === 1 ? 'impegno' : 'impegni'} in agenda` : 'La giornata del team'}</strong></div><Link href="/agenda" aria-label="Apri agenda"><CalendarDays size={22} /></Link></section>
     <Deadlines edit={edit} />
     <div className="mobile-section-title"><h2>Accesso rapido</h2><Button variant="ghost" size="icon" aria-label="Aggiungi link" onClick={() => edit('links')}><Plus size={20} /></Button></div>

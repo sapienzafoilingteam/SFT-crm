@@ -202,3 +202,98 @@
   .workspace[data-nav-style=ios] .mobile-tabbar, .dark .workspace[data-nav-style=ios] .mobile-tabbar { background: var(--card); -webkit-backdrop-filter: none; backdrop-filter: none; border-color: var(--muted-foreground); }
   .workspace[data-nav-style=ios] .mobile-tab-indicator, .dark .workspace[data-nav-style=ios] .mobile-tab-indicator { background: var(--muted); box-shadow: none; }
 }
+
+/* Official footer lockup; preserve the burgundy artwork in either theme. */
+.sft-brand-lockup, .brand .sft-brand-lockup { display: inline-flex; align-items: center; gap: 12px; color: var(--sft-burgundy); flex-shrink: 0; }
+.sft-brand-lockup .sft-brand-symbol { width: 36px; height: 48px; content: normal; }
+.sft-brand-lockup .sft-brand-wordmark { width: 156px; height: 48px; fill: currentColor; font-family: Kelson, sans-serif; font-size: 24px; font-weight: 800; }
+.brand:has(.sft-brand-lockup) { padding: 22px 16px; }
+.brand .sft-brand-lockup { gap: 10px; }
+.brand .sft-brand-symbol { width: 30px; height: 40px; }
+.brand .sft-brand-wordmark { width: 130px; height: 40px; }
+.dark .brand .sft-brand-symbol, .dark .mobile-brand .sft-brand-symbol { content: normal; }
+.dark .brand .sft-brand-lockup { background: var(--sft-paper); padding: 10px; border-radius: 8px; }
+/* On dark surfaces use neutral text with the exact burgundy as a surface/accent. */
+.dark :is(.text-link, .table-link, .deadline-late, .recruiting-name, .recruiting-date, .empty svg, .drive-path button, .drive-file-main svg, .drive-mobile-actions > summary) { color: var(--foreground); }
+.dark :is(.text-link, .table-link) { text-decoration: underline; text-decoration-color: var(--sft-burgundy); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+@media (max-width: 800px) {
+  .mobile-topbar { min-height: calc(72px + env(safe-area-inset-top)); gap: 12px; padding-inline: max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right)); }
+  .mobile-brand .sft-brand-lockup { gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--sft-paper); }
+  .mobile-brand .sft-brand-symbol { width: 24px; height: 32px; }
+  .mobile-brand .sft-brand-wordmark { width: 104px; height: 32px; }
+  .mobile-header-season { font-size: 10px; }
+  .mobile-topbar > a:has(.sft-brand-lockup) { min-width: 0; }
+  .workspace main { padding-top: 28px; }
+  .workspace .page-heading { margin-bottom: 28px; gap: 20px; }
+  .workspace .page-heading p { margin-top: 12px; line-height: 1.6; }
+  .workspace .heading-actions { gap: 12px; }
+  .workspace .mobile-welcome { margin-bottom: 28px; }
+  .workspace .mobile-welcome h1 { margin: 0 0 12px; font-size: 30px; }
+  .workspace .mobile-welcome p { font-size: 13px; line-height: 1.5; }
+  .workspace .mobile-today { padding: 22px; margin-bottom: 28px; }
+  .mobile-section-title { margin: 32px 4px 14px; }
+  .mobile-row { padding: 20px; gap: 16px; min-height: 76px; }
+  .mobile-row small { line-height: 1.6; margin-top: 6px; }
+  .mobile-preferences label { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); align-items: center; gap: 12px 16px; padding: 16px 20px; font-size: 14px; line-height: 1.5; }
+  .mobile-preferences select { width: 100%; max-width: 100%; min-width: 0; padding: 10px 8px; }
+  .mobile-preferences label:has([aria-label="Stile della barra di navigazione"]) { grid-template-columns: minmax(0,1fr); }
+  .mobile-install { margin-top: 28px; padding: 22px; gap: 18px; }
+  .workspace .deadlines-panel { padding: 20px; }
+  .workspace .deadlines-heading { margin: 0 0 18px; gap: 14px; }
+  .workspace .deadlines-heading p { margin-top: 8px; line-height: 1.5; }
+  .workspace .deadlines-heading .btn { font-size: 12px; padding-inline: 12px; }
+  .workspace .deadline-row { gap: 12px; padding-block: 18px 10px; grid-template-columns: 40px minmax(0,1fr); }
+  .workspace .deadline-row strong { font-size: 15px; line-height: 1.5; }
+  .workspace .deadline-row small { margin-top: 8px; font-size: 12px; line-height: 1.6; }
+  .workspace .deadline-status { gap: 10px; padding-top: 4px; }
+  .workspace .date-box { width: 40px; min-width: 40px; }
+  .workspace .delivery-quick-actions { padding: 8px 0 14px 52px; gap: 12px; }
+  .workspace .deadlines-footer { margin-top: 18px; }
+  .workspace .agenda-list { padding: 6px 20px 20px; }
+  .workspace .agenda-list .mobile-date-group { padding: 24px 0 10px; }
+  .workspace .agenda-list .deadline-row > .priority { color: var(--muted-foreground); font-size: 12px; }
+  .workspace .toolbar { gap: 12px; margin-block: 20px; }
+  .workspace .calendar-controls { margin-block: 24px; gap: 16px; flex-wrap: wrap; }
+  .workspace .management-tabs, .workspace .content-tabs { margin-bottom: 28px; padding-block: 4px 12px; gap: 8px; }
+  .workspace .period-filter { gap: 16px; margin-block: 20px 28px; }
+  .workspace .mobile-record-list button { display: grid; grid-template-columns: minmax(0,1fr) 20px; gap: 12px 16px; padding: 22px 20px; min-height: 112px; }
+  .mobile-record-copy { grid-column: 1; }
+  .mobile-record-copy strong { line-height: 1.5; }
+  .mobile-record-copy small { margin-block: 10px; line-height: 1.6; }
+  .mobile-record-value { grid-column: 1; font-size: 15px; }
+  .mobile-record-list svg { grid-column: 2; grid-row: 1 / span 2; }
+  .workspace .drive-browser { padding: 18px; }
+  .workspace .drive-toolbar { gap: 16px; }
+  .workspace .drive-search { margin-block: 20px; }
+  .workspace .drive-grid { gap: 14px; }
+  .workspace .drive-grid .drive-file { padding: 12px; }
+  .workspace .drive-grid .drive-file-main { padding: 8px 0; gap: 16px; }
+  .workspace .drive-file-main strong { font-size: 14px; line-height: 1.5; }
+  .workspace .drive-file-main small { margin-top: 8px; line-height: 1.5; }
+  .dialog-content .dialog-title { margin-bottom: 14px; }
+  .dialog-content > .muted { margin-bottom: 28px; line-height: 1.6; }
+  .dialog-content .form-grid { gap: 24px; }
+  .dialog-content label { gap: 10px; }
+  .dialog-content .progressive-section > summary { padding-block: 18px; }
+  .dialog-content .quick-choices { gap: 10px; }
+  .dialog-content .dialog-footer { gap: 12px; margin-top: 24px; padding-top: 20px; }
+  .workspace[data-nav-style=ios] .mobile-tab-indicator, .dark .workspace[data-nav-style=ios] .mobile-tab-indicator { background: var(--sft-burgundy); box-shadow: none; }
+  .workspace[data-nav-style=android] .mobile-tab-indicator::before, .dark .workspace[data-nav-style=android] .mobile-tab-indicator::before { background: var(--sft-burgundy); }
+  .workspace .mobile-tabbar a[aria-current=page] { color: white; }
+  .workspace[data-nav-style=android] .mobile-tabbar a[aria-current=page] .mobile-tab-label { color: var(--foreground); }
+  .dark .workspace :is(.mobile-topbar > a, .mobile-row > svg:first-child, .mobile-resource a > svg, .mobile-resource-configure > svg, .mobile-today a) { color: var(--foreground); }
+  .dark .workspace .department-monogram { background: var(--sft-burgundy); color: white; }
+  .dark .workspace .mobile-resource-configure > span { color: var(--foreground); }
+}
+@media (max-width: 360px) {
+  .mobile-topbar { gap: 8px; padding-inline: 12px; }
+  .mobile-brand .sft-brand-lockup { gap: 6px; padding-inline: 4px; }
+  .mobile-brand .sft-brand-symbol { width: 21px; height: 28px; }
+  .mobile-brand .sft-brand-wordmark { width: 91px; height: 28px; }
+  .mobile-header-season { display: none; }
+  .workspace .deadlines-heading { flex-direction: column; align-items: flex-start; }
+  .workspace .delivery-quick-actions { padding-left: 0; }
+  .workspace .deadlines-heading .btn { width: 100%; }
+  .mobile-preferences label { grid-template-columns: minmax(0,1fr); }
+  .workspace .drive-grid { grid-template-columns: minmax(0,1fr); }
+}
