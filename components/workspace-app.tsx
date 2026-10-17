@@ -6,6 +6,8 @@ import { live, supabase } from "@/lib/repository";
 import { routeCollections } from '@/lib/workspace-resources';
 import {
   ArrowUpRight,
+  ChevronLeft,
+  MoreHorizontal,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -24,14 +26,20 @@ import {
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useNavigationAppearance } from "@/lib/navigation-appearance";
+import { useMobile } from "@/lib/use-mobile";
+import { MOBILE_TABS, mobileTab, mobileParent } from "@/lib/mobile-navigation";
 import { CalendarSync } from "./calendar-sync";
 import { LegalLinks } from "./legal-page";
 import { useWorkspace } from "./provider";
 import { Button } from "./ui/button";
+const ViewLoading = () => <div className="empty" role="status">Caricamento della pagina…</div>;
+const MobileHome = dynamic(() => import("./mobile-views").then(m => m.MobileHome), { loading: ViewLoading });
+const DepartmentsView = dynamic(() => import("./mobile-views").then(m => m.DepartmentsView), { loading: ViewLoading });
+const MoreView = dynamic(() => import("./mobile-views").then(m => m.MoreView), { loading: ViewLoading });
 const DriveView = dynamic(() => import("./drive-view").then(m => m.DriveView), { loading: () => <div className="empty" role="status">Caricamento Drive…</div> });
 const RecruitingView = dynamic(() => import("./recruiting-view").then(m => m.RecruitingView));
-const ViewLoading = () => <div className="empty" role="status">Caricamento della pagina…</div>;
 const RecordEditor = dynamic(() => import('./record-editor').then(m => m.RecordEditor));
 const SoftwareProjectPage = dynamic(() => import("./software-projects").then(m => m.SoftwareProjectPage), { loading: ViewLoading });
 const HomeView = dynamic(() => import("./views/home").then(m => m.HomeView), { loading: ViewLoading });
@@ -61,9 +69,14 @@ const management = [
 ];
 export function WorkspaceApp({ path }: { path: string[] }) {
   const { data, season, setSeason, ready, ensure, isLoaded, notice } = useWorkspace();
+  const isMobile = useMobile();
+  const { style: navigationStyle } = useNavigationAppearance();
   const routeKey = path.join('/');
   const currentView = useRef(routeKey + season); currentView.current = routeKey + season;
-  const required = useMemo(() => routeCollections(routeKey.split('/').filter(Boolean)), [routeKey]);
+  const required = useMemo(() => {
+    const keys = routeCollections(routeKey.split('/').filter(Boolean));
+    return isMobile && (!routeKey || routeKey === 'home') ? [...new Set<Collection>([...keys, 'events'])] : keys;
+  }, [routeKey, isMobile]);
   const [loadError, setLoadError] = useState('');
   const [retry, setRetry] = useState(0);
   useEffect(() => {
@@ -73,6 +86,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
     return () => { active = false; };
   }, [ready, required, season, ensure, retry]);
   const { resolvedTheme, setTheme } = useTheme();
+  const scrollPositions = useRef(new Map<string, number>());
   const [mobile, setMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [editor, setEditor] = useState<{
@@ -85,7 +99,19 @@ export function WorkspaceApp({ path }: { path: string[] }) {
     setEditor(null);
     setMobile(false);
   }, [path.join("/"), season]);
+  const viewReady = ready && isLoaded(required);
+  useEffect(() => {
+    if (!isMobile || !viewReady) return;
+    const key = routeKey + season;
+    let lastY = scrollPositions.current.get(key) || 0;
+    const frame = requestAnimationFrame(() => { if (!window.location.hash) window.scrollTo(0, lastY); });
+    const remember = () => { lastY = window.scrollY; };
+    window.addEventListener('scroll', remember, { passive: true });
+    return () => { cancelAnimationFrame(frame); scrollPositions.current.set(key, lastY); window.removeEventListener('scroll', remember); };
+  }, [isMobile, viewReady, routeKey, season]);
   const section = path[0] || "home";
+  const parent = mobileParent(path);
+  const currentTab = mobileTab(section);
   const team = TEAMS.find((t) => t.id === path[1]);
   const isSoftwareProject = section === "team" && team?.id === "elettronica" && path[2] === "progetti";
   const softwareProject = isSoftwareProject ? findProject(path[3] || "") : undefined;
@@ -127,6 +153,8 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   const crumb =
     section === "home"
       ? "Home"
+      : section === "reparti" ? "Reparti"
+      : section === "altro" ? "Altro"
       : section === "richieste-crm" ? "Richieste di sviluppo"
       : section === "agenda"
         ? "Agenda e Delivery"
@@ -139,7 +167,9 @@ export function WorkspaceApp({ path }: { path: string[] }) {
               : (softwareProject ? `${team?.name} / ${softwareProject.title}` : team?.name) || "Pagina non trovata";
   const args = { edit: open };
   let content;
-  if (section === "home") content = <HomeView {...args} />;
+  if (section === "home") content = isMobile ? <MobileHome {...args} /> : <HomeView {...args} />;
+  else if (section === "reparti") content = <DepartmentsView />;
+  else if (section === "altro") content = <MoreView />;
   else if (section === "richieste-crm") content = <FeatureRequestsView />;
   else if (section === "agenda") content = <AgendaView {...args} />;
   else if (section === "drive") content = <DriveView />;
@@ -166,7 +196,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
       </div>
     );
   return (
-    <div className="workspace">
+    <div className="workspace" data-section={section} data-nav-style={navigationStyle}>
       <a className="skip-link" href="#main">
         Vai al contenuto
       </a>
@@ -296,7 +326,19 @@ export function WorkspaceApp({ path }: { path: string[] }) {
           </div>
         </div>
       </aside>
+      <nav className="mobile-tabbar" aria-label="Navigazione mobile" style={{ '--active-tab': MOBILE_TABS.findIndex(tab => tab.key === currentTab) } as CSSProperties}>
+        <span className="mobile-tab-indicator" aria-hidden="true" />
+        {MOBILE_TABS.map(tab => {
+          const Icon = { home: Home, agenda: CalendarDays, reparti: Users, drive: FolderOpen, altro: MoreHorizontal }[tab.key];
+          return <Link href={tab.href} scroll={false} key={tab.key} aria-current={currentTab === tab.key ? 'page' : undefined}><span className="mobile-tab-icon"><Icon size={23} strokeWidth={currentTab === tab.key ? 2.3 : 1.8} /></span><span className="mobile-tab-label">{tab.label}</span></Link>;
+        })}
+      </nav>
       <div className="main-shell">
+        <header className="mobile-topbar">
+          {parent ? <Link href={parent} scroll={false} aria-label={parent === '/reparti' ? 'Torna ai reparti' : parent === '/altro' ? 'Torna ad Altro' : 'Torna al reparto'}><ChevronLeft size={22} /><span>Indietro</span></Link> : <Link href="/" scroll={false} className="mobile-brand" aria-label="SFT Home"><img src="/logo.svg" alt="" /><span>SFT</span></Link>}
+          <span className="mobile-page-title">{crumb}</span>
+          <span className="mobile-header-season">{SEASONS.find(s => s.id === season)?.name}</span>
+        </header>
         <header className="topbar">
           <div className="breadcrumb">
             <Button

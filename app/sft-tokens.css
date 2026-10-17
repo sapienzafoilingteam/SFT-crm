@@ -4,6 +4,7 @@
   --sft-burgundy: #822433;
   --sft-burgundy-dark: #6b1d28;
   --sft-burgundy-light: #a34252;
+  --sft-red-accessible: #e64b4b;
   --sft-void: #0a0808;
   --sft-carbon: #141212;
   --sft-paper: #fffcfd;
@@ -64,34 +65,34 @@
   --card-foreground: #fffcfd;
   --popover: #1d181a;
   --popover-foreground: #fffcfd;
-  --primary: #efadba;
-  --primary-foreground: #381017;
-  --secondary: #35252b;
-  --secondary-foreground: #f6dce3;
+  --primary: var(--sft-red-accessible);
+  --primary-foreground: #200a0c;
+  --secondary: #302020;
+  --secondary-foreground: #f6d5d5;
   --muted: #231e20;
   --muted-foreground: #bfb1b6;
-  --accent: #35252b;
-  --accent-foreground: #f6dce3;
-  --destructive: #fa8896;
-  --destructive-foreground: #3b0c15;
+  --accent: #302020;
+  --accent-foreground: #f6d5d5;
+  --destructive: #ff7770;
+  --destructive-foreground: #361311;
   --border: #3f3438;
   --input: #89767f;
-  --ring: #efadba;
+  --ring: var(--sft-red-accessible);
   --sidebar: #141212;
   --sidebar-foreground: #fffcfd;
-  --sidebar-primary: #efadba;
-  --sidebar-primary-foreground: #381017;
-  --sidebar-accent: #35252b;
-  --sidebar-accent-foreground: #f6dce3;
+  --sidebar-primary: var(--sft-red-accessible);
+  --sidebar-primary-foreground: #200a0c;
+  --sidebar-accent: #302020;
+  --sidebar-accent-foreground: #f6d5d5;
   --sidebar-border: #3f3438;
-  --sidebar-ring: #efadba;
+  --sidebar-ring: var(--sft-red-accessible);
   --success: #8dd6ac;
   --success-soft: #162d21;
   --warning: #f2c572;
   --warning-soft: #302612;
   --info: #98ccef;
   --info-soft: #152937;
-  --chart-1: #efadba;
+  --chart-1: var(--sft-red-accessible);
   --chart-2: #98ccef;
   --chart-3: #8dd6ac;
   --chart-4: #f2c572;
@@ -102,4 +103,4 @@
 
 /* Additional paired error surfaces for CRM status controls. */
 :root { --destructive-soft: #fff0f1; }
-.dark { --destructive-soft: #3b0c15; }
+.dark { --destructive-soft: #361311; }

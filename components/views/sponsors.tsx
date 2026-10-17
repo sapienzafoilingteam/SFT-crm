@@ -5,6 +5,8 @@ Sponsor,
 dateLabel,
 money
 } from "@/lib/model";
+import { useMobile } from "@/lib/use-mobile";
+import { MobileRecordList } from "../mobile-record-list";
 import { useViewState } from "@/lib/view-state";
 import {
 CalendarDays,
@@ -15,7 +17,7 @@ List,
 Plus
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect,useState } from "react";
+import { useState } from "react";
 import { useWorkspace } from "../provider";
 import { QuickChoices } from "../quick-choices";
 import { Button } from "../ui/button";
@@ -30,10 +32,9 @@ export function SponsorsView({ edit }: Props) {
   const { data, season, put, busy } = useWorkspace();
   const [query, setQuery] = useViewState(`sponsors:${season}:query`, "");
   const [type, setType] = useViewState(`sponsors:${season}:type`, "Tutti");
-  const [mode, setMode] = useViewState(`sponsors:${season}:mode`, "kanban");
-  useEffect(() => {
-    if (window.matchMedia("(max-width:600px)").matches) setMode("lista");
-  }, []);
+  const isMobile = useMobile();
+  const [savedMode, setMode] = useViewState(`sponsors:${season}:mode`, "");
+  const mode = savedMode || (isMobile ? "lista" : "kanban");
   const [outcome, setOutcome] = useState("Pipeline");
   const [selected, setSelected] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -232,7 +233,7 @@ export function SponsorsView({ edit }: Props) {
             </section>
           ))}
         </div>
-      ) : (
+      ) : isMobile ? <MobileRecordList items={rows.map(s => ({ id: s.id, title: s.title, subtitle: `${s.next_action || s.type} · ${dateLabel(s.due_date)}`, value: money(s.amount_cents), status: s.stage }))} onOpen={setSelected} empty="Nessuna trattativa corrisponde ai filtri." /> : (
         <div className="panel table-scroll">
           <table>
             <thead>

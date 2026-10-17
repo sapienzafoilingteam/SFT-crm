@@ -5,6 +5,8 @@ dateLabel,
 money,
 totalCosts
 } from "@/lib/model";
+import { MobileRecordList } from "../mobile-record-list";
+import { useMobile } from "@/lib/use-mobile";
 import { useViewState } from "@/lib/view-state";
 import {
 MoreHorizontal,
@@ -22,6 +24,7 @@ DialogTitle,
 import { ArchiveButton,Badge,DownloadCsv,Empty,External,Heading,Toolbar,type Props } from "./shared";
 export function CostsView({ edit }: Props) {
   const { data, season } = useWorkspace();
+  const isMobile = useMobile();
   const [query, setQuery] = useViewState(`costs:${season}:query`, "");
   const [category, setCategory] = useViewState(`costs:${season}:category`, "Tutte");
   const [team, setTeam] = useViewState(`costs:${season}:team`, "");
@@ -152,7 +155,7 @@ export function CostsView({ edit }: Props) {
           </Button>
         )}
       </div>
-      <div className="panel table-scroll">
+      {isMobile ? <MobileRecordList items={rows.map(c => ({ id: c.id, title: c.title, subtitle: `${dateLabel(c.date)} · ${c.vendor || c.category}`, value: money(c.amount_cents), status: TEAMS.find(t => t.id === c.team_id)?.short || 'Team' }))} onOpen={setSelected} empty="Nessun costo corrisponde ai filtri." /> : <div className="panel table-scroll">
         <table>
           <thead>
             <tr>
@@ -209,7 +212,7 @@ export function CostsView({ edit }: Props) {
           </tfoot>
         </table>
         {!rows.length && <Empty text="Nessun costo corrisponde ai filtri." />}
-      </div>
+      </div>}
       <Dialog
         open={!!current}
         onOpenChange={(v) => {

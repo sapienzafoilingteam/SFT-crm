@@ -11,8 +11,11 @@ Archive,
 ArrowUpRight,
 Download,
 Layers,
-Search
+Search,
+SlidersHorizontal
 } from "lucide-react";
+import { useMobile } from "@/lib/use-mobile";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "../ui/dialog";
 import { useState } from "react";
 import { useWorkspace } from "../provider";
 import { Button } from "../ui/button";
@@ -98,6 +101,8 @@ export function Toolbar({
   setSearch: (s: string) => void;
   children?: React.ReactNode;
 }) {
+  const mobile = useMobile();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   return (
     <div className="toolbar">
       <div className="search-box">
@@ -109,7 +114,10 @@ export function Toolbar({
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      {children}
+      {mobile && children ? <>
+        <Button variant="outline" className="mobile-filter-button" onClick={() => setFiltersOpen(true)}><SlidersHorizontal size={18} />Filtri e vista</Button>
+        <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}><DialogContent className="mobile-filter-sheet"><DialogTitle className="dialog-title">Filtri e vista</DialogTitle><DialogDescription className="muted">Scegli cosa mostrare nella pagina.</DialogDescription><div className="mobile-filter-fields">{children}</div><div className="dialog-footer"><Button onClick={() => setFiltersOpen(false)}>Mostra risultati</Button></div></DialogContent></Dialog>
+      </> : children}
     </div>
   );
 }

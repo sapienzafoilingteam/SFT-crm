@@ -8,6 +8,7 @@ DriveFile,
 GOOGLE_PREFIX,
 } from "@/lib/google-drive";
 import { live } from "@/lib/repository";
+import { useMobile } from "@/lib/use-mobile";
 import { useViewState } from "@/lib/view-state";
 import {
 ArrowUpRight,
@@ -17,6 +18,7 @@ Eye,
 FileText,
 FolderOpen,
 LayoutGrid,
+MoreHorizontal,
 List,
 Pencil,
 Plus,
@@ -63,6 +65,7 @@ function googleLink(file: DriveFile) {
 }
 export function DriveView({ team }: { team?: { id: string; name: string } } = {}) {
   const demo = !live;
+  const isMobile = useMobile();
   const [ready, setReady] = useState(false);
   const [checking, setChecking] = useState(!demo);
   const [storage, setStorage] = useState<DriveStorage | null>(null);
@@ -363,7 +366,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
     });
   }
   const controls = (file: DriveFile) => (
-    <div className="drive-file-actions">
+    <details className="drive-mobile-actions" open={isMobile ? undefined : true}><summary aria-label={`Azioni per ${file.name}`}><MoreHorizontal size={20} /></summary><div className="drive-file-actions">
       {file.mimeType !== DRIVE_FOLDER && (
         <>
           <button
@@ -436,7 +439,7 @@ export function DriveView({ team }: { team?: { id: string; name: string } } = {}
       >
         <Trash2 size={16} />
       </button>
-    </div>
+    </div></details>
   );
   return (
     <>

@@ -186,6 +186,7 @@ export function Provider({ children, publicHome = false, inactive = false }: {
     const save = useCallback(async (fn: (data: Workspace) => Workspace, options?: { silent?: boolean }) => {
         if (saving.current || !authorized.current)
             return false;
+        if (live && !navigator.onLine) { notice("Sei offline. Riconnettiti prima di salvare."); return false; }
         saving.current = true;
         setBusy(true);
         const generation = epoch.current, selectedSeason = activeSeason.current;

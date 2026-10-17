@@ -5,6 +5,8 @@ Template,
 safeUrl
 } from "@/lib/model";
 import { documentUrl,live,uploadDocument } from "@/lib/repository";
+import { MobileRecordList } from "../mobile-record-list";
+import { useMobile } from "@/lib/use-mobile";
 import { useViewState } from "@/lib/view-state";
 import {
 ArrowRight,
@@ -33,6 +35,7 @@ export function LibraryView({
   mode,
   edit,
 }: Props & { mode: "contracts" | "templates" }) {
+  const isMobile = useMobile();
   const { data, season, notice, put, busy } = useWorkspace();
   const [query, setQuery] = useViewState(`library:${season}:query`, "");
   const [tab, setTab] = useViewState(`library:${season}:tab`, mode === "contracts" ? "contratti" : "email");
@@ -132,7 +135,7 @@ export function LibraryView({
       </div>
       {mode === "templates" && <p><Link href="/design-system/index.html">Apri il design system completo →</Link></p>}
       <Toolbar search={query} setSearch={setQuery} />
-      {tab === "contratti" ? (
+      {tab === "contratti" ? isMobile ? <MobileRecordList items={filtered(data.contracts).map(c => ({ id: c.id, title: c.title, subtitle: `${c.type} · ${data.sponsors.find(s => s.id === c.sponsor_id)?.title || 'Partner da definire'}`, status: c.status }))} onOpen={setSelected} empty="Nessun contratto per questa stagione." /> : (
         <div className="panel table-scroll">
           <table>
             <thead>

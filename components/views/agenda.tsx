@@ -6,6 +6,7 @@ TEAMS,
 dateLabel
 } from "@/lib/model";
 import { departmentMeetingsForMonth, isDepartmentMeeting } from "@/lib/department-resources";
+import { useMobile } from "@/lib/use-mobile";
 import { useViewState } from "@/lib/view-state";
 import {
 CalendarDays,
@@ -15,7 +16,7 @@ CalendarPlus,
 List,
 Plus
 } from "lucide-react";
-import { useEffect,useMemo,useState } from "react";
+import { Fragment,useMemo,useState } from "react";
 import { DeliveryActions } from "../delivery-actions";
 import { useWorkspace } from "../provider";
 import { Button } from "../ui/button";
@@ -28,13 +29,13 @@ DialogTitle,
 import { Badge,Empty,Heading,Toolbar,type Props } from "./shared";
 export function AgendaView({ edit }: Props) {
   const { data, season } = useWorkspace();
+  const currentMonth = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()).slice(0, 7);
   const [query, setQuery] = useViewState(`agenda:${season}:query`, "");
   const [type, setType] = useViewState(`agenda:${season}:type`, "Tutti");
   const [team, setTeam] = useViewState(`agenda:${season}:team`, "");
-  const [mode, setMode] = useViewState(`agenda:${season}:mode`, "calendario");
-  useEffect(() => {
-    if (window.matchMedia("(max-width:600px)").matches) setMode("lista");
-  }, []);
+  const isMobile = useMobile();
+  const [savedMode, setMode] = useViewState(`agenda:${season}:mode`, "");
+  const mode = savedMode || (isMobile ? "lista" : "calendario");
   const [month, setMonth] = useViewState(`agenda:${season}:month`, () => new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()).slice(0, 7));
   const [meetingDetail, setMeetingDetail] = useState<ReturnType<typeof departmentMeetingsForMonth>[number] | null>(null);
   const [modelView, setModelView] = useState(false);
@@ -84,7 +85,7 @@ export function AgendaView({ edit }: Props) {
         title="Agenda e Delivery"
         description="Report, contenuti, eventi e riunioni. Una vista condivisa su cosa fare."
       >
-        <Button variant="outline" asChild>
+        <Button variant="outline" className="calendar-subscribe-button" asChild>
           <a
             href="https://calendar.google.com/calendar/u/1?cid=c2FwaWVuemFmb2lsaW5ndGVhbUBnbWFpbC5jb20"
             target="_blank"
@@ -100,9 +101,10 @@ export function AgendaView({ edit }: Props) {
           Nuova delivery
         </Button>
       </Heading>
-      <p id="calendar-subscribe-help" className="muted">
+      <p id="calendar-subscribe-help" className="muted calendar-subscribe-help">
         Apri Google Calendar con il tuo account personale e aggiungi il calendario di sapienzafoilingteam@gmail.com per vedere gli impegni SFT e i loro aggiornamenti anche sul telefono e sul computer. Il calendario è pubblico: non serve richiedere accesso.
       </p>
+      <details className="mobile-calendar-help"><summary>Calendario del team sul telefono</summary><p>In Google Calendar aggiungi il calendario pubblico del team al tuo account personale per ricevere gli aggiornamenti.</p><a className="text-link" href="https://calendar.google.com/calendar/u/1?cid=c2FwaWVuemFmb2lsaW5ndGVhbUBnbWFpbC5jb20" target="_blank" rel="noopener noreferrer">Aggiungi il calendario del team <CalendarPlus size={16} /></a></details>
       <Toolbar search={query} setSearch={setQuery}>
         <select
           aria-label="Tipo agenda"
@@ -156,9 +158,9 @@ export function AgendaView({ edit }: Props) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setMonth("2026-10")}
+            onClick={() => setMonth(currentMonth)}
           >
-            Mese demo
+            Oggi
           </Button>
           <Button
             variant="outline"
@@ -196,7 +198,7 @@ export function AgendaView({ edit }: Props) {
                     className={
                       "calendar-day " +
                       (day < 1 || day > days ? "outside" : "") +
-                      (date === "2026-10-01" ? " today" : "")
+                      (date === new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date()) ? " today" : "")
                     }
                     key={i}
                   >
@@ -237,8 +239,8 @@ export function AgendaView({ edit }: Props) {
         <div className="panel">
           {items
             .filter((d) => !d.date || d.date.startsWith(month))
-            .map((d) => (
-              <div className="deadline-action-row" key={d.id}><button
+            .map((d, index, visible) => (
+              <Fragment key={d.id}>{(index === 0 || visible[index - 1].date !== d.date) && <h2 className="mobile-date-group">{d.date ? dateLabel(d.date) : 'Senza data'}</h2>}<div className="deadline-action-row"><button
                 className="deadline-row"
                 onClick={() => isDepartmentMeeting(d.id) ? setMeetingDetail(d as NonNullable<typeof meetingDetail>) : edit(d.collection, d)}
               >
@@ -255,7 +257,7 @@ export function AgendaView({ edit }: Props) {
                 </div>
                 <Badge>{d.status}</Badge>
                 <span className="priority">{d.priority}</span>
-              </button>{d.collection === 'deliveries' && <DeliveryActions row={d as Delivery} />}</div>
+              </button>{d.collection === 'deliveries' && <DeliveryActions row={d as Delivery} />}</div></Fragment>
             ))}
           {!items.some((d) => !d.date || d.date.startsWith(month)) && (
             <Empty text="Nessun impegno in questo mese." />

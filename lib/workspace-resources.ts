@@ -3,6 +3,7 @@ import { emptyWorkspace } from './repository';
 export function routeCollections(path: readonly string[]): Collection[] {
     const section = path[0] || 'home';
     const common: Collection[] = ['deliveries'];
+    if (section === 'reparti') return [...common, 'links'];
     if (section === 'home')
         return [...common, 'links', 'pages', 'reports'];
     if (section === 'richieste-crm') return [...common, 'reports'];
