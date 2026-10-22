@@ -1,0 +1,62 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+import sharp from 'sharp';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// Hand-built geometry in the original coordinate system. Each element is a
+// closed silhouette; no raster tracing, external fonts, masks or white patches.
+const shapes = [
+  ['sail-and-s', `M 779 22
+    C 783 22 788 23 794 24
+    L 936 53 Q 954 56 950 74
+    C 920 254 869 505 766 754
+    Q 762 768 752 768 H 533
+    L 361 880 L 337 939 Q 333 951 321 951
+    H 128 L 114 986 H 230 Q 249 986 241 1007
+    L 151 1234 Q 147 1245 137 1245 H 48
+    Q 31 1245 36 1230 L 40 1219 Q 44 1209 53 1209
+    H 121 L 192 1037 Q 198 1024 184 1024 H 79
+    Q 61 1024 68 1006 L 99 928 Q 103 915 116 915
+    H 312 L 382 743
+    C 480 491 612 230 765 32 Q 771 22 779 22 Z`],
+  ['lower-sail', `M 277 739 H 363 L 304 890 H 290
+    Q 279 890 277 877 L 264 754 Q 262 739 277 739 Z`],
+  ['rider', `M 855 745
+    C 875 742 891 756 889 775
+    C 886 810 869 848 847 868
+    Q 838 877 824 875 L 784 870 L 775 883 Q 772 891 762 891
+    H 451 Q 442 891 447 883
+    C 505 866 577 859 672 860
+    L 742 827 Q 751 822 761 826 L 810 835
+    Q 820 824 827 803 Q 834 782 821 790
+    C 799 804 768 809 742 810
+    Q 732 810 734 803 Q 735 798 747 795
+    L 784 783 L 828 752 Q 840 745 855 745 Z`],
+  ['detail', `M 521 804 Q 524 802 528 807 L 556 836
+    Q 559 840 551 842 L 454 859 Q 443 862 449 854 Z`],
+  ['f-and-foil', `M 393 915 H 541 Q 546 915 543 923
+    L 535 943 Q 532 951 521 951 H 411 L 397 986 H 508
+    Q 516 986 513 994 L 504 1016 Q 501 1025 491 1025
+    H 386 Q 380 1025 377 1033 L 306 1209
+    C 331 1220 362 1234 390 1251
+    C 316 1245 236 1217 187 1183
+    Q 177 1174 187 1176 L 263 1200 Q 267 1201 270 1193
+    L 378 928 Q 383 915 393 915 Z`],
+  ['t-and-foil', `M 593 915 H 752 Q 761 915 758 923
+    L 750 943 Q 747 951 738 951 H 689 Q 681 951 677 960
+    L 582 1195 Q 578 1203 587 1207
+    C 607 1214 627 1223 645 1232
+    C 602 1229 550 1212 495 1183 Q 481 1175 494 1178
+    L 546 1191 L 636 964 Q 642 951 628 951 H 578
+    Q 568 951 572 941 L 579 924 Q 583 915 593 915 Z`],
+];
+const colors = { original: '#802431', burgundy: '#822433', ink: '#1a1718', white: '#ffffff' };
+for (const [variant, color] of Object.entries(colors)) {
+  const title = `Sapienza Foiling Team — ${variant}`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 969 1280" width="969" height="1280" role="img" aria-labelledby="sft-title sft-description">\n  <title id="sft-title">${title}</title>\n  <desc id="sft-description">Marchio con vela, velista e monogramma SFT. Ridisegno vettoriale a curve pulite.</desc>\n  <g fill="${color}">\n${shapes.map(([id,d]) => `    <path id="${id}" d="${d.replace(/\s+/g, ' ').trim()}"/>`).join('\n')}\n    <circle id="rider-head" cx="860" cy="709" r="24"/>\n  </g>\n</svg>\n`;
+  await mkdir(path.join(root, 'public/brand/logos'), { recursive: true });
+  await writeFile(path.join(root, `public/brand/logos/sft-${variant}.svg`), svg);
+  await sharp(Buffer.from(svg)).resize({height:2560}).png().toFile(path.join(root, `public/brand/exports/sft-${variant}.png`));
+}
+console.log('Rebuilt four SVG variants and transparent PNG exports at 2560 px.');

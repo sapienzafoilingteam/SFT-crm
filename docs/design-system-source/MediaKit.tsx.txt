@@ -1,0 +1,41 @@
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, Copy, Download } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { BrandLockup } from '@/components/sft/brand';
+import content from '../public/media-kit/content.json';
+
+const variants = [
+  { id: 'burgundy', name: 'Bordeaux', background: 'light' },
+  { id: 'white', name: 'Bianco', background: 'dark' },
+  { id: 'ink', name: 'Ink', background: 'light' },
+  { id: 'original', name: 'Originale', background: 'light' },
+];
+
+export function MediaKit() {
+  useEffect(() => {
+    if (window.location.hash === '#media-kit') document.getElementById('media-kit')?.scrollIntoView();
+  }, []);
+  const [language, setLanguage] = useState<'it' | 'en'>('it');
+  async function copy(text: string) {
+    try { await navigator.clipboard.writeText(text); toast.success('Testo copiato'); }
+    catch { toast.error('Copia non disponibile. Seleziona il testo oppure scarica la presentazione.'); }
+  }
+  return <section id="media-kit" className="catalog-section media-kit" aria-labelledby="media-kit-title">
+    <header><p className="sft-eyebrow text-primary">Per stampa, partner e comunicazione</p><h2 id="media-kit-title" className="sft-display">Media kit</h2><p>Il team, in parole e immagini. Presentazioni, marchi e fotografie raccolti in un unico posto.</p></header>
+    <div className="media-kit-cover">
+      <div className="media-kit-cover-copy"><BrandLockup inverse assetBase="./brand" label="Media kit"/><h3 className="sft-display">Dall’idea.<br/>All’acqua.<br/>Al volo.</h3><p>I materiali per raccontare Sapienza Foiling Team.</p><Button variant="secondary" asChild><a href="./media-kit/SFT-media-kit.zip" download>Scarica il media kit ZIP<Download aria-hidden="true"/></a></Button><span>Loghi SVG e PNG · 4 fotografie · testi IT / EN</span></div>
+      <figure><img src="./brand/photos/boat-flight.jpg" alt="Il Moth del Sapienza Foiling Team in volo sui foil" loading="lazy"/><figcaption>Progettazione, costruzione e test in acqua.</figcaption></figure>
+    </div>
+    <div className="media-kit-heading"><div><p className="sft-eyebrow text-primary">Il progetto</p><h3 className="sft-display">Le parole per presentarci.</h3></div><div className="flex gap-2" role="group" aria-label="Lingua della presentazione">{(['it','en'] as const).map(lang => <Button key={lang} variant={language === lang ? 'default' : 'outline'} aria-pressed={language === lang} onClick={() => setLanguage(lang)}>{lang === 'it' ? 'Italiano' : 'English'}</Button>)}</div></div>
+    <div className="catalog-grid">{(['short','extended'] as const).map(kind => <article className="sample" key={kind}><header className="sample-header"><h4>{kind === 'short' ? 'Presentazione breve' : 'Presentazione estesa'}</h4><Button variant="ghost" size="sm" aria-label={`Copia la presentazione ${kind === 'short' ? 'breve' : 'estesa'}`} onClick={() => copy(content[language][kind])}><Copy aria-hidden="true"/>Copia</Button></header><div className="sample-body"><p lang={language} className="media-kit-bio">{content[language][kind]}</p></div></article>)}</div>
+    <div className="media-kit-text-download"><Button variant="outline" asChild><a href="./media-kit/presentazione.txt" download>Scarica i testi IT / EN<Download aria-hidden="true"/></a></Button><p>Testi editoriali · aggiornamento 22 ottobre 2026</p></div>
+    <div className="media-kit-heading"><div><p className="sft-eyebrow text-primary">Identità visiva</p><h3 className="sft-display">Il nostro marchio.</h3></div><a href="#fondazioni" className="media-kit-link">Colori e tipografia<ArrowUpRight size={16}/></a></div>
+    <div className="media-kit-logos">{variants.map(variant => <article className="sample" key={variant.id}><div className={`media-kit-logo media-kit-logo-${variant.background}`}><img src={`./brand/logos/sft-${variant.id}.svg`} alt={`Sapienza Foiling Team · logo ${variant.name.toLowerCase()}`} loading="lazy"/></div><div className="media-kit-asset-footer"><h4>{variant.name}</h4><div className="flex gap-2">{['svg','png'].map(ext => <Button variant="outline" size="sm" asChild key={ext}><a href={`./brand/${ext === 'svg' ? 'logos' : 'exports'}/sft-${variant.id}.${ext}`} download aria-label={`Scarica logo ${variant.name} ${ext.toUpperCase()}`}>{ext.toUpperCase()}<Download aria-hidden="true"/></a></Button>)}</div></div></article>)}</div>
+    <p className="catalog-note mt-6">Mantieni proporzioni e colori originali. Usa il marchio bianco su fondi scuri, bordeaux o ink su fondi chiari. Lascia spazio intorno al logo e scegli un fondo che ne mantenga la leggibilità.</p>
+    <div className="media-kit-heading"><div><p className="sft-eyebrow text-primary">Archivio fotografico</p><h3 className="sft-display">Il progetto, dal vivo.</h3></div><p>Fotografie dalla raccolta del team</p></div>
+    <div className="catalog-grid">{content.photos.map(photo => <article className="sample" key={photo.file}><a href={`./brand/photos/${photo.file}`} download className="media-kit-photo-link" aria-label={`Scarica foto: ${photo.title}`}><img src={`./brand/photos/${photo.file}`} alt={photo.caption} loading="lazy"/></a><div className="media-kit-photo-info"><div><h4>{photo.title}</h4><p>{photo.caption}</p></div><Button variant="outline" size="sm" asChild><a href={`./brand/photos/${photo.file}`} download aria-label={`Scarica JPG: ${photo.title}`}>JPG<Download aria-hidden="true"/></a></Button></div></article>)}</div>
+    <div className="catalog-note mt-6"><strong>Utilizzo e crediti</strong><p className="mt-2">{content.usage}</p></div>
+    <div className="media-kit-contact"><div><p className="sft-eyebrow text-primary">Parliamone</p><h3 className="sft-display">Stampa e collaborazioni.</h3><p>Per interviste, crediti fotografici e materiali aggiuntivi, scrivi al team.</p></div><div className="grid gap-3"><Button asChild><a href={`mailto:${content.contact.email}`}>{content.contact.email}<ArrowUpRight aria-hidden="true"/></a></Button><div className="flex flex-wrap gap-4">{[['Sito',content.contact.website],['Instagram',content.contact.instagram],['LinkedIn',content.contact.linkedin]].map(([label,href]) => <a className="media-kit-link" key={label} href={href} target="_blank" rel="noreferrer">{label}<ArrowUpRight size={16}/></a>)}</div></div></div>
+  </section>;
+}
