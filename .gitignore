@@ -17,3 +17,4 @@ supabase/.temp/
 
 # Isolated demo and validation builds
 .next-*/
+/tmp/

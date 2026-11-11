@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import "./sft-workspace.css";
 import "./sft-mobile.css";
+import "./dollaroni.css";
 import { PwaRuntime } from "@/components/pwa";
 import { WorkspaceRoot } from "@/components/workspace-root";
 export const metadata: Metadata = {

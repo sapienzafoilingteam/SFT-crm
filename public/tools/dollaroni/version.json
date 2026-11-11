@@ -1,0 +1,10 @@
+{
+  "version": "0.5.0-crm.2",
+  "date": "2026-10-30",
+  "notes": [
+    "Brumoth usa Gemini tramite il CRM: non serve scaricare modelli sul dispositivo. I numeri continuano a essere calcolati da Dollaroni.",
+    "I progetti del reparto sono salvati nel CRM e disponibili ai membri del team nella stagione selezionata. File scaricati e bozze locali rimangono copie distinte.",
+    "Interfaccia più compatta, gestione dei progetti richiudibile e salvataggio principale unico.",
+    "Gli aggiornamenti dell’app sono gestiti insieme a quelli del CRM."
+  ]
+}

@@ -28,6 +28,7 @@ import { linkIcon } from "../link-icons";
 import { useWorkspace } from "../provider";
 import { Button } from "../ui/button";
 import { Empty, SectionTitle, type Props } from "./shared";
+import { isDollaroniReport } from "@/lib/dollaroni";
 import { readRequest } from "@/lib/feature-requests";
 const teamIcons = [Waves, Megaphone, Leaf, Wrench, Wind, Cpu, Anchor];
 export function HomeView({ edit }: Props) {
@@ -36,7 +37,7 @@ export function HomeView({ edit }: Props) {
     (x) => !x.archived && x.season_id === season && !x.team_id,
   );
   const reports = data.reports
-    .filter((x) => !x.archived && x.season_id === season && !readRequest(x))
+    .filter((x) => !x.archived && x.season_id === season && !readRequest(x) && !isDollaroniReport(x))
     .slice(0, 3);
   return (
     <>

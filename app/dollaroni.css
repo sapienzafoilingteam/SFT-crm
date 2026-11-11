@@ -1,0 +1,52 @@
+/* Keep the CRM shell compact so the engineering workspace stays in view. */
+.dollaroni-page { min-width: 0; }
+.dollaroni-entry { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; padding: 24px; }
+.dollaroni-entry h2 { margin: 6px 0; }
+.dollaroni-entry p { margin: 0; color: var(--muted-foreground); }
+.dollaroni-page > .software-project-back { margin-bottom: 8px; }
+.dollaroni-page > .page-heading { margin-bottom: 18px; align-items: center; }
+.dollaroni-page > .page-heading h1 { font-size: 32px; line-height: 1.1; }
+.dollaroni-page > .page-heading p { margin-top: 6px; font-size: 14px; }
+.dollaroni-workspace { margin-bottom: 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+.dollaroni-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 16px; }
+.dollaroni-current-project { min-width: 0; flex: 1 1 180px; display: grid; gap: 3px; }
+.dollaroni-current-project strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.dollaroni-save-status { font-size: 12px; line-height: 1.4; color: var(--muted-foreground); }
+.dollaroni-save-status.is-unsaved { color: var(--warning); }
+.dollaroni-save-status.is-saved { color: var(--success); }
+.dollaroni-workspace-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.dollaroni-chevron-open { transform: rotate(180deg); }
+.dollaroni-projects-drawer { border-top: 1px solid var(--border); padding: 16px; }
+.dollaroni-projects-context { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 12px; font-size: 13px; color: var(--muted-foreground); }
+.dollaroni-projects-context p { margin: 0; color: var(--foreground); }
+.dollaroni-project-controls { display: flex; align-items: end; flex-wrap: wrap; gap: 8px; }
+.dollaroni-project-picker { flex: 1 1 240px; min-width: 0; display: grid; gap: 6px; }
+.dollaroni-project-picker select { width: 100%; min-width: 0; }
+.dollaroni-storage-note, .dollaroni-action-status { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: var(--muted-foreground); }
+.dollaroni-error { margin-bottom: 12px; }
+.dollaroni-error p { margin: 0; }
+.dollaroni-frame-holder { --dollaroni-frame-height: 78dvh; --dollaroni-frame-min-height: 640px; position: relative; overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); min-width: 0; }
+.dollaroni-frame { display: block; width: 100%; height: var(--dollaroni-frame-height); min-height: var(--dollaroni-frame-min-height); border: 0; background: var(--card); }
+.dollaroni-loading { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; padding: 24px; color: var(--muted-foreground); background: var(--card); }
+.dollaroni-frame-holder:fullscreen { border: 0; border-radius: 0; --dollaroni-frame-height: 100dvh; --dollaroni-frame-min-height: 100dvh; }
+@media (max-width: 760px) {
+  .dollaroni-entry { padding: 18px; }
+  .dollaroni-page > .page-heading { gap: 12px; }
+  .dollaroni-page > .page-heading h1 { font-size: 28px; }
+  .dollaroni-page > .page-heading .heading-actions { width: auto; }
+  .dollaroni-toolbar { gap: 10px; padding: 12px; }
+  .dollaroni-current-project { flex-basis: 100%; }
+  .dollaroni-workspace-actions { width: 100%; }
+  .dollaroni-workspace-actions > .btn:first-child { flex: 1; }
+  .dollaroni-projects-drawer { padding: 12px; }
+  .dollaroni-project-picker { flex-basis: 100%; }
+  .dollaroni-project-controls > .btn { flex: 1; }
+  .dollaroni-frame-holder { --dollaroni-frame-height: 82dvh; --dollaroni-frame-min-height: 560px; }
+}
+@media (max-width: 380px) {
+  .dollaroni-workspace-actions > .btn { flex: 1 1 100%; }
+}
+@media (max-width: 760px) {
+  .dollaroni-workspace-actions { display: grid; grid-template-columns: minmax(0, 1fr) 44px; }
+  .dollaroni-workspace-actions > .btn:last-child { grid-column: 1 / -1; }
+}

@@ -1,6 +1,8 @@
 "use client";
 import { TEAMS, dateLabel, safeUrl } from "@/lib/model";
 import { ArrowUpRight, CalendarDays, FolderOpen, Plus } from "lucide-react";
+import { isDollaroniReport } from "@/lib/dollaroni";
+import Link from "next/link";
 import { readRequest } from "@/lib/feature-requests";
 import { SoftwareProjects } from "../software-projects";
 import { DepartmentResources } from "../department-resources";
@@ -16,12 +18,16 @@ export function TeamView({
 }: Props & { team: (typeof TEAMS)[number] }) {
   const { data, season } = useWorkspace();
   const reports = data.reports.filter(
-    (r) => !r.archived && r.season_id === season && r.team_id === team.id && !readRequest(r),
+    (r) => !r.archived && r.season_id === season && r.team_id === team.id && !readRequest(r) && !isDollaroniReport(r),
   );
   return (
     <>
       <Heading eyebrow="SPAZIO DEL REPARTO" title={team.name} description={team.description} />
       <DepartmentResources />
+      {team.id === "materiali" && <section className="panel dollaroni-entry" aria-labelledby="dollaroni-entry-title">
+        <div><span className="eyebrow">STRUMENTI DEL REPARTO</span><h2 id="dollaroni-entry-title">Dollaroni</h2><p>Laminazioni, costi SM$, sostenibilità e report S1/S2, in un unico spazio di lavoro.</p></div>
+        <Button asChild variant="outline"><Link href="/team/materiali/dollaroni">Apri Dollaroni<ArrowUpRight size={16} /></Link></Button>
+      </section>}
       {team.id === "elettronica" && <SoftwareProjects />}
       <div className="team-resources">
         {data.links
