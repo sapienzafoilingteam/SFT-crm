@@ -44,6 +44,7 @@ export function MoreView() {
   return <><Heading title="Altro" description="Strumenti e preferenze del workspace." />
     <div className="mobile-group">{[
       ['/recruiting', 'Recruiting', Users], ['/team/management/sponsor', 'Sponsor e partnership', Users],
+      ['/team/management/social', 'Social Studio', FolderOpen],
       ['/team/management/bilancio', 'Bilancio', FolderOpen], ['/team/management/contratti', 'Contratti', FolderOpen],
       ['/richieste-crm', 'Richieste di sviluppo', Lightbulb], ['/impostazioni', 'Impostazioni', Settings],
     ].map(([href, label, Icon]) => { const ItemIcon = Icon as typeof Users; return <Link className="mobile-row" href={href as string} key={href as string}><ItemIcon size={21} /><span>{label as string}</span><ChevronRight size={18} /></Link>; })}</div>

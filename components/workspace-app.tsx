@@ -42,6 +42,7 @@ const MoreView = dynamic(() => import("./mobile-views").then(m => m.MoreView), {
 const DriveView = dynamic(() => import("./drive-view").then(m => m.DriveView), { loading: () => <div className="empty" role="status">Caricamento Drive…</div> });
 const RecruitingView = dynamic(() => import("./recruiting-view").then(m => m.RecruitingView));
 const RecordEditor = dynamic(() => import('./record-editor').then(m => m.RecordEditor));
+const SocialStudio = dynamic(() => import('./social-studio').then(m => m.SocialStudio), { loading: ViewLoading });
 const DollaroniPage = dynamic(() => import("./dollaroni-page").then(m => m.DollaroniPage), { loading: ViewLoading });
 const SoftwareProjectPage = dynamic(() => import("./software-projects").then(m => m.SoftwareProjectPage), { loading: ViewLoading });
 const HomeView = dynamic(() => import("./views/home").then(m => m.HomeView), { loading: ViewLoading });
@@ -65,6 +66,7 @@ const management = [
   ["pagina", "Pagina del reparto"],
   ["eventi", "Eventi"],
   ["sponsor", "Sponsor"],
+  ["social", "Social"],
   ["contratti", "Contratti"],
   ["template", "Template e Media"],
   ["bilancio", "Bilancio"],
@@ -184,6 +186,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
     else if (!isManagement || view === "pagina")
       content = <TeamView team={team} {...args} />;
     else if (view === "") content = <OverviewView {...args} />;
+    else if (view === "social") content = <SocialStudio key={season} path={path.slice(3)} />;
     else if (view === "sponsor") content = <SponsorsView {...args} />;
     else if (view === "eventi") content = <EventsView {...args} />;
     else if (view === "bilancio") content = <CostsView {...args} />;

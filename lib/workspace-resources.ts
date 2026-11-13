@@ -24,6 +24,7 @@ export function routeCollections(path: readonly string[]): Collection[] {
         eventi: ['events', 'sponsors', 'costs'], bilancio: ['costs', 'events', 'sponsors'],
         contratti: ['contracts', 'offers', 'documents', 'sponsors', 'events'],
         template: ['templates', 'documents', 'sponsors', 'events'],
+        social: ['sponsors', 'events'],
     };
     return [...common, ...(modules[path[2] || ''] || [])];
 }

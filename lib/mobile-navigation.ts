@@ -10,6 +10,7 @@ export function mobileTab(section: string) {
   return ['home', 'agenda', 'drive'].includes(section) ? section : 'altro';
 }
 export function mobileParent(path: readonly string[]) {
+  if (path[0] === 'team' && path[1] === 'management' && path[2] === 'social') return path.length > 3 ? '/team/management/social' : '/team/management';
   if (path[0] === 'team') return path.length > 2 ? `/team/${path[1]}` : '/reparti';
   return MOBILE_TABS.some(tab => tab.href === `/${path.join('/')}`) || !path.length ? null : '/altro';
 }
