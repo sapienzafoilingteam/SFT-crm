@@ -1,10 +1,11 @@
 {
-  "version": "0.5.0-crm.2",
-  "date": "2026-10-30",
+  "version": "0.5.0-crm.4",
+  "date": "2026-11-11",
   "notes": [
-    "Brumoth usa Gemini tramite il CRM: non serve scaricare modelli sul dispositivo. I numeri continuano a essere calcolati da Dollaroni.",
-    "I progetti del reparto sono salvati nel CRM e disponibili ai membri del team nella stagione selezionata. File scaricati e bozze locali rimangono copie distinte.",
-    "Interfaccia più compatta, gestione dei progetti richiudibile e salvataggio principale unico.",
-    "Gli aggiornamenti dell’app sono gestiti insieme a quelli del CRM."
+    "Più comoda sul telefono: in alto restano solo budget e sezioni, le voci di costo e il Performance Rating diventano schede, campi e pulsanti più grandi.",
+    "Il lavoro non salvato è protetto: prima di sostituire un progetto l'app chiede conferma e ne tiene una copia, recuperabile dalla schermata iniziale.",
+    "Salvando su file, l'app avvisa se nel frattempo il file è stato cambiato da qualcun altro.",
+    "Nuovi controlli sui conti: valori negativi, id duplicati, voci a costo zero dimenticate, carbonio su voci a mano fuori dalla Tab. 2, foil senza gruppo.",
+    "L'avviso sugli sconti 2027 mostra anche totale e margine senza sconti. I file progetto danneggiati vengono rifiutati con un messaggio chiaro."
   ]
 }

@@ -2,7 +2,7 @@ import { onCrmLoad, publishProject, projectReplaced, saveToCrm } from './crm.js'
 import { html, useState, useMemo, useEffect, useCallback } from '../../vendor/preact-htm.js';
 import { Button, Icon, Bar, Badge, TextInput, NumInput } from './ui.js';
 import { sm, pct } from './format.js';
-import { useProject, useAutosave, loadAutosave, openProjectFile, saveProjectFile, serialize, validateProject, downloadBytes } from './store.js';
+import { useProject, useAutosave, loadAutosave, openProjectFile, saveProjectFile, serialize, validateProject, downloadBytes, hasUnsavedWork, saveRecoveryCopy, loadRecoveryCopy, clearRecoveryCopy } from './store.js';
 import { emptyProject, projectFrom2026, freezeToS2, toRules2027 } from './templates.js';
 import { CURRENT_RULES, rulesId } from '../engine/rules.js';
 import { evaluate } from '../engine/project.js';
@@ -38,7 +38,8 @@ export function App({ contexts }) {
   const autosave = useMemo(loadAutosave, []);
   const { project, update, replace, undo, redo, canUndo, canRedo } = useProject(null);
   const ctx = contextFor(contexts, project);
-  const [file, setFile] = useState({ handle: null, fileName: null, savedJson: null });
+  const [file, setFile] = useState({ handle: null, fileName: null, savedJson: null, pristineJson: null, lastModified: null });
+  const [recovery, setRecovery] = useState(loadRecoveryCopy);
   const [view, setView] = useState('overview');
   const [welcome, setWelcome] = useState(true);
   const [chatSession, setChatSession] = useState(0);
@@ -47,7 +48,7 @@ export function App({ contexts }) {
   const [expandedLine, setExpandedLine] = useState(null);
   const [toast, setToast] = useState(null);
 
-  useAutosave(project, { fileName: file.fileName, savedJson: file.savedJson });
+  useAutosave(project, { fileName: file.fileName, savedJson: file.savedJson, pristineJson: file.pristineJson });
 
   const ev = useMemo(() => {
     if (!project) return null;
@@ -71,18 +72,44 @@ export function App({ contexts }) {
   }, [baseline]);
   const baseTotals = useMemo(() => (evBase ? new Map(evBase.lines.map((l) => [l.id, l.total])) : null), [evBase]);
   const checks = useMemo(() => (ev && !ev.error ? runChecks(ev) : []), [ev]);
+  const unsaved = hasUnsavedWork(project, file.savedJson, file.pristineJson);
+
+  useEffect(() => {
+    if (!unsaved) return undefined;
+    const onLeave = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', onLeave);
+    return () => window.removeEventListener('beforeunload', onLeave);
+  }, [unsaved]);
 
   const notify = (text, tone = 'ok') => {
     setToast({ text, tone });
     setTimeout(() => setToast(null), 3200);
   };
 
-  const load = (p, fileInfo = { handle: null, fileName: null, savedJson: null }, fromCrm = false) => {
-    if (!fromCrm && project && !confirm('Aprire un altro progetto? Le modifiche restano nella bozza locale fino all’apertura del nuovo progetto. Salva prima nel CRM o su file se vuoi conservarle.')) return;
+  /** Prima di sostituire il progetto: chiede conferma se c'è lavoro non salvato e ne tiene una copia di recupero. */
+  const confirmReplace = () => {
+    const current = project
+      ? (unsaved ? { project, fileName: file.fileName, savedJson: file.savedJson, pristineJson: file.pristineJson } : null)
+      : (autosave?.project && hasUnsavedWork(autosave.project, autosave.savedJson, autosave.pristineJson) ? autosave : null);
+    if (!current) return true;
+    const ok = confirm(
+      `"${current.project.name}" ha modifiche non salvate nel CRM o su file.\n\n` +
+      'Continuando verrà sostituito: ne tengo una copia di recupero nella schermata iniziale, ma solo finché non ne sostituisci un altro.\n\n' +
+      'Continuare?'
+    );
+    if (!ok) return false;
+    if (saveRecoveryCopy(current)) {
+      setRecovery(loadRecoveryCopy());
+      return true;
+    }
+    return confirm('Non riesco a tenere la copia di recupero: continuando le modifiche andranno perse. Continuare?');
+  };
+
+  const load = (p, fileInfo = {}, fromCrm = false) => {
     if (!fromCrm) projectReplaced(p);
     replace(p);
     setChatSession(value => value + 1);
-    setFile(fileInfo);
+    setFile({ handle: null, fileName: null, savedJson: null, lastModified: null, pristineJson: serialize(p), ...fileInfo });
     setWelcome(false);
     setView('overview');
     setSelPart(null);
@@ -90,10 +117,15 @@ export function App({ contexts }) {
     setExpandedLine(null);
   };
 
-  useEffect(() => onCrmLoad(p => load(validateProject(p), { handle: null, fileName: null, savedJson: null }, true)));
+  useEffect(() => onCrmLoad((p) => {
+    // il CRM ha già deciso di aprire questo progetto: non si chiede niente, ma il lavoro non salvato resta recuperabile
+    const incoming = validateProject(p);
+    if (unsaved && serialize(incoming) !== serialize(project) && saveRecoveryCopy({ project, fileName: file.fileName, savedJson: file.savedJson, pristineJson: file.pristineJson })) setRecovery(loadRecoveryCopy());
+    load(incoming, { savedJson: serialize(incoming) }, true);
+  }));
   useEffect(() => { if (project) publishProject(project); }, [project]);
   const saveCrm = async () => {
-    try { await saveToCrm(project); notify('Progetto salvato nel CRM'); }
+    try { await saveToCrm(project); setFile((f) => ({ ...f, savedJson: serialize(project) })); notify('Progetto salvato nel CRM'); }
     catch (error) { notify(error.message, 'err'); }
   };
 
@@ -109,13 +141,38 @@ export function App({ contexts }) {
       setTimeout(() => document.querySelector('.row-open')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50);
     }
     document.querySelector('main')?.scrollTo(0, 0);
+    window.scrollTo(0, 0); // sul telefono scorre la pagina intera
+    // sul telefono le sezioni sono una fila che scorre: porta in vista quella scelta
+    setTimeout(() => document.querySelector('.nav-item.active')?.scrollIntoView({ block: 'nearest', inline: 'center' }), 0);
   }, []);
 
   const actions = {
-    resume: () => load(autosave.project, { handle: null, fileName: autosave.fileName, savedJson: autosave.savedJson }),
-    new: () => load(emptyProject()),
-    template: async () => load(projectFrom2026(await fetchJson('data/projects/meravijosa-2026-s1.json'))),
+    resume: () => {
+      try {
+        load(validateProject(autosave.project), { fileName: autosave.fileName, savedJson: autosave.savedJson, pristineJson: autosave.pristineJson ?? null });
+      } catch (e) {
+        alert('Non riesco a riprendere il progetto: ' + e.message);
+      }
+    },
+    recover: () => {
+      if (!confirmReplace()) return;
+      const kept = recovery;
+      try {
+        load(validateProject(kept.project), { fileName: kept.fileName, savedJson: kept.savedJson, pristineJson: kept.pristineJson ?? null });
+      } catch (e) {
+        alert('Non riesco a recuperare il progetto: ' + e.message);
+        return;
+      }
+      // confirmReplace può aver appena messo da parte il progetto sostituito: quella copia resta
+      if (loadRecoveryCopy()?.keptAt === kept.keptAt) {
+        clearRecoveryCopy();
+        setRecovery(null);
+      }
+    },
+    new: () => { if (confirmReplace()) load(emptyProject()); },
+    template: async () => { if (confirmReplace()) load(projectFrom2026(await fetchJson('data/projects/meravijosa-2026-s1.json'))); },
     example: async (id) => {
+      if (!confirmReplace()) return;
       const p = await fetchJson(`data/projects/${id}.json`);
       // l'esempio S2 2026 viene collegato alla stima S1 2026 per il confronto
       if (p.stage === 'S2' && !p.baseline && id === 'meravijosa-2026-s2') {
@@ -126,7 +183,7 @@ export function App({ contexts }) {
     open: async () => {
       try {
         const r = await openProjectFile();
-        if (r) load(r.project, { handle: r.handle, fileName: r.fileName, savedJson: serialize(r.project) });
+        if (r && confirmReplace()) load(r.project, { handle: r.handle, fileName: r.fileName, savedJson: serialize(r.project), lastModified: r.lastModified ?? null });
       } catch (e) {
         alert('Non riesco ad aprire il file: ' + e.message);
       }
@@ -134,9 +191,17 @@ export function App({ contexts }) {
     save: async (saveAs = false) => {
       if (!project) return;
       try {
-        const r = await saveProjectFile(project, file.handle, { saveAs });
+        const r = await saveProjectFile(project, file.handle, {
+          saveAs,
+          knownModified: file.lastModified,
+          confirmOverwrite: (when) => confirm(
+            `Il file "${file.fileName}" è cambiato dopo che l'hai aperto (ultima modifica ${new Date(when).toLocaleString('it-IT', { dateStyle: 'short', timeStyle: 'short' })}): forse l'ha salvato qualcun altro o un'altra finestra.\n\n` +
+            'OK = sovrascrivilo con la tua versione (le modifiche dell\'altro vanno perse).\n' +
+            'Annulla = non salvare: con Ctrl+Maiusc+S puoi salvare in un altro file.'
+          ),
+        });
         if (r) {
-          setFile({ handle: r.handle, fileName: r.fileName, savedJson: serialize(project) });
+          setFile((f) => ({ ...f, handle: r.handle, fileName: r.fileName, savedJson: serialize(project), lastModified: r.lastModified }));
           notify(`Salvato in ${r.fileName}`);
         }
       } catch (e) {
@@ -157,7 +222,7 @@ export function App({ contexts }) {
       update(() => s2);
       setChatSession(value => value + 1);
       projectReplaced(s2); // A shared S2 is a new record; keep the delivered S1 intact.
-      setFile({ handle: null, fileName: null, savedJson: null });
+      setFile({ handle: null, fileName: null, savedJson: null, pristineJson: null, lastModified: null });
       go('compare');
       notify('S1 congelato: ora sei in S2');
     },
@@ -201,7 +266,8 @@ export function App({ contexts }) {
   });
 
   if (welcome || !project) {
-    return html`<${Welcome} autosave=${autosave} onResume=${actions.resume} onNew=${actions.new} onTemplate=${actions.template}
+    // con un progetto aperto il salvataggio letto all'avvio è vecchio: per tornarci c'è "Torna al progetto aperto"
+    return html`<${Welcome} autosave=${project ? null : autosave} recovery=${recovery} onRecover=${actions.recover} onResume=${actions.resume} onNew=${actions.new} onTemplate=${actions.template}
       onOpen=${actions.open} onExample=${actions.example} onClose=${project ? () => setWelcome(false) : null} />`;
   }
 
@@ -219,7 +285,7 @@ export function App({ contexts }) {
         <span class=${`stage-badge ${isS2 ? 's2' : ''}`} title=${isS2 ? 'Stage S2: costruzione e consuntivo' : 'Stage S1: stima di progetto'}>${isS2 ? 'S2 · as-built' : 'S1 · stima'}</span>
         <button class=${`rules-badge ${ctx.rules.official.provisional ? 'provisional' : ''}`} onClick=${() => go('overview')}
           title=${`${ctx.rules.title}${ctx.rules.official.provisional ? ' · listino e Layup Calculator 2026 provvisori, in attesa di SuMoth Agora' : ''}`}>
-          Regole ${ctx.rules.id}${ctx.rules.official.provisional ? ' · listino provvisorio' : ''}</button>
+          Regole ${ctx.rules.id}${ctx.rules.official.provisional ? html`<span class="rules-extra"> · listino provvisorio</span>` : ''}</button>
       </div>
       <div class="topbar-actions">
         <${Button} kind="ghost" icon="undo" title="Annulla (Ctrl+Z)" onClick=${undo} disabled=${!canUndo} />
@@ -236,15 +302,15 @@ export function App({ contexts }) {
       <div class="budget-main">
         <span class="budget-label">Budget</span>
         <strong class=${ev.error ? '' : ev.total > ev.budget ? 't-err' : ''}>${ev.error ? '–' : sm(ev.total)}</strong>
-        <span class="muted">/ ${ev.error ? '–' : sm(ev.budget)} SM$</span>
+        <span class="muted budget-cap">/ ${ev.error ? '–' : sm(ev.budget)} SM$</span>
       </div>
       <div class="budget-bar">${!ev.error && html`<${Bar} ratio=${ev.total / ev.budget} tone=${ev.total > ev.budget ? 'err' : ev.margin < ev.budget * 0.02 ? 'warn' : 'accent'} height=${10} />`}</div>
       <div class="budget-side">
-        ${!ev.error && html`<span>Margine <strong class=${ev.margin < 0 ? 't-err' : ''}>${sm(ev.margin)}</strong> SM$ (${pct(Math.max(ev.margin, 0) / ev.budget)})</span>`}
+        ${!ev.error && html`<span class="budget-margin">Margine <strong class=${ev.margin < 0 ? 't-err' : ''}>${sm(ev.margin)}</strong><span class="budget-extra"> SM$ (${pct(Math.max(ev.margin, 0) / ev.budget)})</span></span>`}
         ${!ev.error && evBase && html`<span class="muted small">S1: ${sm(evBase.total)}</span>`}
         <button class="link-chip" onClick=${() => go('checks')}>
           ${errors ? html`<${Badge} tone="err">${errors} ${errors === 1 ? 'errore' : 'errori'}</${Badge}>` : html`<${Badge} tone="ok">nessun errore</${Badge}>`}
-          ${warnings > 0 && html`<${Badge} tone="warn">${warnings} da verificare</${Badge}>`}
+          ${warnings > 0 && html`<${Badge} tone="warn">${warnings}<span class="budget-extra"> da verificare</span></${Badge}>`}
         </button>
       </div>
     </div>

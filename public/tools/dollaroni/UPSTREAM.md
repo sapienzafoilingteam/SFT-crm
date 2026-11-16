@@ -22,3 +22,9 @@ CRM adaptations:
 Do not overwrite these adaptations blindly when updating the upstream snapshot.
 The CRM's own service worker remains responsible for offline behavior; no Dollaroni
 service worker or local updater is registered by the embedded entry point.
+
+## 0.5.0-crm.4 (Mario, 16/11/2026)
+
+- crm.3: protezione del lavoro non salvato con copia di recupero, avviso se il file locale è cambiato, nuovi controlli sui conti (valori negativi, id duplicati, voci a costo zero, carbonio su voci a mano, foil senza gruppo).
+- crm.4: interfaccia per il telefono (fino a 760 px): `styles/mobile.css` (nuovo, caricato dopo `crm.css`), etichette `data-label` e classi nelle viste Voci, Listino, Performance Rating, barra in alto con testi brevi, `go()` porta in vista la sezione scelta. Sopra 760 px l'aspetto non cambia.
+- Nessuna modifica a `crm.js`, `crm.css`, protocollo `postMessage` o pagina host. Test di Dollaroni 81/81.
