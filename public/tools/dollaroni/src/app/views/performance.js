@@ -67,7 +67,7 @@ export function Performance({ project, ev, ctx, update, go }) {
               <td title=${c.en}>${c.it}</td>
               ${c.conditions.map((x) => x.applicable
                 ? html`<td class="c"><label class=${`perf-opt ${x.checked ? 'on' : ''} ${tone(x.points)}`} title=${condText[x.id]}>
-                    <input type="checkbox" checked=${x.checked} onChange=${() => toggle(c.id, x.id)} /><span>${fmtPoints(x.points)}</span></label></td>`
+                    <input type="checkbox" checked=${x.checked} onChange=${() => toggle(c.id, x.id)} /><b class="perf-letter">${x.id})</b><span>${fmtPoints(x.points)}</span></label></td>`
                 : html`<td class="c perf-na" title="Condizione non applicabile a questo componente">N/A</td>`)}
               <td class=${`r strong ${toneText(c.points)}`}>${fmtPoints(c.points)}</td>
             </tr>`)}`)}
@@ -81,15 +81,15 @@ export function Performance({ project, ev, ctx, update, go }) {
         Senza prove sufficienti sull'anno o sul danno la penalità si applica (§11.1.5.1). L'elenco arriva dalle voci "Parte usata o commerciale".</p>
       ${perf.commercial.length === 0
         ? html`<p class="muted">Nessuna vela, albero o foil tra le parti usate o commerciali. Se ne usate, aggiungili in Voci di costo come "Parte usata o commerciale".</p>`
-        : html`<div class="table-scroll"><table class="tbl">
+        : html`<div class="table-scroll"><table class="tbl tbl-cards">
             <thead><tr><th>Voce</th><th>Elemento</th><th>Anno di produzione</th><th>Commerciale</th><th>Con danni compromettenti</th><th class="r">Punti</th><th></th></tr></thead>
             <tbody>${perf.commercial.map((c) => html`<tr>
               <td>${c.name}</td>
-              <td>${ctx.rules.usedParts[c.element]?.en || c.element}</td>
-              <td><${NumInput} value=${c.year} width=${72} placeholder="non noto" onChange=${(v) => setUsed(c.lineId, (u) => { u.year = v; }, 'year')} /></td>
-              <td><input type="checkbox" checked=${c.commercial} onChange=${(e) => setUsed(c.lineId, (u) => { u.commercial = e.target.checked; })} /></td>
-              <td><input type="checkbox" checked=${c.damaged} onChange=${(e) => setUsed(c.lineId, (u) => { if (e.target.checked) u.damaged = true; else delete u.damaged; })} /></td>
-              <td class=${`r strong ${toneText(c.points)}`}>${fmtPoints(c.points)}</td>
+              <td data-label="Elemento">${ctx.rules.usedParts[c.element]?.en || c.element}</td>
+              <td data-label="Anno di produzione"><${NumInput} value=${c.year} width=${72} placeholder="non noto" onChange=${(v) => setUsed(c.lineId, (u) => { u.year = v; }, 'year')} /></td>
+              <td data-label="Commerciale"><input type="checkbox" checked=${c.commercial} onChange=${(e) => setUsed(c.lineId, (u) => { u.commercial = e.target.checked; })} /></td>
+              <td data-label="Con danni compromettenti"><input type="checkbox" checked=${c.damaged} onChange=${(e) => setUsed(c.lineId, (u) => { if (e.target.checked) u.damaged = true; else delete u.damaged; })} /></td>
+              <td class=${`r strong ${toneText(c.points)}`} data-label="Punti">${fmtPoints(c.points)}</td>
               <td class="row-actions"><${Button} small title="Apri la voce" icon="chevron" onClick=${() => go('lines', { line: c.lineId })} /></td>
             </tr>`)}</tbody>
           </table></div>`}
