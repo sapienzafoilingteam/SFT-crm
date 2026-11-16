@@ -14,7 +14,7 @@ export function Catalog({ project, ctx, update }) {
   const provisional = ctx.rules.official.provisional;
 
   return html`
-    <div class="page-head"><div><h1>Listino</h1><p class="muted">Prezzi SM$ ufficiali (2026_SMC_Standardized_Costs) più le voci aggiunte dal team.</p></div></div>
+    <div class="page-head"><div><h1>Listino</h1><p class="muted">Prezzi SM$ ufficiali (${ctx.libraryVersion ? `libreria di SuMoth Agora v${ctx.libraryVersion}` : '2026_SMC_Standardized_Costs'}) più le voci aggiunte dal team.</p></div></div>
     ${provisional && html`<div class="notice notice-warn">Regole ${ctx.rules.id}: il listino ufficiale sta sulla SuMoth Agora Platform (§10.1.1), aperta solo ai team ammessi.
       Finché non lo vediamo si usano i prezzi 2026 qui sotto. I materiali nuovi e le correzioni di prezzo si propongono su Agora con evidenze scientifiche (§10.3).</div>`}
 
@@ -33,7 +33,7 @@ export function Catalog({ project, ctx, update }) {
         </tr>`)}</tbody></table></div>`}
     </${Card}>
 
-    <${Card} title=${provisional ? `Listino ufficiale 2026 (provvisorio per il ${ctx.rules.id})` : 'Listino ufficiale 2026'} actions=${html`<${TextInput} value=${q} onChange=${setQ} placeholder="Cerca (es. basalt, PET, CNC)" width=${240} />`}>
+    <${Card} title=${ctx.libraryVersion ? `Libreria di SuMoth Agora v${ctx.libraryVersion}` : provisional ? `Listino ufficiale 2026 (provvisorio per il ${ctx.rules.id})` : 'Listino ufficiale 2026'} actions=${html`<${TextInput} value=${q} onChange=${setQ} placeholder="Cerca (es. basalt, PET, CNC)" width=${240} />`}>
       ${ctx.catalogWarnings.length > 0 && html`<div class="notice notice-warn">${ctx.catalogWarnings.map((w) => html`<div>${w}</div>`)}</div>`}
       <div class="table-scroll"><table class="tbl tbl-compact tbl-catalog">
         <thead><tr><th>Categoria</th><th>Voce</th><th>Unità</th><th class="r">SM$/unità</th><th>Nota</th></tr></thead>

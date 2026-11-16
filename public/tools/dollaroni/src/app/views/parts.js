@@ -7,6 +7,12 @@ import { layupTableSvg } from '../../io/layup-svg.js';
 import { uid } from '../format.js';
 
 const GSM_VALUES = [80, 100, 120, 150, 180, 200, 220, 240, 260, 300, 340, 400, 600];
+/** Densità standard di un'anima su Agora: solo queste hanno un assorbimento di resina documentato. */
+const grades = (entry) => {
+  const list = Object.entries(entry?.grades || {}).map(([d, abs]) => `${d} kg/m³ → ${abs} g/m²`);
+  return list.length ? ` · densità standard su Agora (resina assorbita): ${list.join(', ')}` : '';
+};
+
 const CARBON_SOURCES = [
   { value: 'virgin', label: 'CF vergine' },
   { value: 'recycled', label: 'CF riciclato' },
@@ -114,7 +120,7 @@ function PartEditor({ part, ev, evBase, isS2, ctx, update, onSelect }) {
             <div class="sub-body">
               <div class="sub-row">
                 <label class="field"><span>Fibra</span>
-                  <${CatalogSelect} catalog=${catalog} kinds=${['reinforcement']} value=${s.reinforcement} onChange=${(v) => setSub(i, (x) => { x.reinforcement = v; })} />
+                  <${CatalogSelect} catalog=${catalog} kinds=${spec.model === 'agora' ? ['reinforcement', 'prepreg'] : ['reinforcement']} value=${s.reinforcement} onChange=${(v) => setSub(i, (x) => { x.reinforcement = v; })} />
                   <div class="sub-line">
                     <${Select} className="inp-sm" value=${s.reinforcementSource || 'new'} options=${SOURCE_OPTIONS} onChange=${(v) => setSub(i, (x) => { x.reinforcementSource = v; })} />
                     ${r?.reinforcement?.carbon && html`<${Select} className="inp-sm" value=${s.carbonSource || (s.reinforcementSource === 'upcycled' ? 'upcycled' : 'virgin')} options=${CARBON_SOURCES} onChange=${(v) => setSub(i, (x) => { x.carbonSource = v; })} />`}
@@ -124,8 +130,8 @@ function PartEditor({ part, ev, evBase, isS2, ctx, update, onSelect }) {
                   <${CatalogSelect} catalog=${catalog} kinds=${['matrix']} value=${s.matrix} onChange=${(v) => setSub(i, (x) => { x.matrix = v; })} />
                   <div class="sub-line"><${Select} className="inp-sm" value=${s.matrixSource || 'new'} options=${SOURCE_OPTIONS} onChange=${(v) => setSub(i, (x) => { x.matrixSource = v; })} /></div>
                 </label>
-                <label class="field"><span>Processo (Vf)</span>
-                  <${Select} value=${s.process} options=${spec.processes.map((p) => ({ value: p.name, label: `${p.name} · Vf ${Math.round(p.vf * 100)}%` }))} onChange=${(v) => setSub(i, (x) => { x.process = v; })} /></label>
+                <label class="field"><span>Processo</span>
+                  <${Select} value=${s.process} options=${spec.processes.map((p) => ({ value: p.name, label: p.vf == null ? p.name : `${p.name} · Vf ${Math.round(p.vf * 100)}%` }))} onChange=${(v) => setSub(i, (x) => { x.process = v; })} /></label>
               </div>
               <div class="sub-row sub-nums">
                 <label class="field"><span>Area ply m²</span><${NumInput} value=${s.plyArea} onChange=${(v) => setSub(i, (x) => { x.plyArea = v ?? 0; }, 'area')} width=${84} /></label>
@@ -259,7 +265,7 @@ function CoreCard({ part, pr, catalog, set }) {
         <label class="field"><span>Resina assorbita (g/m²)</span><${NumInput} value=${c.resinUptake} onChange=${(v) => setCore((x) => { x.resinUptake = v; }, 'u')} placeholder="es. 250" /></label>
       `}
     </div>
-    ${c && html`<p class="muted small mt">Massa anima ${kg(pr?.core?.mass || 0, 3)}${pr?.core?.uptake ? ` + resina assorbita ${kg(pr.core.uptake, 3)}` : ' · assorbimento di resina non stimato'}</p>`}
+    ${c && html`<p class="muted small mt">Massa anima ${kg(pr?.core?.mass || 0, 3)}${pr?.core?.uptake ? ` + resina assorbita ${kg(pr.core.uptake, 3)}` : ' · assorbimento di resina non stimato'}${grades(catalog.get(c.ref))}</p>`}
   </${Card}>`;
 }
 

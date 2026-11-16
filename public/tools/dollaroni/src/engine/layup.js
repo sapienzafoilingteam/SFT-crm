@@ -7,6 +7,10 @@
 //   K+1(massa resina g)= (1−Wf) · massa fibra / Wf
 //
 // Così i numeri dell'app coincidono con quelli che la giuria ricalcola nel file ufficiale.
+//
+// 2027 (spec.model 'agora', libreria di SuMoth Agora): il processo dà la frazione di resina IN MASSA r
+// per famiglia di fibra, quindi resina = fibra · r/(1−r) e Vf = ((1−r)/ρf) / ((1−r)/ρf + r/ρm).
+// Un prepreg paga fibra E resina al suo prezzo SM$/kg (come su Agora).
 
 import { layupMaterialFor } from './rules-2026.js';
 
@@ -16,10 +20,11 @@ function resolveMaterial(spec, catalog, ref, role) {
   if (!entry) return { ref, error: `Materiale "${ref}" non presente nel listino` };
   const map = layupMaterialFor(entry);
   const options = role === 'reinforcement' ? spec.reinforcements : spec.matrices;
-  const opt = map.calc ? options.find((o) => o.name === map.calc) : null;
+  const calcName = entry.layup ?? map.calc; // le voci di Agora portano il nome della libreria
+  const opt = calcName ? options.find((o) => o.name === calcName) : null;
   const density = opt ? opt.density : map.density;
   if (!density) return { ref, entry, error: `Densità sconosciuta per "${entry.name}"` };
-  return { ref, entry, calc: opt || null, density, carbon: map.carbon, inCalculator: Boolean(opt) };
+  return { ref, entry, calc: opt || null, density, carbon: entry.carbon ?? map.carbon, inCalculator: Boolean(opt) };
 }
 
 export function computeSubstack(spec, catalog, s) {
@@ -36,15 +41,28 @@ export function computeSubstack(spec, catalog, s) {
   const gsm = Number(s.arealWeight) || 0;
   if (errors.length) return { input: s, reinforcement, matrix, process, errors, fibre: 0, resin: 0, total: 0 };
 
-  const vf = process.vf;
   const rf = reinforcement.density;
   const rm = matrix.density;
-  const wf = (rf * vf) / (rf * vf + rm * (1 - vf));
+  let vf, wf;
+  if (spec.model === 'agora') {
+    const r = process.rfrac?.[reinforcement.calc?.family];
+    if (typeof r !== 'number') {
+      errors.push(`${reinforcement.entry.name}: SuMoth Agora non dà la frazione di resina per ${process.exact} (famiglia di fibra non definita)`);
+      return { input: s, reinforcement, matrix, process, errors, fibre: 0, resin: 0, total: 0 };
+    }
+    wf = 1 - r;
+    vf = (wf / rf) / (wf / rf + r / rm);
+  } else {
+    vf = process.vf;
+    wf = (rf * vf) / (rf * vf + rm * (1 - vf));
+  }
   const fibre = area * plies * gsm;
   const resin = fibre === 0 ? 0 : ((1 - wf) * fibre) / wf;
   return {
     input: s, reinforcement, matrix, process, errors,
     vf, wf, fibre, resin, total: fibre + resin,
+    // Agora: la resina di un prepreg si paga al prezzo del prepreg, quindi va sulla voce del prepreg
+    resinRef: spec.model === 'agora' && reinforcement.entry.kind === 'prepreg' ? s.reinforcement : s.matrix,
     inCalculator: reinforcement.inCalculator && matrix.inCalculator,
   };
 }
@@ -97,7 +115,8 @@ export function partMaterialMasses(result) {
   for (const r of result.substacks) {
     if (r.errors.length) continue;
     add('reinforcement', r.input.reinforcement, r.input.reinforcementSource || 'new', r.fibre);
-    add('matrix', r.input.matrix, r.input.matrixSource || 'new', r.resin);
+    const prepreg = r.resinRef && r.resinRef !== r.input.matrix;
+    add('matrix', r.resinRef ?? r.input.matrix, (prepreg ? r.input.reinforcementSource : r.input.matrixSource) || 'new', r.resin);
   }
   return out;
 }

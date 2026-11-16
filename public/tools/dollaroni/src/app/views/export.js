@@ -113,9 +113,9 @@ export function ExportView({ project, ev, evBase, ctx, checks, onToS2, go }) {
     <div class="page-head"><div><h1>Esporta ${project.stage}</h1><p class="muted">${isS2
       ? 'Tabelle della sezione 2 "Final cost analysis" del template S2, calcolate dai dati as-built.'
       : 'Raccoglie i dati del progetto e li mette nei formati ufficiali del report S1.'}</p></div></div>
-    ${rules.official.provisional && html`<div class="notice notice-info">Regole ${rules.id}: il costo si dichiara sulla SuMoth Agora Platform
-      (${isS2 ? 'Measured Manufacturing Cost, §9.2' : 'Predicted Manufacturing Cost, §7.3'}, 500 punti). Questi file servono da base per compilarlo e per il report.
-      I template 2027 sono su Moodle e non li abbiamo ancora visti, quindi le tabelle seguono la struttura dei report 2026.</div>`}
+    ${rules.official.agora && html`<div class="notice notice-info">Regole ${rules.id}: il costo si dichiara sulla SuMoth Agora Platform
+      (${isS2 ? 'Measured Manufacturing Cost, §9.2' : 'Predicted Manufacturing Cost, §7.3'}, 500 punti). Dollaroni usa la stessa libreria e le stesse frazioni di resina, quindi i totali dovrebbero coincidere; questi file servono da base per compilarlo e per il report.
+      Non c'è un file del Layup Calculator da compilare: in appendice restano le tabelle di layup come immagini. I template 2027 sono su Moodle e non li abbiamo ancora visti, quindi le tabelle seguono la struttura dei report 2026.</div>`}
 
     <div class="grid-2">
       <${Card} title="Cosa viene prodotto">
@@ -125,9 +125,9 @@ export function ExportView({ project, ev, evBase, ctx, checks, onToS2, go }) {
             <li><${Icon} name="gauge" /> <strong>${rules.reportNumbering ? '2.3 ' : ''}Cost Summary</strong>: total cost breakdown e confronto con la stima S1 (Δ e variazione)${evBase ? '' : html` <${Badge} tone="warn">manca l'S1 di riferimento</${Badge}>`}</li>
             <li><${Icon} name="check" /> <strong>${rules.reportNumbering ? '2.4 ' : ''}Self-Assessment</strong>: dati di supporto (quanto è misurato, differenze maggiori, pesato vs calcolato). Il testo lo scrivete voi</li>
             ${rules.wasteTracking && html`<li><${Icon} name="list" /> <strong>Materiale usato e scarti</strong> (§9.2.2)</li>`}
-            <li><${Icon} name="layers" /> <strong>Mass breakdown as-built</strong>${massRef} e <strong>Layup Calculator</strong> dei pezzi as-built, con le immagini</li>`
+            <li><${Icon} name="layers" /> <strong>Mass breakdown as-built</strong>${massRef} e <strong>${rules.official.agora ? 'tabelle di layup' : 'Layup Calculator'}</strong> dei pezzi as-built, con le immagini</li>`
           : html`
-            <li><${Icon} name="file" /> <strong>Layup Calculator ufficiale</strong>, un file per pezzo (${project.parts.length} pezzi${project.parts.some((p) => (p.substacks || []).length > 5) ? ', quelli con più di 5 substack su più file' : ''})</li>
+            <li><${Icon} name="file" /> <strong>${rules.official.agora ? 'Tabelle di layup (immagini)' : 'Layup Calculator ufficiale'}</strong>, ${rules.official.agora ? 'una tabella' : 'un file'} per pezzo (${project.parts.length} pezzi${project.parts.some((p) => (p.substacks || []).length > 5) ? ', quelli con più di 5 substack su più file' : ''})</li>
             <li><${Icon} name="layers" /> <strong>Immagini delle tabelle di layup</strong> per l'appendice</li>
             <li><${Icon} name="book" /> <strong>Documento per Google Docs</strong> (Montserrat): tabella SuMoth Dollar breakdown, SM$ per componente, limiti di carbonio, masse stimate, appendice</li>`}
           ${ev.performance && html`<li><${Icon} name="star" /> <strong>Performance Rating</strong> (Tab. 3): condizioni per componente e parti commerciali</li>`}
@@ -149,7 +149,7 @@ export function ExportView({ project, ev, evBase, ctx, checks, onToS2, go }) {
     </div>
 
     ${r && html`<${Card} title="File pronti" actions=${html`<${Button} kind="primary" icon="download" onClick=${() => downloadBytes(r.zip.bytes, r.zip.name, r.zip.mime)}>Scarica tutto (.zip)</${Button}>`}>
-      ${r.errors.length > 0 && html`<div class="notice notice-warn"><strong>Non esportati nel Layup Calculator:</strong>${r.errors.map((e) => html`<div>${e}</div>`)}</div>`}
+      ${r.errors.length > 0 && html`<div class="notice notice-warn"><strong>Pezzi non esportati:</strong>${r.errors.map((e) => html`<div>${e}</div>`)}</div>`}
       ${folders.map((f) => html`<div class="file-group">
         <h4>${f}</h4><p class="muted small">${FOLDER_INFO[f] || ''}</p>
         <ul class="file-list">${r.files.filter((x) => x.folder === f).map((x) => html`<li>

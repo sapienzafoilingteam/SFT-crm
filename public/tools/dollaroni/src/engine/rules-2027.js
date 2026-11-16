@@ -3,9 +3,10 @@
 // Cosa cambia rispetto al 2026 (verificato sul PDF il 28/09/2026):
 //  - budget 10.000 SM$ "da tenere sotto" (§10.1.2); sforarlo costa 500 punti (§10.1.3);
 //  - Tab. 2 (limiti di carbonio) identica al 2026, "Wingbars" si chiama "Hiking racks";
-//  - il listino non è più un file pubblico: costi e calcolo stanno sulla SuMoth Agora Platform (§10.1.1),
-//    aperta solo ai team ammessi. Finché non la vediamo si usano listino e Layup Calculator 2026 (provvisori);
-//  - gli sconti di provenienza del §3.3.B 2026 non sono più citati: restano attivi ma "da confermare";
+//  - il listino non è più un file pubblico: costi e calcolo stanno sulla SuMoth Agora Platform (§10.1.1).
+//    Dal 13/11/2026 si usa la sua libreria (agora.sumoth.org/library.json, copia in data/official/,
+//    si aggiorna con tools/update_agora_library.py): prezzi, densità e frazione di resina per processo × famiglia di fibra;
+//  - gli sconti di provenienza del §3.3.B 2026 non sono più nel regolamento, ma Agora li applica riga per riga (−25/−50/−100%);
 //  - la vecchia Tab. 3 (parti usate a costo fisso + handicap per anno) non c'è più: una parte usata
 //    si paga come una voce normale. Al suo posto c'è la nuova Tab. 3 "SuMoth Performance Points" (§11);
 //  - il mass breakdown as-built del §2.5 2026 non è più richiesto;
@@ -15,7 +16,7 @@
 import { RULES_2026 } from './rules-2026.js';
 
 const rename = (list) => list.map((x) => (x.id === 'wingbars' ? { ...x, en: 'Hiking racks' } : x));
-const AGORA = 'to be confirmed on the SuMoth Agora Platform';
+const AGORA = 'as applied by the SuMoth Agora Platform';
 
 // Tab. 3 2027: punti per le condizioni a)–g) della regola 11.1.3. null = N/A.
 //                                   a     b     c    d    e     f     g
@@ -40,31 +41,31 @@ const PERF_ROWS = [
 export const RULES_2027 = {
   id: '2027',
   title: '2027 SMC Competition Rulebook v1.0 (7 settembre 2026)',
-  // Il listino 2027 sta su SuMoth Agora: intanto si usano i file 2026, segnati come provvisori.
-  official: { ...RULES_2026.official, provisional: true },
+  // Libreria di SuMoth Agora (prezzi + frazioni di resina); nel 2027 non c'è un file del Layup Calculator.
+  official: { agora: 'data/official/2027_SuMoth_Agora_library.json', provisional: false },
   budget: 10000, // §10.1.2 "shall remain below 10,000 SM$"
   budgetStrict: true,
   budgetPenalty: 500, // §10.1.3
   refs: { budget: '§10.1', sources: '§3.3.B 2026', upcycled: '§3.3.A 2026', mass: null, usedParts: null },
   help: {
-    notInCalculator: 'nel 2027 il calcolo si fa su SuMoth Agora: verificare lì come dichiararlo',
+    notInCalculator: 'non è nella libreria di SuMoth Agora: proporlo su Agora con evidenze scientifiche (§10.3)',
     priceSource: 'prezzo preso da SuMoth Agora o MSRP del fornitore',
     catalogExtras: 'Materiali e hardware che non sono nel listino, sempre con la fonte del prezzo. Nel 2027 i prezzi stanno su SuMoth Agora e i materiali nuovi si propongono lì, con evidenze scientifiche (§10.3).',
   },
   massBreakdownRequired: false,
-  sourcesToConfirm: true,
+  sourcesToConfirm: false, // li applica Agora
   wasteTracking: true, // §9.2.2
   upcycledHullNonFoiling: true, // §6.2.1
   reportNumbering: false, // i template 2027 (su Moodle) non sono ancora noti
   labels: {
     s2DocTitle: 'MEASURED MANUFACTURING COST – supporting tables',
-    costBasis: `unit costs from the 2026 Standardized Costs (provisional: the 2027 costs are defined on the SuMoth Agora Platform, Rule 10.1.1); provenance discounts of the 2026 Rules (Section 3.3.B) ${AGORA}.`,
+    costBasis: `unit costs from the SuMoth Agora Platform library (Rule 10.1.1); provenance discounts of the 2026 Rules (Section 3.3.B) ${AGORA}.`,
   },
 
   // Categorie dei costi: le stesse 7 del template S2 2026, in attesa di vedere come le chiede Agora.
   components: rename(RULES_2026.components),
 
-  // Sconti del §3.3.B 2026: il regolamento 2027 non li cita più. Restano, ma da confermare su Agora.
+  // Sconti del §3.3.B 2026: il regolamento 2027 non li cita più, Agora li applica riga per riga.
   sources: {
     new: { factor: 1, it: 'Nuovo', en: null },
     industrial_excess: {

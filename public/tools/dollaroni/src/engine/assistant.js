@@ -47,9 +47,9 @@ export const INTENTS = {
     it: 'Budget e margine',
     desc: 'quanto si è speso, quanto resta, margine sul budget, sforamenti',
     keys: [
-      [/\bbudget\b/, 2], [/\bmargin[ei]\b/, 2], [/\brimast[oaie]\b|\brimane\b|\brimangono\b|\bresta(no)?\b|\bavanza\b/, 1],
-      [/\bspes[aeo]\b|\bspeso\b|\bspendiamo\b|\bspendere\b|\bspeso\b/, 1], [/\btotale\b/, 1], [/\bsforat|\bsforiamo|\bsforare\b/, 2],
-      [/\bsoldi\b|\bdollar|\bsm\$|\bsmd?\b/, 1], [/quanto (abbiamo|ho|hai|avete) (gia )?(speso|usato)/, 2],
+      [/\bbudget\b/, 2], [/\bmargin[ei]\b/, 2], [/\brimast[oaie]\b|\brimane\b|\brimangono\b|\bresta(no)?\b|\bavanza\b|\bleft\b|\bremain/, 1],
+      [/\bspes[aeo]\b|\bspeso\b|\bspendiamo\b|\bspendere\b|\bspeso\b|\bspen[dt]\b|\bspending\b/, 1], [/\btotale\b|\btotal\b/, 1], [/\bsforat|\bsforiamo|\bsforare\b|\bexceed|\bover budget\b|\boverrun/, 2],
+      [/\bsoldi\b|\bmoney\b|\bdollar|\bsm\$|\bsmd?\b/, 1], [/quanto (abbiamo|ho|hai|avete) (gia )?(speso|usato)|how much (have )?(we|i|you) (already )?(spent|used)|how much .{0,12}budget/, 2],
     ],
   },
   capacity: {
@@ -67,9 +67,9 @@ export const INTENTS = {
     it: 'Classifica dei costi',
     desc: 'classifica dei componenti e delle voci più costose, dove vanno i soldi',
     keys: [
-      [/classific|ranking|graduatoria|\bordin(e|a|ati?) per\b/, 3], [/piu (car[oaie]|costos[oaie])|costano di piu|costa di piu|spendiamo di piu|maggior[ei] (cost|spes)/, 3],
-      [/dove (vanno|finiscono|spendiamo|se ne vanno|si spende|va il)/, 3], [/ripartizion|suddivision|per componente|breakdown|distribuzion/, 2],
-      [/\btop\b|principal[ei] (voci|cost)|voci principali|pesa di piu|pesano di piu/, 2],
+      [/classific|ranking|graduatoria|\bordin(e|a|ati?) per\b|\brank\b|\bsorted by\b/, 3], [/piu (car[oaie]|costos[oaie])|costano di piu|costa di piu|spendiamo di piu|maggior[ei] (cost|spes)|most expensive|costs? the most|spend the most|biggest (cost|expense)|highest cost/, 3],
+      [/dove (vanno|finiscono|spendiamo|se ne vanno|si spende|va il)|where (do|does|did|is|are) .{0,20}(go|spend|spent|going)/, 3], [/ripartizion|suddivision|per componente|breakdown|distribuzion|by component/, 2],
+      [/\btop\b|principal[ei] (voci|cost)|voci principali|pesa di piu|pesano di piu|main (items|costs)/, 2],
     ],
   },
   carbon: {
@@ -81,8 +81,8 @@ export const INTENTS = {
     it: 'Errori e cose da sistemare',
     desc: 'errori, avvisi e controlli da sistemare prima della consegna',
     keys: [
-      [/error|sbagliat|problem|\bcontroll|avvis|warning|\bcheck/, 3], [/sistemar|correggere|da fare|cosa (manca|non va|devo fare|dobbiamo fare)/, 3],
-      [/va bene\b|tutto (ok|a posto|in regola|giusto)|conform|in regola|e corretto|e giusto/, 2],
+      [/error|sbagliat|problem|\bcontroll|avvis|warning|\bcheck|\bissues?\b|\bwrong\b/, 3], [/sistemar|correggere|da fare|cosa (manca|non va|devo fare|dobbiamo fare)|\bfix\b|\bto do\b|what(.s| is) missing|need to do/, 3],
+      [/va bene\b|tutto (ok|a posto|in regola|giusto)|conform|in regola|e corretto|e giusto|all good|is (it )?(ok|right|correct)|complian/, 2],
     ],
   },
   parts: {
@@ -94,8 +94,8 @@ export const INTENTS = {
     it: 'Materiali e prezzi',
     desc: 'materiali usati, quantità, prezzi del listino',
     keys: [
-      [/material[ei]|\bfibr[ae]\b|\bresin[ae]\b|epossidic|\banim[ae]\b|\bcore\b|consumabil/, 2],
-      [/listino|prezz[oi]|quanto costa|costa al (kg|chilo)|al chilo|al kg/, 3],
+      [/material[ei]?s?|\bfibr[ae]s?\b|\bfibers?\b|\bresin[ae]?s?\b|epossidic|epoxy|\banim[ae]\b|\bcores?\b|consumabil/, 2],
+      [/listino|price list|prezz[oi]|\bprices?\b|quanto costa|how much (does|is)|costa al (kg|chilo)|al chilo|al kg|per (kg|kilo)/, 3],
     ],
   },
   savings: {
@@ -107,17 +107,17 @@ export const INTENTS = {
     it: 'Simulazione "e se…"',
     desc: 'simulare una modifica: cambiare materiale a un pezzo o aggiungere materiale',
     keys: [
-      [/\be se\b|cosa succede se|cosa cambia se|che succede se|simula|ipotesi|ipotizz/, 3],
+      [/\be se\b|cosa succede se|cosa cambia se|che succede se|simula|ipotesi|ipotizz|what if|what happens if|what changes if|suppose/, 3],
       [/\bse (sostitu|cambi|usass|usiamo|uso|faccio|facess|facciamo|mettess|mettiamo|metto|aggiung|toglie|togli|passass|passiamo)/, 3],
-      [/al posto d|invece d|(sostituire|sostituendo|cambiare|cambiando|rifare) .{0,30}(con|in) /, 2],
+      [/al posto d|invece d|instead of|(sostituire|sostituendo|cambiare|cambiando|rifare|replac\w*|chang\w*|swap\w*) .{0,30}(con|in|with) /, 2],
     ],
   },
   rules: {
     it: 'Regolamento',
     desc: 'regole SuMoth: budget, sconti, limiti, Performance Rating, scarti, parti usate',
     keys: [
-      [/regol|regolament|\bnorm[ae]\b|ammess|consentit|vietat|obbligator|\bsi puo\b/, 2], [/penal|\bpunt[oi]\b/, 2],
-      [/scont|scadut|shelf|eccedenz|upcycl/, 2], [/agora|§|tab(ella|\.)? ?[34]\b|scart[oi]|parti usate|usat[oie] /, 2],
+      [/regol|regolament|\brules?\b|rulebook|\bnorm[ae]\b|ammess|consentit|\ballowed\b|vietat|forbidden|obbligator|mandatory|required|\bsi puo\b/, 2], [/penal|\bpunt[oi]\b|\bpoints?\b/, 2],
+      [/scont|\bdiscounts?\b|scadut|expired|shelf|eccedenz|surplus|upcycl/, 2], [/agora|§|tab(ella|\.|le)? ?[34]\b|scart[oi]|\bwaste\b|parti usate|used parts?|usat[oie] /, 2],
     ],
   },
   compare: {
@@ -224,7 +224,7 @@ function findAmount(q) {
   const m = q.match(/(\d+(?:[.,]\d+)?)\s*(kg|chili|chilogrammi|g|grammi|gr)\b/);
   if (!m) return null;
   const v = Number(m[1].replace(',', '.'));
-  return /^g|gr/.test(m[2]) && !/^ch/.test(m[2]) ? v / 1000 : v;
+  return /^g/.test(m[2]) ? v / 1000 : v;
 }
 
 // ------------------------------------------------------------------ instradamento
@@ -244,7 +244,7 @@ export function route(question, { ev, previous } = {}) {
   const parts = findParts(q, ev);
   const components = findComponents(q, ev);
   const amount = findAmount(q);
-  const entities = { materials, parts, components, amount, wantsWhere: /\bdove\b|troppo|eccess|sfor|sopra|classific/.test(q) };
+  const entities = { materials, parts, components, amount, wantsWhere: /\bdove\b|\bwhere\b|troppo|too much|eccess|excess|sfor|sopra|classific|\bover\b/.test(q) };
 
   // le entità rafforzano gli argomenti collegati
   if (parts.length && !scores.whatif) scores.parts = (scores.parts || 0) + 1;
@@ -671,7 +671,7 @@ function rulesBlock(ev, q) {
     lines.push(`Sconti di provenienza: eccedenza industriale −${pc(1 - s.industrial_excess.factor, 0)}, fuori shelf-life −${pc(1 - s.out_of_shelf_life.factor, 0)}, upcycled −${pc(1 - s.upcycled.factor, 0)} (${r.refs.sources}).${r.sourcesToConfirm ? ` Il regolamento ${r.id} non li cita più: da confermare su SuMoth Agora.` : ''}`);
     lines.push(`Gli elementi upcycled vanno descritti con origine e trasformazione (${r.refs.upcycled}).${r.upcycledHullNonFoiling ? ' Nel 2027 uno scafo upcycled è ammesso solo se in origine era di una barca non foiling (§6.2.1).' : ''}`);
   }
-  if (all || /carbon|cfrp|tab(ella|\.)? ?2/.test(q)) {
+  if (all || /carbon|cfrp|tab(ella|\.|le)? ?2/.test(q)) {
     const i = r.carbonGroups.findIndex((g) => g.id === 'hull');
     lines.push(`Tab. 2: limiti di carbonio per gruppo (scafo, terrazze, ognuno dei 4 foil, gantry, rig, altro). Per lo scafo: ${kg(r.carbonLimits.cfrp[i])} di CFRP, ${kg(r.carbonLimits.cf[i])} di carbonio secco; il carbonio riciclato o upcycled ha limiti più alti.`);
   }
@@ -887,7 +887,7 @@ export function verifyNumbers(reply, facts) {
   for (const m of text.matchAll(NUM_RE)) {
     const s = m[0];
     const before = text.slice(Math.max(0, m.index - 6), m.index);
-    if (/(§|tab\.?\s?|tabella\s|sezione\s|regola\s)$/i.test(before)) continue;
+    if (/(§|tab\.?\s?|tabella\s|table\s|sezione\s|section\s|regola\s|rule\s)$/i.test(before)) continue;
     const vals = readings(s);
     if (!vals.length) continue;
     if (vals.every((v) => Number.isInteger(v) && (v <= 12 || (v >= 2010 && v <= 2035)))) continue;
