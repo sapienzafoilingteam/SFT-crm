@@ -166,4 +166,86 @@ export async function importLayupSpec(bytes, JSZipLib, layout = LAYUP_TEMPLATE_2
   return { layout, reinforcements: reinf, matrices, processes };
 }
 
+// ---------------------------------------------------------------- libreria di SuMoth Agora (2027)
+
+// Nome su Agora -> id della stessa voce nel listino 2026, così i progetti 2027 nati da quelli 2026 continuano a funzionare.
+// Le voci senza corrispondenza prendono un id nuovo dal nome.
+const AGORA_IDS = {
+  fibers: {
+    'Carbon Fiber STM': 'dry-fabric-carbon-fibers/std-modulus-cf', 'Carbon Fiber IM': 'dry-fabric-carbon-fibers/int-modulus-cf',
+    'Carbon Fiber HM': 'dry-fabric-carbon-fibers/high-modulus-cf', 'Carbon Fiber UHM': 'dry-fabric-carbon-fibers/ultra-high-modulus-cf',
+    'Glass Fiber S': 'dry-fabric-glass-fibers/s-glass', 'Glass Fiber E': 'dry-fabric-glass-fibers/e-glass',
+    'Aramid Kevlar': 'dry-fabric-aramid-fibers/kevlar', 'Aramid BioBased': 'dry-fabric-aramid-fibers/biobased', 'Aramid Other': 'dry-fabric-aramid-fibers/others',
+    Basalt: 'dry-fabric-basalt-fibers', Flax: 'dry-fabric-flax', Innegra: 'dry-fabric-innegra', Diolen: 'dry-fabric-diolen',
+  },
+  prepregs: {
+    'Carbon Fiber STM': 'cf-epoxy-prepreg/epoxy-std-modulus-cf', 'Carbon Fiber IM': 'cf-epoxy-prepreg/epoxy-int-modulus-cf',
+    'Carbon Fiber HM': 'cf-epoxy-prepreg/epoxy-high-modulus-cf', 'Carbon Fiber UHM': 'cf-epoxy-prepreg/epoxy-ultra-high-modulus-cf',
+  },
+  matrices: {
+    Epoxy: 'std-epoxy/lamination-resin', 'Bio Epoxy': 'bio-based-epoxy/lamination', Polyester: 'polyester/lamination',
+    'Vinyl-ester': 'vinyl-esther/lamination', 'PU Resin/Paint': 'pu-resin-paints/coating-core', PA12: 'pa12/reinforcement', PA11: 'pa11/reinforcement',
+  },
+  adhesives: { 'Methyl Methacrylate (MMA)': 'mma/bonding' },
+  cores: {
+    'Gurit Balsa': 'wood/balsa', Paulownia: 'wood/paulonia', 'PVC/SAN': 'pvc-san', ASA: 'asa', 'PET standard': 'pet/standard', 'Recycled PET': 'pet/recycled',
+    'EPS standard': 'eps/standard', 'EPS recycled': 'eps/recycled', 'XPS standard': 'xps/standard', 'XPS recycled': 'xps/recycled',
+    'Honeycomb Aluminium (industry waste only)': 'honeycomb/aluminum', 'Honeycomb Aramid (industry waste only)': 'honeycomb/aramid',
+  },
+  processes: { 'Machining (CNC)': 'machining', 'Additive Manufacturing': 'additive-manuf', 'Oven cure': 'oven-cure', 'Autoclave cure': 'autoclave-cure', 'Laser (CNC)': 'laser' },
+  consumables: {
+    'Tacky tape (15 m roll)': 'vacuum-bagging/tacky-tape', 'Vacuum bag': 'vacuum-bagging/vacuum-bag', 'PE vacuum hose': 'vacuum-bagging/pe-vacuum-hose',
+    'PVC vacuum hose': 'vacuum-bagging/pvc-vacuum-hose', Breather: 'vacuum-bagging/breather', 'Peel ply': 'vacuum-bagging/peel-ply', Flowmesh: 'vacuum-bagging/flowmesh',
+    Brushes: 'vacuum-bagging/brushes', 'Spiral tube (infusion)': 'vacuum-bagging/spiral-tube', 'Release agent water based': 'release-agent/water-based',
+    'Release agent solvent based': 'release-agent/solvent-based', 'Release wax': 'release-agent/wax', PVA: 'release-agent/pva', 'Spray tack (VARI)': 'vari/spray-tack',
+  },
+  raw: {
+    'Tooling board Epoxy (0.7 t/cm)': 'tooling-board/epoxy', 'Tooling board PU (0.7 t/cm)': 'tooling-board/pu', 'MDF/HDF wood': 'mdf-hdf-wood',
+    'MDF/HDF recycled': 'mdf-hdf-recycled', Steel: 'steel', 'Stainless Steel': 'stainless-steel', Aluminium: 'aluminum', 'Teflon/PTFE (1 kg max from block)': 'teflon-ptfe/block-tape',
+  },
+  am: { 'PLA filament': 'pla/filament', 'ABS filament': 'abs/filament', 'PETG filament': 'petg/filament', 'Other filaments (co-polymer/reinforced)': 'other-filements/co-polymer-reinforced' },
+};
+const AGORA_UNITS = { 'm²': 'm2', brush: 'pc', 'lin. m': 'm', L: 'L', kg: 'kg', roll: 'roll15' };
+
+/**
+ * Legge library.json di SuMoth Agora (agora.sumoth.org/library.json).
+ * Ritorna {entries, warnings, spec, version, updated}: entries come importCostCatalog, spec come importLayupSpec
+ * ma con model 'agora': ogni processo ha la frazione di resina IN MASSA per famiglia di fibra (rfrac) al posto del Vf.
+ */
+export function importAgoraLibrary(json) {
+  if (json?.app !== 'sumoth-agora' || json.kind !== 'library' || !json.lib?.fibers) throw new Error('Il file non è una libreria di SuMoth Agora (library.json)');
+  const L = json.lib;
+  const entries = [];
+  const warnings = [];
+  // group = nome: report, controlli e Brumoth leggono il materiale da group + type, come nel listino 2026
+  const add = (table, key, kind, name, price, unit, extra = {}) => {
+    if (price === null || price === undefined) warnings.push(`"${name}" non ha prezzo su SuMoth Agora (!-!): la giuria non l'ha ancora definito`);
+    entries.push({ id: AGORA_IDS[table]?.[key] ?? `${slug(table)}/${slug(name)}`, kind, sheet: 'Agora', group: name, type: '', name, unit, price: price ?? null, note: '', ...extra });
+  };
+  for (const [name, f] of Object.entries(L.fibers)) {
+    const layup = { layup: name, carbon: /carbon/i.test(name) };
+    add('fibers', name, 'reinforcement', name, f.dry, 'kg', layup);
+    add('prepregs', name, 'prepreg', `${name} prepreg`, f.preg, 'kg', layup);
+  }
+  for (const [name, m] of Object.entries(L.matrices)) add('matrices', name, 'matrix', name, m.p, 'kg', { layup: name });
+  for (const [name, m] of Object.entries(L.adhesives || {})) add('adhesives', name, 'matrix', name, m.p, 'kg', { layup: name });
+  for (const [name, c] of Object.entries(L.cores || {})) {
+    if (c.custom) continue; // "Custom core…": il team aggiunge la sua anima come voce del team
+    add('cores', name, 'core', name, c.p, 'kg', { grades: c.grades || {} });
+  }
+  for (const [name, p] of Object.entries(L.processes || {})) add('processes', name, 'process', name, p, 'h');
+  for (const [name, c] of Object.entries(L.consumables || {})) add('consumables', name, 'consumable', name, c.p, AGORA_UNITS[c.u] ?? c.u);
+  for (const [name, p] of Object.entries(L.raw || {})) add('raw', name, 'other', name, p, 'kg');
+  for (const [name, p] of Object.entries(L.am || {})) add('am', name, 'other', name, p, 'kg');
+
+  const spec = {
+    model: 'agora',
+    reinforcements: Object.entries(L.fibers).map(([name, f]) => ({ name, exact: name, density: f.d, family: f.rk })),
+    matrices: [...Object.entries(L.matrices), ...Object.entries(L.adhesives || {})].map(([name, m]) => ({ name, exact: name, density: m.d })),
+    // nomi in maiuscolo = quelli del Layup Calculator 2026, già salvati nei progetti ("HAND LAYUP + VAC")
+    processes: Object.entries(L.rfrac || {}).map(([name, rfrac]) => ({ name: name.toUpperCase(), exact: name, rfrac, preg: Boolean(L.tech?.[name]?.preg) })),
+  };
+  return { entries, warnings, spec, version: json.version, updated: json.updated };
+}
+
 export { splitRef };

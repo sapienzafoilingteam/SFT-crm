@@ -1,7 +1,7 @@
 // Avvio: carica i file ufficiali (listino e Layup Calculator) di ogni regolamento e monta l'app.
 
 import { html, render } from '../../vendor/preact-htm.js';
-import { importCostCatalog, importLayupSpec } from '../io/official.js';
+import { importCostCatalog, importLayupSpec, importAgoraLibrary } from '../io/official.js';
 import { RULES } from '../engine/rules.js';
 import { App } from './app.js';
 import { startUpdates } from './updates.js';
@@ -18,10 +18,15 @@ async function bytes(url) {
 
 /** Listino + Layup Calculator; se due regolamenti usano gli stessi file si leggono una volta sola. */
 const loaded = new Map();
-function officialData({ costs, layup }) {
-  const key = `${costs}|${layup}`;
+function officialData({ costs, layup, agora }) {
+  const key = agora || `${costs}|${layup}`;
   if (!loaded.has(key)) {
     loaded.set(key, (async () => {
+      // 2027: libreria di SuMoth Agora (prezzi e frazioni di resina), niente file del Layup Calculator
+      if (agora) {
+        const { entries, warnings, spec, version } = importAgoraLibrary(JSON.parse(new TextDecoder().decode(await bytes(agora))));
+        return { spec, catalogEntries: entries, catalogWarnings: warnings, templateBytes: null, libraryVersion: version };
+      }
       const [costBytes, template] = await Promise.all([bytes(costs), bytes(layup)]);
       const { entries, warnings } = await importCostCatalog(costBytes);
       const spec = await importLayupSpec(template);

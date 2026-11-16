@@ -69,7 +69,7 @@ function findAmount(q) {
   const m = q.match(/(\d+(?:[.,]\d+)?)\s*(kg|chili|chilogrammi|g|grammi|gr)\b/);
   if (!m) return null;
   const v = Number(m[1].replace(',', '.'));
-  return /^(g|gr|grammi)$/.test(m[2]) ? v / 1000 : v;
+  return /^(g|gr|grams?|grammi)$/.test(m[2]) ? v / 1000 : v;
 }
 
 function findPrice(q) {
@@ -81,10 +81,10 @@ function findPrice(q) {
 }
 function unitOf(u) {
   if (!u) return null;
-  if (/^(kg|chilo)/.test(u)) return 'kg';
+  if (/^(kg|kilo|chilo)/.test(u)) return 'kg';
   if (/^(m2|mq)/.test(u)) return 'm2';
-  if (/^(m|metro)$/.test(u)) return 'm';
-  if (/^(l|litro)$/.test(u)) return 'L';
+  if (/^(m|metre|meter|metro)$/.test(u)) return 'm';
+  if (/^(l|liter|litre|litro)$/.test(u)) return 'L';
   return 'pc';
 }
 function findDensity(q) {
@@ -108,10 +108,10 @@ export function parseCommand(question, { ev, spec } = {}) {
   const parts = findParts(q, ev);
   const comps = findComponents(q, ev);
   const amount = findAmount(q);
-  const removing = /\b(togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare)\b/.test(q);
-  const swapping = /\b(sostituisci|sostituire|sostituisco|sostituissi|cambia|cambiare|cambio|cambiassi|passa|passo|passassi|fai|fammi|facciamo|facessi|faccio|rifai|usa|uso|usassi|usiamo)\b/.test(q) && /\b(in|con)\s+(il |lo |la |l')?(\w+)/.test(q);
-  const wantsPart = /\b(pezz[oi]|sezion[ei]|part[ei] laminat|laminato nuovo|nuovo laminato)\b/.test(q);
-  const wantsMaterial = /\b(material[ei]|nel listino|al listino|nuov[oa] (fibra|tessuto|resina)|voce del team|che non c'e|che non ce|non esiste|non c'e)\b/.test(q);
+  const removing = /\b(remove|delete|togli|togliere|rimuovi|rimuovere|elimina|eliminare|cancella|cancellare)\b/.test(q);
+  const swapping = /\b(replace|change|switch|make|use|sostituisci|sostituire|sostituisco|sostituissi|cambia|cambiare|cambio|cambiassi|passa|passo|passassi|fai|fammi|facciamo|facessi|faccio|rifai|usa|uso|usassi|usiamo)\b/.test(q) && /\b(in|con|with|to)\s+(il |lo |la |l'|the )?(\w+)/.test(q);
+  const wantsPart = /\b(parts?|sections?|laminated part|new laminate|pezz[oi]|sezion[ei]|part[ei] laminat|laminato nuovo|nuovo laminato)\b/.test(q);
+  const wantsMaterial = /\b(materials?|in the price list|to the price list|new (fibre|fiber|fabric|resin)|team item|that does not exist|material[ei]|nel listino|al listino|nuov[oa] (fibra|tessuto|resina)|voce del team|che non c'e|che non ce|non esiste|non c'e)\b/.test(q);
 
   // --- nuovo materiale nel listino del team
   if (wantsMaterial && !removing) {
@@ -175,7 +175,7 @@ export function parseCommand(question, { ev, spec } = {}) {
         },
         target: { view: 'parts', opts: { part: id } },
       });
-      if (comp.id === 'wingbars' && /terrazz/.test(normalize(name))) out.notes.push('Nota: il componente Terrazze esiste già e contiene Wing panel e Wing frame; il nuovo pezzo si aggiunge a quelli.');
+      if (comp.id === 'wingbars' && /terrazz|\bwings?\b/.test(normalize(name))) out.notes.push('Nota: il componente Terrazze esiste già e contiene Wing panel e Wing frame; il nuovo pezzo si aggiunge a quelli.');
     }
   }
 
@@ -304,7 +304,7 @@ export function parseCommand(question, { ev, spec } = {}) {
 const KIND_IT = { reinforcement: 'Rinforzi', matrix: 'Matrici e resine', core: 'Anime', consumable: 'Consumabili', hardware: 'Voci del team (MSRP, Discord)', other: 'Altro' };
 
 function kindOf(n) {
-  if (/carbon|carbo|innegra|basalt|vetro|glass|kevlar|aramid|lino|flax|fibr|tessut|diolen|dyneema/.test(n)) return 'reinforcement';
+  if (/carbon|carbo|innegra|basalt|vetro|glass|kevlar|aramid|lino|flax|fibr|fiber|fabric|tessut|diolen|dyneema/.test(n)) return 'reinforcement';
   if (/resin|epossid|epoxy|vinil|poliest/.test(n)) return 'matrix';
   if (/anima|core|schiuma|foam|balsa|pet|pvc|nido/.test(n)) return 'core';
   if (/peel|sacco|breather|nastro|tape|distaccante/.test(n)) return 'consumable';

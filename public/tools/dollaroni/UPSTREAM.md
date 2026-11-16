@@ -28,3 +28,10 @@ service worker or local updater is registered by the embedded entry point.
 - crm.3: protezione del lavoro non salvato con copia di recupero, avviso se il file locale è cambiato, nuovi controlli sui conti (valori negativi, id duplicati, voci a costo zero, carbonio su voci a mano, foil senza gruppo).
 - crm.4: interfaccia per il telefono (fino a 760 px): `styles/mobile.css` (nuovo, caricato dopo `crm.css`), etichette `data-label` e classi nelle viste Voci, Listino, Performance Rating, barra in alto con testi brevi, `go()` porta in vista la sezione scelta. Sopra 760 px l'aspetto non cambia.
 - Nessuna modifica a `crm.js`, `crm.css`, protocollo `postMessage` o pagina host. Test di Dollaroni 81/81.
+
+## 0.7.0-crm.1 (Mario, 16/11/2026)
+
+- Dalla 0.7.0 di `val4mario-sketch/dollaroni-app` (commit `3414efc`): regole 2027 con la libreria di SuMoth Agora (`data/official/2027_SuMoth_Agora_library.json`, v2026.01): prezzi, frazione di resina in massa per processo × famiglia di fibra, prepreg, densità standard delle anime; sconti di provenienza applicati come su Agora; nel 2027 niente xlsx del Layup Calculator, solo le tabelle di layup come immagini. Messaggi tradotti in italiano.
+- Dalla 0.6.0: Brumoth riconosce anche le domande in inglese (solo le parole chiave in `src/engine/assistant.js` e `actions.js`; le risposte restano in italiano).
+- Aggiornare la libreria quando Agora la cambia: `python scripts/update-dollaroni-agora.py`, poi i test di Dollaroni.
+- Nessuna modifica a `crm.js`, `crm.css`, `llm.js`, pagina host o endpoint Gemini. Test di Dollaroni 83/83.
