@@ -34,14 +34,17 @@ export function loadMock(fallback: Workspace): Workspace {
 export function emptyWorkspace(): Workspace {
   return Object.fromEntries(COLLECTIONS.map(k => [k, []])) as unknown as Workspace;
 }
+// Account condiviso del team: entra nel CRM ma non è una persona, quindi non ha nome né reparto.
+export const TEAM_ACCOUNT_EMAIL = "sapienzafoilingteam@gmail.com";
 export async function verifyWorkspaceAccess() {
   if (!supabase) throw new Error("Configura URL e chiave pubblica Supabase.");
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("LOGIN");
-  const { data: member, error: memberError } = await supabase.from("members").select("active").eq("id", user.id).maybeSingle();
+  const { data: member, error: memberError } = await supabase.from("members").select("active,full_name,team_id,role").eq("id", user.id).maybeSingle();
   if (memberError) throw new Error("Non riesco a verificare l’abilitazione al CRM. Riprova.");
-  if (!member?.active) throw new Error("Account non abilitato al CRM. Contatta il responsabile del team.");
-  return user;
+  if (!member?.active) throw new Error("Account non abilitato al CRM. Contatta un responsabile del team.");
+  const shared = user.email?.toLowerCase() === TEAM_ACCOUNT_EMAIL;
+  return { user, shared, fullName: (member.full_name as string) || "", role: (member.role as string) || "membro", profileComplete: shared || Boolean(member.full_name && (member.team_id || member.role === "team_captain")) };
 }
 export async function loadRemote(collections: readonly Collection[] = COLLECTIONS, season?: string): Promise<Partial<Workspace>> {
   if (!supabase) throw new Error("Configurazione Supabase mancante.");

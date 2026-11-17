@@ -2,6 +2,7 @@
 import { PROJECTS, findProject, projectPath } from '@/lib/software-projects';
 import { Collection, SEASONS, TEAMS } from "@/lib/model";
 import { newRecord } from "@/lib/new-record";
+import { initials } from "@/lib/attendance";
 import { live, supabase } from "@/lib/repository";
 import { routeCollections } from '@/lib/workspace-resources';
 import {
@@ -11,6 +12,7 @@ import {
   CalendarDays,
   ChevronDown,
   ChevronRight,
+  ClipboardCheck,
   Compass,
   FolderOpen,
   Home,
@@ -52,6 +54,7 @@ const CostsView = dynamic(() => import("./views/costs").then(m => m.CostsView), 
 const AgendaView = dynamic(() => import("./views/agenda").then(m => m.AgendaView), { loading: ViewLoading });
 const LibraryView = dynamic(() => import("./views/library").then(m => m.LibraryView), { loading: ViewLoading });
 const FeatureRequestsView = dynamic(() => import("./views/feature-requests").then(m => m.FeatureRequestsView), { loading: ViewLoading });
+const AttendanceView = dynamic(() => import("./attendance").then(m => m.AttendanceView), { loading: ViewLoading });
 const SettingsView = dynamic(() => import("./views/settings").then(m => m.SettingsView), { loading: ViewLoading });
 export type Edit = (
   k: Collection,
@@ -69,7 +72,9 @@ const management = [
   ["bilancio", "Bilancio"],
 ];
 export function WorkspaceApp({ path }: { path: string[] }) {
-  const { data, season, setSeason, ready, ensure, isLoaded, notice } = useWorkspace();
+  const { data, season, setSeason, ready, ensure, isLoaded, notice, account } = useWorkspace();
+  // Account personale: iniziali e nome; account del team (o demo): workspace condiviso.
+  const personal = live && account && !account.shared && account.fullName ? account.fullName : '';
   const isMobile = useMobile();
   const { style: navigationStyle } = useNavigationAppearance();
   const routeKey = path.join('/');
@@ -157,6 +162,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
       : section === "reparti" ? "Reparti"
       : section === "altro" ? "Altro"
       : section === "richieste-crm" ? "Richieste di sviluppo"
+      : section === "presenze" ? "Presenze"
       : section === "agenda"
         ? "Agenda e Delivery"
         : section === "recruiting"
@@ -175,6 +181,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
   else if (section === "agenda") content = <AgendaView {...args} />;
   else if (section === "drive") content = <DriveView />;
   else if (section === "recruiting") content = <RecruitingView />;
+  else if (section === "presenze") content = <AttendanceView />;
   else if (section === "impostazioni") content = <SettingsView {...args} />;
   else if (section === "team" && team) {
     if (isSoftwareProject) content = <SoftwareProjectPage key={path[3]} slug={path[3] || ""} />;
@@ -271,6 +278,7 @@ export function WorkspaceApp({ path }: { path: string[] }) {
             <Users size={18} />Recruiting
           </Link>
           <a href="/design-system/index.html" className="nav-link"><span aria-hidden="true">✳</span>Design system</a>
+          <Link href="/presenze" className={section === "presenze" ? "nav-link active" : "nav-link"}><ClipboardCheck size={18} />Presenze</Link>
           <div className="nav-caption">I NOSTRI REPARTI</div>
           {TEAMS.map((t) => (
             <div key={t.id}>
@@ -301,10 +309,10 @@ export function WorkspaceApp({ path }: { path: string[] }) {
         </nav>
         <div className="sidebar-bottom">
           <div className="profile">
-            <div className="avatar">SF</div>
+            <div className={"avatar" + (personal && initials(personal).length > 2 ? " three" : "")} aria-hidden="true">{personal ? initials(personal) : "SF"}</div>
             <div>
-              <strong>Workspace condiviso</strong>
-              <small>{live ? "Team connesso" : "Anteprima dimostrativa"}</small>
+              <strong>{personal || "Workspace condiviso"}</strong>
+              <small>{personal ? "Utente connesso" : live ? "Team connesso" : "Anteprima dimostrativa"}</small>
             </div>
             {live && (
               <button

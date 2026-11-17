@@ -5,6 +5,7 @@ import { readRequest } from "@/lib/feature-requests";
 import { SoftwareProjects } from "../software-projects";
 import { DepartmentResources } from "../department-resources";
 import { DepartmentPage } from "../department-page";
+import { DepartmentAttendance } from "../attendance";
 import { Deadlines } from "../deadlines";
 import { DriveView } from "../drive-view";
 import { useWorkspace } from "../provider";
@@ -22,6 +23,7 @@ export function TeamView({
     <>
       <Heading eyebrow="SPAZIO DEL REPARTO" title={team.name} description={team.description} />
       <DepartmentResources />
+      <DepartmentAttendance team={team} />
       {team.id === "elettronica" && <SoftwareProjects />}
       <div className="team-resources">
         {data.links

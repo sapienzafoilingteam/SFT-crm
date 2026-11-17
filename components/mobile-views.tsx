@@ -1,12 +1,13 @@
 'use client';
 import Link from 'next/link';
-import { ArrowUpRight, CalendarDays, ChevronRight, FolderOpen, Globe, Lightbulb, LogOut, Plus, Settings, Users } from 'lucide-react';
+import { ArrowUpRight, CalendarDays, ChevronRight, ClipboardCheck, FolderOpen, Globe, Lightbulb, LogOut, Plus, Settings, Users } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { departmentMeetingsForMonth } from '@/lib/department-resources';
 import { SEASONS, TEAMS, dateLabel, safeUrl } from '@/lib/model';
 import { live, supabase } from '@/lib/repository';
 import { useWorkspace } from './provider';
 import { Deadlines } from './deadlines';
+import { CaptainAttendance } from './attendance';
 import { DepartmentResources } from './department-resources';
 import { Button } from './ui/button';
 import { Heading } from './views/shared';
@@ -16,7 +17,8 @@ import { PwaInstall } from './pwa';
 import type { Edit } from './workspace-app';
 
 export function MobileHome({ edit }: { edit: Edit }) {
-  const { data, season } = useWorkspace();
+  const { data, season, account } = useWorkspace();
+  const captain = !live || account?.role === 'team_captain';
   const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Rome' }).format(new Date());
   const links = data.links.filter(l => !l.archived && l.season_id === season && !l.team_id);
   const todayItems = [...data.deliveries, ...data.events].filter(d => !d.archived && d.season_id === season && d.date === today);
@@ -24,6 +26,7 @@ export function MobileHome({ edit }: { edit: Edit }) {
   return <div className="mobile-home">
     <div className="mobile-welcome"><div><h1>Il tuo workspace</h1><p>{dateLabel(today)} · Stagione {SEASONS.find(s => s.id === season)?.name}</p></div></div>
     <section className="mobile-today"><div><span>Oggi</span><strong>{todayCount ? `${todayCount} ${todayCount === 1 ? 'impegno' : 'impegni'} in agenda` : 'La giornata del team'}</strong></div><Link href="/agenda" aria-label="Apri agenda"><CalendarDays size={22} /></Link></section>
+    {captain && <CaptainAttendance />}
     <Deadlines edit={edit} />
     <div className="mobile-section-title"><h2>Accesso rapido</h2><Button variant="ghost" size="icon" aria-label="Aggiungi link" onClick={() => edit('links')}><Plus size={20} /></Button></div>
     <div className="mobile-group">
@@ -43,7 +46,7 @@ export function MoreView() {
   const { preference, setPreference } = useNavigationAppearance();
   return <><Heading title="Altro" description="Strumenti e preferenze del workspace." />
     <div className="mobile-group">{[
-      ['/recruiting', 'Recruiting', Users], ['/team/management/sponsor', 'Sponsor e partnership', Users],
+      ['/presenze', 'Presenze', ClipboardCheck], ['/recruiting', 'Recruiting', Users], ['/team/management/sponsor', 'Sponsor e partnership', Users],
       ['/team/management/bilancio', 'Bilancio', FolderOpen], ['/team/management/contratti', 'Contratti', FolderOpen],
       ['/richieste-crm', 'Richieste di sviluppo', Lightbulb], ['/impostazioni', 'Impostazioni', Settings],
     ].map(([href, label, Icon]) => { const ItemIcon = Icon as typeof Users; return <Link className="mobile-row" href={href as string} key={href as string}><ItemIcon size={21} /><span>{label as string}</span><ChevronRight size={18} /></Link>; })}</div>

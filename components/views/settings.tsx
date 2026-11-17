@@ -16,6 +16,7 @@ RotateCcw
 } from "lucide-react";
 import { useEffect,useState } from "react";
 import { useWorkspace } from "../provider";
+import { MembersAdmin } from "../members-admin";
 import { Button } from "../ui/button";
 import { ArchiveButton,Badge,Empty,Heading,SectionTitle,type Props } from "./shared";
 export function SettingsView({ edit }: Props) {
@@ -42,6 +43,7 @@ export function SettingsView({ edit }: Props) {
         {[
           ["link", "Link utili"],
           ["database", "Database e accessi"],
+          ["account", "Account del team"],
           ["archivio", "Archivio"],
         ].map(([k, t]) => (
           <button
@@ -53,7 +55,7 @@ export function SettingsView({ edit }: Props) {
           </button>
         ))}
       </div>
-      {tab === "link" ? (
+      {tab === "account" ? <MembersAdmin /> : tab === "link" ? (
         <section className="panel settings-links">
           <SectionTitle title="Link della stagione">
             <Button onClick={() => edit("links")}>

@@ -8,7 +8,7 @@ import { live, initialAuthMode, loadMock, loadRemote, persist, supabase, verifyW
 import { WorkspaceResources } from '@/lib/workspace-resources';
 import { clearViewState } from '@/lib/view-state';
 import { Button } from './ui/button';
-import { AuthPanel } from './auth-panel';
+import { AuthPanel, ProfilePanel } from './auth-panel';
 import { LegalLinks } from './legal-page';
 import { PublicHome } from './public-home';
 interface State {
@@ -17,7 +17,10 @@ interface State {
     busy: boolean;
     ready: boolean;
     revision: number;
+    account: Account | null;
 }
+/** Chi ha fatto l'accesso: l'account condiviso del team oppure un membro con nome e cognome. */
+export interface Account { shared: boolean; fullName: string; role: string }
 interface Actions {
     setSeason: (season: string) => void;
     save: (fn: (data: Workspace) => Workspace, options?: { silent?: boolean }) => Promise<boolean>;
@@ -68,6 +71,7 @@ export function Provider({ children, publicHome = false, inactive = false }: {
     const [ready, setReady] = useState(false), [busy, setBusy] = useState(false);
     const [revision, setRevision] = useState(0), [problem, setProblem] = useState('');
     const [accountEmail, setAccountEmail] = useState('');
+    const [account, setAccount] = useState<Account | null>(null);
     const [recovery, setRecovery] = useState(initialAuthMode === 'recovery');
     const activeSeason = useRef(season), dataRef = useRef(data), saving = useRef(false), authorized = useRef(false), initialized = useRef(false);
     const epoch = useRef(0);
@@ -98,12 +102,17 @@ export function Provider({ children, publicHome = false, inactive = false }: {
                 void persist(next, stored).catch(() => notice('Impossibile salvare nel browser.'));
             return;
         }
-        void verifyWorkspaceAccess().then(user => {
+        void verifyWorkspaceAccess().then(({ user, shared, fullName, role, profileComplete }) => {
             if (cancelled || generation !== epoch.current)
                 return;
             setAccountEmail(user.email || '');
+            setAccount({ shared, fullName, role });
             if (!user.user_metadata?.password_configured || initialAuthMode === 'invite' || initialAuthMode === 'recovery') {
                 setProblem('SET_PASSWORD');
+                return;
+            }
+            if (!profileComplete) {
+                setProblem('COMPLETE_PROFILE');
                 return;
             }
             authorized.current = true;
@@ -235,10 +244,10 @@ export function Provider({ children, publicHome = false, inactive = false }: {
     }, [save]);
     const isLoaded = useCallback((keys: readonly Collection[]) => !live || resources.has(activeSeason.current, keys), [resources]);
     const actions = useMemo(() => ({ setSeason, ensure, refresh, save, put, notice, isLoaded }), [setSeason, ensure, refresh, save, put, isLoaded]);
-    const state = useMemo(() => ({ data, season, ready, busy, revision }), [data, season, ready, busy, revision]);
+    const state = useMemo(() => ({ data, season, ready, busy, revision, account }), [data, season, ready, busy, revision, account]);
     return <ThemeProvider attribute="class" defaultTheme="system" enableSystem><ActionsContext.Provider value={actions}><StateContext.Provider value={state}>
-    {inactive ? children : live && !ready ? publicHome && problem !== 'SET_PASSWORD' ? <PublicHome /> : <div className="login"><img src="/logo.svg" alt="Sapienza Foiling Team"/>
-      {problem === 'LOGIN' || problem === 'SET_PASSWORD' ? <AuthPanel setup={problem === 'SET_PASSWORD'} accountEmail={accountEmail} recovery={recovery}/> : <><h1>Il tuo spazio di squadra.</h1><p role={problem ? 'alert' : 'status'}>{problem || 'Verifica dell’accesso…'}</p>{problem && <Button onClick={() => window.location.reload()}>Riprova</Button>}</>}
+    {inactive ? children : live && !ready ? publicHome && problem !== 'SET_PASSWORD' && problem !== 'COMPLETE_PROFILE' ? <PublicHome /> : <div className="login"><img src="/logo.svg" alt="Sapienza Foiling Team"/>
+      {problem === 'COMPLETE_PROFILE' ? <ProfilePanel accountEmail={accountEmail}/> : problem === 'LOGIN' || problem === 'SET_PASSWORD' ? <AuthPanel setup={problem === 'SET_PASSWORD'} accountEmail={accountEmail} recovery={recovery}/> : <><h1>Il tuo spazio di squadra.</h1><p role={problem ? 'alert' : 'status'}>{problem || 'Verifica dell’accesso…'}</p>{problem && <Button onClick={() => window.location.reload()}>Riprova</Button>}</>}
       <LegalLinks /></div> : children}
     <Toast />
   </StateContext.Provider></ActionsContext.Provider></ThemeProvider>;

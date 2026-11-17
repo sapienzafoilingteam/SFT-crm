@@ -5,7 +5,7 @@ export const SEASONS = [
 export const TEAMS = [
   {
     id: "scafo",
-    name: "Scafo e terrazze",
+    name: "Scafo e Terrazze",
     short: "Scafo",
     description: "Forma, struttura e performance sull’acqua.",
     color: "#9c5964",
