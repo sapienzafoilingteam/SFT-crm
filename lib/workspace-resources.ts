@@ -15,6 +15,7 @@ export function routeCollections(path: readonly string[]): Collection[] {
         return [...common, 'links'];
     if (section !== 'team')
         return common;
+    if (path[1] === 'materiali' && path[2] === 'dollaroni') return [...common, 'reports'];
     if (path[1] === 'elettronica' && path[2] === 'progetti') return common;
     if (path[1] !== 'management' || path[2] === 'pagina')
         return [...common, 'pages', 'reports', 'links'];
@@ -23,6 +24,7 @@ export function routeCollections(path: readonly string[]): Collection[] {
         eventi: ['events', 'sponsors', 'costs'], bilancio: ['costs', 'events', 'sponsors'],
         contratti: ['contracts', 'offers', 'documents', 'sponsors', 'events'],
         template: ['templates', 'documents', 'sponsors', 'events'],
+        social: ['sponsors', 'events'],
     };
     return [...common, ...(modules[path[2] || ''] || [])];
 }

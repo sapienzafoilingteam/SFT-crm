@@ -1,0 +1,15 @@
+from pathlib import Path
+import json
+import zipfile
+root = Path(__file__).resolve().parents[1]
+media = root / "public/media-kit"
+data = json.loads((media / "content.json").read_text())
+with zipfile.ZipFile(media / "SFT-media-kit.zip", "w", zipfile.ZIP_DEFLATED) as archive:
+    for name in ("content.json", "presentazione.txt"):
+        archive.write(media / name, "SFT-media-kit/" + name)
+    archive.write(root / "LICENSES/ASSET_PROVENANCE.md", "SFT-media-kit/PROVENIENZA.md")
+    for folder in ("logos", "exports"):
+        for file in sorted((root / "public/brand" / folder).iterdir()):
+            archive.write(file, "SFT-media-kit/" + folder + "/" + file.name)
+    for photo in data["photos"]:
+        archive.write(root / "public/brand/photos" / photo["file"], "SFT-media-kit/photos/" + photo["file"])

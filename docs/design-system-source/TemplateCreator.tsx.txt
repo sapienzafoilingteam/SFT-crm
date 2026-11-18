@@ -1,0 +1,43 @@
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+export const templates = [['update','Aggiornamento progetto'],['recruiting','Reparti e recruiting'],['technical','Spiegazione tecnica'],['event','Evento e trasferta'],['sponsor','Partner e sponsor'],['carousel-body','Slide interna carosello'],['story','Story'],['presentation','Presentazione 16:9'],['presentation-content','Slide contenuti']];
+
+export function TemplateCreator() {
+ const [selected,setSelected]=useState<string|null>(null);
+ const [source,setSource]=useState('');
+ const [texts,setTexts]=useState<string[]>([]);
+ const [preview,setPreview]=useState('');
+ const [error,setError]=useState('');
+ const [exporting,setExporting]=useState(false);
+ useEffect(()=>{
+  setSource('');setTexts([]);setError('');
+  if(!selected)return;
+  const controller=new AbortController();
+  fetch(`./templates/${selected}.svg`,{signal:controller.signal}).then(r=>{if(!r.ok)throw Error();return r.text();}).then(svg=>{
+   setTexts(Array.from(new DOMParser().parseFromString(svg,'image/svg+xml').querySelectorAll('text')).map(t=>t.textContent||''));setSource(svg);
+  }).catch(e=>{if(e.name!=='AbortError')setError('Impossibile caricare il template. Chiudi e riprova.');});
+  return ()=>controller.abort();
+ },[selected]);
+ useEffect(()=>{
+  if(!source){setPreview('');return;}
+  const doc=new DOMParser().parseFromString(source,'image/svg+xml');
+  doc.querySelectorAll('text').forEach((t,i)=>{t.textContent=texts[i]??'';});
+  const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(doc)],{type:'image/svg+xml'}));
+  setPreview(url);return ()=>URL.revokeObjectURL(url);
+ },[source,texts]);
+ const download=(url:string,extension:string)=>{const a=document.createElement('a');a.href=url;a.download=`sft-${selected}-personalizzato.${extension}`;a.click();};
+ const exportPng=async()=>{
+  setExporting(true);setError('');
+  try{
+   const img=new Image();img.src=preview;await img.decode();
+   const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+   const context=canvas.getContext('2d');if(!context)throw Error();context.drawImage(img,0,0);
+   const blob=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error()),'image/png'));
+   const url=URL.createObjectURL(blob);download(url,'png');setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch{setError('Esportazione PNG non riuscita. Puoi scaricare il file SVG.');}finally{setExporting(false);}
+ };
+ return <><div className="catalog-template-grid mt-10">{templates.map(([file,label])=><article key={file} className="sample"><img src={`./templates/${file}.svg`} alt={`Template ${label}`} loading="lazy"/><div className="p-5 grid gap-3"><h3 className="font-semibold">{label}</h3><Button onClick={()=>setSelected(file)}>Crea template</Button><Button asChild variant="outline"><a href={`./templates/${file}.svg`} download>Scarica originale SVG</a></Button></div></article>)}</div><Dialog open={!!selected} onOpenChange={open=>{if(!open)setSelected(null);}}><DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto"><DialogHeader><DialogTitle>Crea template · {templates.find(([id])=>id===selected)?.[1]}</DialogTitle><DialogDescription>Personalizza i testi e scarica il risultato. Ogni campo corrisponde a una riga: verifica che i testi rimangano dentro la griglia nell’anteprima.</DialogDescription></DialogHeader>{error&&<p role="alert">{error}</p>}{!source&&!error&&<p role="status">Caricamento template…</p>}{source&&<div className="catalog-grid"><div className="grid gap-3 self-start">{texts.map((value,i)=><label className="grid gap-1 text-sm" key={i} htmlFor={`creator-text-${i}`}>Riga {i+1}<Input id={`creator-text-${i}`} value={value} onChange={e=>setTexts(previous=>previous.map((text,index)=>index===i?e.target.value:text))}/></label>)}<div className="flex flex-wrap gap-2"><Button disabled={!preview} onClick={()=>download(preview,'svg')}>Scarica SVG</Button><Button variant="outline" disabled={!preview||exporting} onClick={exportPng}>{exporting?'Esportazione…':'Scarica PNG'}</Button></div></div>{preview&&<img src={preview} alt="Anteprima del template personalizzato" className="w-full self-start"/>}</div>}</DialogContent></Dialog></>;
+}

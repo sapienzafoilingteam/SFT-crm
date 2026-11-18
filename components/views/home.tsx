@@ -29,6 +29,7 @@ import { linkIcon } from "../link-icons";
 import { useWorkspace } from "../provider";
 import { Button } from "../ui/button";
 import { Empty, SectionTitle, type Props } from "./shared";
+import { isDollaroniReport } from "@/lib/dollaroni";
 import { readRequest } from "@/lib/feature-requests";
 import { live } from "@/lib/repository";
 const teamIcons = [Waves, Megaphone, Leaf, Wrench, Wind, Cpu, Anchor];
@@ -39,7 +40,7 @@ export function HomeView({ edit }: Props) {
   );
   const captain = !live || account?.role === "team_captain";
   const reports = data.reports
-    .filter((x) => !x.archived && x.season_id === season && !readRequest(x))
+    .filter((x) => !x.archived && x.season_id === season && !readRequest(x) && !isDollaroniReport(x))
     .slice(0, 3);
   return (
     <>

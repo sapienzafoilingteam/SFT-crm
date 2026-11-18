@@ -1,0 +1,10 @@
+{
+  "version": "0.7.0-crm.1",
+  "date": "2026-11-16",
+  "notes": [
+    "Regole 2027 con la libreria di SuMoth Agora (v2026.01): prezzi di Agora, resina calcolata come su Agora (frazione in massa per processo e fibra), prepreg e densità standard delle anime. Gli sconti di provenienza li applica Agora: niente più avviso \"da confermare\".",
+    "Nel 2027 non c'è più il file del Layup Calculator da compilare: l'export tiene le tabelle di layup come immagini. Meravijosa portata al 2027 fa 8.405,57 SM$ e il Main Horizontal non supera più il limite di carbonio.",
+    "Brumoth capisce anche le domande in inglese (risponde in italiano).",
+    "Più comoda sul telefono: in alto restano solo budget e sezioni, le voci di costo e il Performance Rating diventano schede, campi e pulsanti più grandi."
+  ]
+}
