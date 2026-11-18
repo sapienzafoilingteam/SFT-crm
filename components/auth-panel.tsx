@@ -163,7 +163,7 @@ export function AuthPanel({
         // Clear callback intent; the session remains authenticated.
         window.location.replace("/");
       } else if (register) {
-        const { error: authError } = await supabase.auth.signUp({
+        const { data: signUpData, error: authError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
@@ -182,6 +182,11 @@ export function AuthPanel({
         setGateToken("");
         setPassword("");
         setConfirmation("");
+        // Conferma email disattivata: l'account è già attivo e la sessione aperta.
+        if (signUpData.session) {
+          window.location.replace("/");
+          return;
+        }
         setNotice(
           "Registrazione inviata. Apri il link che ti abbiamo mandato per email: dopo la conferma potrai accedere al CRM.",
         );
