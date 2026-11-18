@@ -49,35 +49,35 @@ export function Compare({ project, ev, evBase, onToS2, onLinkBaseline, onDownloa
     </div>
 
     <${Card} title="Per componente (tabella di confronto della 2.3)">
-      <table class="tbl cmp-tbl">
-        <thead><tr><th>Componente</th><th class="r">S1</th><th class="r">S2</th><th class="r">Δ SM$</th><th class="r">Variazione</th><th style="width:34%"></th></tr></thead>
-        <tbody>${cmp.rows.map((r) => {
+      <table class="tbl stack-table cmp-tbl" role="table">
+        <thead role="rowgroup"><tr role="row"><th role="columnheader">Componente</th><th role="columnheader" class="r">S1</th><th role="columnheader" class="r">S2</th><th role="columnheader" class="r">Δ SM$</th><th role="columnheader" class="r">Variazione</th><th role="columnheader" style="width:34%"></th></tr></thead>
+        <tbody role="rowgroup">${cmp.rows.map((r) => {
           const c = ev.components.find((x) => x.en === r.component);
-          return html`<tr>
-            <td><button class="link" onClick=${() => go('lines', { component: c?.id })}>${c?.it || r.component}</button></td>
-            <td class="r">${r.s1 === null ? '—' : sm(r.s1)}</td>
-            <td class="r strong">${sm(r.s2)}</td>
-            <td class=${`r ${r.delta > 0 ? 't-warn' : r.delta < 0 ? 't-ok' : ''}`}>${r.isNew ? html`<${Badge} tone="info">nuova</${Badge}>` : signed(r.delta)}</td>
-            <td class="r muted">${r.isNew ? '—' : variation(r.variation)}</td>
-            <td><div class="dual-bar"><${Bar} ratio=${(r.s1 || 0) / maxAbs} tone="neutral" height=${5} /><${Bar} ratio=${r.s2 / maxAbs} height=${5} /></div></td>
+          return html`<tr role="row">
+            <td role="cell" class="stack-wide"><button class="link" onClick=${() => go('lines', { component: c?.id })}>${c?.it || r.component}</button></td>
+            <td role="cell" data-label="S1" class="r">${r.s1 === null ? '—' : sm(r.s1)}</td>
+            <td role="cell" data-label="S2" class="r strong">${sm(r.s2)}</td>
+            <td role="cell" data-label="Δ SM$" class=${`r ${r.delta > 0 ? 't-warn' : r.delta < 0 ? 't-ok' : ''}`}>${r.isNew ? html`<${Badge} tone="info">nuova</${Badge}>` : signed(r.delta)}</td>
+            <td role="cell" data-label="Variazione" class="r muted">${r.isNew ? '—' : variation(r.variation)}</td>
+            <td role="cell" class="stack-wide"><div class="dual-bar"><${Bar} ratio=${(r.s1 || 0) / maxAbs} tone="neutral" height=${5} /><${Bar} ratio=${r.s2 / maxAbs} height=${5} /></div></td>
           </tr>`;
         })}</tbody>
-        <tfoot><tr><td class="strong">Totale</td><td class="r strong">${sm(cmp.total.s1)}</td><td class="r strong">${sm(cmp.total.s2)}</td><td class="r strong">${signed(cmp.total.delta)}</td><td class="r">${variation(cmp.total.variation)}</td><td class="muted small">grigio S1 · blu S2</td></tr></tfoot>
+        <tfoot role="rowgroup"><tr role="row"><td role="cell" class="stack-wide strong">Totale</td><td role="cell" data-label="S1" class="r strong">${sm(cmp.total.s1)}</td><td role="cell" data-label="S2" class="r strong">${sm(cmp.total.s2)}</td><td role="cell" data-label="Δ SM$" class="r strong">${signed(cmp.total.delta)}</td><td role="cell" data-label="Variazione" class="r">${variation(cmp.total.variation)}</td><td role="cell" class="stack-wide muted small">grigio S1 · blu S2</td></tr></tfoot>
       </table>
     </${Card}>
 
     <${Card} title=${html`Cosa è cambiato, voce per voce <span class="muted small">(${items.length} differenze, dalla più grande)</span>`}>
       ${items.length === 0 ? html`<p class="muted">Nessuna differenza: l'S2 è ancora uguale alla stima S1.</p>` : html`
-        <div class="table-scroll"><table class="tbl tbl-compact">
-          <thead><tr><th></th><th>Voce</th><th>Componente</th><th class="r">Quantità S1 → S2</th><th class="r">S1</th><th class="r">S2</th><th class="r">Δ SM$</th></tr></thead>
-          <tbody>${shown.map((x) => html`<tr>
-            <td><${Badge} tone=${KIND[x.kind].tone}>${KIND[x.kind].label}</${Badge}></td>
-            <td>${x.kind === 'removed' ? html`<span class="muted">${x.name}</span>` : html`<button class="link" onClick=${() => (x.auto ? go('parts', { part: x.id.split(':')[0] }) : go('lines', { line: x.id }))}>${x.name}</button>`}</td>
-            <td class="muted">${ev.components.find((c) => c.id === x.component)?.it || x.component}</td>
-            <td class="r small">${x.qty1 === null ? '—' : num(x.qty1, 3)} → ${x.qty2 === null ? '—' : num(x.qty2, 3)} ${x.unit === 'm2' ? 'm²' : x.unit}</td>
-            <td class="r">${x.s1 === null ? '—' : sm(x.s1)}</td>
-            <td class="r">${x.s2 === null ? '—' : sm(x.s2)}</td>
-            <td class=${`r strong ${x.delta > 0 ? 't-warn' : x.delta < 0 ? 't-ok' : ''}`}>${signed(x.delta)}</td>
+        <div class="table-scroll"><table class="tbl stack-table tbl-compact" role="table">
+          <thead role="rowgroup"><tr role="row"><th role="columnheader"></th><th role="columnheader">Voce</th><th role="columnheader">Componente</th><th role="columnheader" class="r">Quantità S1 → S2</th><th role="columnheader" class="r">S1</th><th role="columnheader" class="r">S2</th><th role="columnheader" class="r">Δ SM$</th></tr></thead>
+          <tbody role="rowgroup">${shown.map((x) => html`<tr role="row">
+            <td role="cell"><${Badge} tone=${KIND[x.kind].tone}>${KIND[x.kind].label}</${Badge}></td>
+            <td role="cell" class="stack-wide">${x.kind === 'removed' ? html`<span class="muted">${x.name}</span>` : html`<button class="link" onClick=${() => (x.auto ? go('parts', { part: x.id.split(':')[0] }) : go('lines', { line: x.id }))}>${x.name}</button>`}</td>
+            <td role="cell" data-label="Componente" class="muted">${ev.components.find((c) => c.id === x.component)?.it || x.component}</td>
+            <td role="cell" data-label="Quantità S1 → S2" class="r small">${x.qty1 === null ? '—' : num(x.qty1, 3)} → ${x.qty2 === null ? '—' : num(x.qty2, 3)} ${x.unit === 'm2' ? 'm²' : x.unit}</td>
+            <td role="cell" data-label="S1" class="r">${x.s1 === null ? '—' : sm(x.s1)}</td>
+            <td role="cell" data-label="S2" class="r">${x.s2 === null ? '—' : sm(x.s2)}</td>
+            <td role="cell" data-label="Δ SM$" class=${`r strong ${x.delta > 0 ? 't-warn' : x.delta < 0 ? 't-ok' : ''}`}>${signed(x.delta)}</td>
           </tr>`)}</tbody>
         </table></div>
         ${items.length > 12 && html`<${Button} small onClick=${() => setShowAll(!showAll)}>${showAll ? 'Mostra solo le principali' : `Mostra tutte (${items.length})`}</${Button}>`}`}
@@ -85,13 +85,13 @@ export function Compare({ project, ev, evBase, onToS2, onLinkBaseline, onDownloa
 
     <div class="grid-2">
       <${Card} title="Pezzi laminati: massa S1 → S2">
-        ${parts.length === 0 ? html`<p class="muted">Nessun pezzo laminato.</p>` : html`<table class="tbl tbl-compact">
-          <thead><tr><th>Pezzo</th><th class="r">S1</th><th class="r">S2 calcolato</th><th class="r">S2 pesato</th></tr></thead>
-          <tbody>${parts.map((p) => html`<tr>
-            <td>${p.kind === 'removed' ? html`<span class="muted">${p.name} (eliminato)</span>` : html`<button class="link" onClick=${() => go('parts', { part: p.id })}>${p.name}</button>`}${p.kind === 'new' ? html` <${Badge} tone="info">nuovo</${Badge}>` : ''}</td>
-            <td class="r">${p.mass1 === null ? '—' : kg(p.mass1)}</td>
-            <td class="r">${p.mass2 === null ? '—' : kg(p.mass2)}</td>
-            <td class="r">${p.weighed === null ? html`<span class="muted small">da pesare</span>` : kg(p.weighed)}</td>
+        ${parts.length === 0 ? html`<p class="muted">Nessun pezzo laminato.</p>` : html`<table class="tbl stack-table tbl-compact" role="table">
+          <thead role="rowgroup"><tr role="row"><th role="columnheader">Pezzo</th><th role="columnheader" class="r">S1</th><th role="columnheader" class="r">S2 calcolato</th><th role="columnheader" class="r">S2 pesato</th></tr></thead>
+          <tbody role="rowgroup">${parts.map((p) => html`<tr role="row">
+            <td role="cell" class="stack-wide">${p.kind === 'removed' ? html`<span class="muted">${p.name} (eliminato)</span>` : html`<button class="link" onClick=${() => go('parts', { part: p.id })}>${p.name}</button>`}${p.kind === 'new' ? html` <${Badge} tone="info">nuovo</${Badge}>` : ''}</td>
+            <td role="cell" data-label="S1" class="r">${p.mass1 === null ? '—' : kg(p.mass1)}</td>
+            <td role="cell" data-label="S2 calcolato" class="r">${p.mass2 === null ? '—' : kg(p.mass2)}</td>
+            <td role="cell" data-label="S2 pesato" class="r">${p.weighed === null ? html`<span class="muted small">da pesare</span>` : kg(p.weighed)}</td>
           </tr>`)}</tbody></table>`}
       </${Card}>
       <${Card} title="Quanto è già as-built (per la 2.4)">

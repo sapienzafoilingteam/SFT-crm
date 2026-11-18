@@ -80,7 +80,7 @@ export function TextInput({ value, onChange, width, placeholder, title, classNam
 }
 
 /** options: [{value, label, group?}] */
-export function Select({ value, onChange, options, width, title, className = '', placeholder }) {
+export function Select({ id, value, onChange, options, width, title, className = '', placeholder }) {
   const groups = [];
   for (const o of options) {
     const g = o.group || '';
@@ -90,7 +90,7 @@ export function Select({ value, onChange, options, width, title, className = '',
   }
   const opt = (o) => html`<option value=${o.value} selected=${o.value === value}>${o.label}</option>`;
   const known = options.some((o) => o.value === value);
-  return html`<select class=${`inp ${className}`} style=${width ? { width: typeof width === 'number' ? width + 'px' : width } : null} title=${title}
+  return html`<select id=${id} class=${`inp ${className}`} style=${width ? { width: typeof width === 'number' ? width + 'px' : width } : null} title=${title}
     onChange=${(e) => onChange(e.target.value)}>
     ${placeholder !== undefined && html`<option value="" selected=${!value}>${placeholder}</option>`}
     ${!known && value && html`<option value=${value} selected>${value} (non trovato)</option>`}

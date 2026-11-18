@@ -37,6 +37,11 @@ export function Parts({ project, ev, evBase, ctx, update, selectedId, onSelect }
       ? html`<${Empty} title="Ancora nessun pezzo laminato" action=${html`<${Button} kind="primary" icon="plus" onClick=${add}>Aggiungi il primo pezzo</${Button}>`}>
           Scafo, pannelli e telaio delle terrazze, paratie, foil… ognuno con i suoi substack di fibra e resina.</${Empty}>`
       : html`<div class="parts-layout">
+          <div class="field part-picker">
+            <label for="dollaroni-part">Pezzo da modificare</label>
+            <${Select} id="dollaroni-part" value=${selected?.id} onChange=${onSelect}
+              options=${parts.map((part) => ({ value: part.id, label: part.name || 'Senza nome' }))} />
+          </div>
           <nav class="parts-list" aria-label="Pezzi">
             ${parts.map((p) => {
               const pr = ev.parts.find((x) => x.part.id === p.id);
@@ -230,14 +235,14 @@ function WasteCard({ part, ev, set }) {
   return html`<${Card} title="Scarti di materiale (§9.2.2)">
     <p class="muted small">Materiale consumato in più rispetto a quello che resta nel pezzo: ritagli di tessuto, resina rimasta nei bicchieri, anima rifilata.
       Si somma alla quantità e al costo delle voci del pezzo. Non conta nei limiti di carbonio né nelle masse.</p>
-    ${rows.size === 0 ? html`<p class="muted">Nessun materiale nel pezzo.</p>` : html`<div class="table-scroll"><table class="tbl tbl-compact">
-      <thead><tr><th>Materiale</th><th class="r">Nel pezzo</th><th class="r">Scarto (kg)</th><th class="r">Consumato</th><th class="r">Scarto %</th></tr></thead>
-      <tbody>${[...rows.values()].map((r) => html`<tr>
-        <td>${r.name}</td>
-        <td class="r">${kg(r.used - r.waste, 3)}</td>
-        <td class="r"><${NumInput} value=${part.waste?.[r.ref]} width=${80} placeholder="0" onChange=${(v) => setWaste(r.ref, v)} /></td>
-        <td class="r">${kg(r.used, 3)}</td>
-        <td class="r">${r.used > 0 && r.waste > 0 ? pct(r.waste / r.used) : '—'}</td>
+    ${rows.size === 0 ? html`<p class="muted">Nessun materiale nel pezzo.</p>` : html`<div class="table-scroll"><table class="tbl stack-table tbl-compact" role="table">
+      <thead role="rowgroup"><tr role="row"><th role="columnheader">Materiale</th><th role="columnheader" class="r">Nel pezzo</th><th role="columnheader" class="r">Scarto (kg)</th><th role="columnheader" class="r">Consumato</th><th role="columnheader" class="r">Scarto %</th></tr></thead>
+      <tbody role="rowgroup">${[...rows.values()].map((r) => html`<tr role="row">
+        <td role="cell" class="stack-wide">${r.name}</td>
+        <td role="cell" data-label="Nel pezzo" class="r">${kg(r.used - r.waste, 3)}</td>
+        <td role="cell" data-label="Scarto (kg)" class="r"><${NumInput} value=${part.waste?.[r.ref]} width=${80} placeholder="0" onChange=${(v) => setWaste(r.ref, v)} /></td>
+        <td role="cell" data-label="Consumato" class="r">${kg(r.used, 3)}</td>
+        <td role="cell" data-label="Scarto %" class="r">${r.used > 0 && r.waste > 0 ? pct(r.waste / r.used) : '—'}</td>
       </tr>`)}</tbody></table></div>`}
   </${Card}>`;
 }

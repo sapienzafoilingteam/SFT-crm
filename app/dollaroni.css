@@ -36,17 +36,14 @@
   .dollaroni-page > .page-heading .heading-actions { width: auto; }
   .dollaroni-toolbar { gap: 10px; padding: 12px; }
   .dollaroni-current-project { flex-basis: 100%; }
-  .dollaroni-workspace-actions { width: 100%; }
-  .dollaroni-workspace-actions > .btn:first-child { flex: 1; }
+  .dollaroni-workspace-actions { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)) 44px; }
+  .dollaroni-workspace-actions > .btn { min-width: 0; min-height: 44px; white-space: normal; padding-inline: 6px; }
   .dollaroni-projects-drawer { padding: 12px; }
   .dollaroni-project-picker { flex-basis: 100%; }
-  .dollaroni-project-controls > .btn { flex: 1; }
+  .dollaroni-project-controls > .btn { flex: 1 1 auto; min-height: 44px; }
   .dollaroni-frame-holder { --dollaroni-frame-height: 82dvh; --dollaroni-frame-min-height: 560px; }
 }
-@media (max-width: 380px) {
-  .dollaroni-workspace-actions > .btn { flex: 1 1 100%; }
-}
-@media (max-width: 760px) {
-  .dollaroni-workspace-actions { display: grid; grid-template-columns: minmax(0, 1fr) 44px; }
-  .dollaroni-workspace-actions > .btn:last-child { grid-column: 1 / -1; }
+@media (max-width: 400px) {
+  .dollaroni-workspace-actions { grid-template-columns: minmax(0, 1fr) 44px; }
+  .dollaroni-workspace-actions > .btn:first-child { grid-column: 1 / -1; }
 }

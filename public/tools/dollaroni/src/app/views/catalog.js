@@ -20,29 +20,29 @@ export function Catalog({ project, ctx, update }) {
 
     <${Card} title="Voci del team" actions=${html`<${Button} small icon="plus" onClick=${addExtra}>Aggiungi voce</${Button}>`}>
       <p class="muted small">${ctx.rules.help.catalogExtras}</p>
-      ${extras.length === 0 ? html`<p class="muted">Nessuna voce aggiunta.</p>` : html`<div class="table-scroll"><table class="tbl tbl-cards">
-        <thead><tr><th>Nome</th><th>Tipo</th><th>Unità</th><th class="r">SM$/unità</th><th>Densità g/cm³</th><th>Fonte del prezzo</th><th></th></tr></thead>
-        <tbody>${extras.map((e) => html`<tr>
-          <td><${TextInput} value=${e.name} width=${200} onChange=${(v) => setExtra(e.id, (x) => { x.name = v; }, 'n')} /></td>
-          <td data-label="Tipo"><${Select} value=${e.kind || 'hardware'} options=${EXTRA_KINDS} width=${170} onChange=${(v) => setExtra(e.id, (x) => { x.kind = v; })} /></td>
-          <td data-label="Unità"><${Select} value=${e.unit} options=${UNITS} width=${80} onChange=${(v) => setExtra(e.id, (x) => { x.unit = v; })} /></td>
-          <td class="r" data-label="SM$/unità"><${NumInput} value=${e.price} width=${72} onChange=${(v) => setExtra(e.id, (x) => { x.price = v; }, 'p')} /></td>
-          <td data-label="Densità g/cm³">${e.kind === 'reinforcement' ? html`<${NumInput} value=${e.density} width=${64} placeholder="es. 1,8" onChange=${(v) => setExtra(e.id, (x) => { x.density = v; }, 'd')} />` : html`<span class="muted small">—</span>`}</td>
-          <td data-label="Fonte del prezzo"><${TextInput} value=${e.priceSource} width=${220} placeholder="es. MSRP Harken, Discord 12/11" onChange=${(v) => setExtra(e.id, (x) => { x.priceSource = v; }, 's')} /></td>
-          <td class="row-actions"><${Button} small icon="trash" title="Elimina" onClick=${() => update((d) => { d.catalogExtras = d.catalogExtras.filter((x) => x.id !== e.id); })} /></td>
+      ${extras.length === 0 ? html`<p class="muted">Nessuna voce aggiunta.</p>` : html`<div class="table-scroll"><table class="tbl stack-table" role="table">
+        <thead role="rowgroup"><tr role="row"><th role="columnheader">Nome</th><th role="columnheader">Tipo</th><th role="columnheader">Unità</th><th role="columnheader" class="r">SM$/unità</th><th role="columnheader">Densità g/cm³</th><th role="columnheader">Fonte del prezzo</th><th role="columnheader"></th></tr></thead>
+        <tbody role="rowgroup">${extras.map((e) => html`<tr role="row">
+          <td role="cell" data-label="Nome"><${TextInput} value=${e.name} width=${200} onChange=${(v) => setExtra(e.id, (x) => { x.name = v; }, 'n')} /></td>
+          <td role="cell" data-label="Tipo"><${Select} value=${e.kind || 'hardware'} options=${EXTRA_KINDS} width=${170} onChange=${(v) => setExtra(e.id, (x) => { x.kind = v; })} /></td>
+          <td role="cell" data-label="Unità"><${Select} value=${e.unit} options=${UNITS} width=${80} onChange=${(v) => setExtra(e.id, (x) => { x.unit = v; })} /></td>
+          <td role="cell" data-label="SM$/unità" class="r"><${NumInput} value=${e.price} width=${72} onChange=${(v) => setExtra(e.id, (x) => { x.price = v; }, 'p')} /></td>
+          <td role="cell" data-label="Densità g/cm³">${e.kind === 'reinforcement' ? html`<${NumInput} value=${e.density} width=${64} placeholder="es. 1,8" onChange=${(v) => setExtra(e.id, (x) => { x.density = v; }, 'd')} />` : html`<span class="muted small">—</span>`}</td>
+          <td role="cell" data-label="Fonte del prezzo"><${TextInput} value=${e.priceSource} width=${220} placeholder="es. MSRP Harken, Discord 12/11" onChange=${(v) => setExtra(e.id, (x) => { x.priceSource = v; }, 's')} /></td>
+          <td role="cell" class="row-actions"><${Button} small icon="trash" title="Elimina" onClick=${() => update((d) => { d.catalogExtras = d.catalogExtras.filter((x) => x.id !== e.id); })} /></td>
         </tr>`)}</tbody></table></div>`}
     </${Card}>
 
     <${Card} title=${ctx.libraryVersion ? `Libreria di SuMoth Agora v${ctx.libraryVersion}` : provisional ? `Listino ufficiale 2026 (provvisorio per il ${ctx.rules.id})` : 'Listino ufficiale 2026'} actions=${html`<${TextInput} value=${q} onChange=${setQ} placeholder="Cerca (es. basalt, PET, CNC)" width=${240} />`}>
       ${ctx.catalogWarnings.length > 0 && html`<div class="notice notice-warn">${ctx.catalogWarnings.map((w) => html`<div>${w}</div>`)}</div>`}
-      <div class="table-scroll"><table class="tbl tbl-compact tbl-catalog">
-        <thead><tr><th>Categoria</th><th>Voce</th><th>Unità</th><th class="r">SM$/unità</th><th>Nota</th></tr></thead>
-        <tbody>${entries.map((e) => html`<tr>
-          <td class="muted">${kindLabel(e.kind)}</td>
-          <td>${shortName(e)}</td>
-          <td>${unitLabel(e.unit)}</td>
-          <td class="r">${e.price === null ? html`<${Badge} tone="warn">da chiedere</${Badge}>` : num(e.price, 2)}</td>
-          <td class="muted small">${e.note}</td>
+      <div class="table-scroll"><table class="tbl stack-table tbl-compact" role="table">
+        <thead role="rowgroup"><tr role="row"><th role="columnheader">Categoria</th><th role="columnheader">Voce</th><th role="columnheader">Unità</th><th role="columnheader" class="r">SM$/unità</th><th role="columnheader">Nota</th></tr></thead>
+        <tbody role="rowgroup">${entries.map((e) => html`<tr role="row">
+          <td role="cell" data-label="Categoria" class="muted">${kindLabel(e.kind)}</td>
+          <td role="cell" class="stack-wide">${shortName(e)}</td>
+          <td role="cell" data-label="Unità">${unitLabel(e.unit)}</td>
+          <td role="cell" data-label="SM$/unità" class="r">${e.price === null ? html`<${Badge} tone="warn">da chiedere</${Badge}>` : num(e.price, 2)}</td>
+          <td role="cell" data-label="Nota" class="muted small">${e.note}</td>
         </tr>`)}</tbody>
       </table></div>
     </${Card}>`;

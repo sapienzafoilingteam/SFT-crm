@@ -27,7 +27,12 @@ export function Lines({ project, ev, ctx, update, baseTotals, filter, setFilter,
     <div class="page-head">
       <div><h1>Voci di costo</h1><p class="muted">Tutto quello che costa SM$, diviso nelle 7 categorie del template S2. Le righe grigie arrivano dai pezzi laminati.</p></div>
     </div>
-    <div class="chips">
+    <div class="field cost-filter">
+      <label for="dollaroni-cost-category">Categoria</label>
+      <${Select} id="dollaroni-cost-category" value=${filter || ''} onChange=${(value) => setFilter(value || null)}
+        options=${[{ value: '', label: `Tutte · ${sm(ev.total)}` }, ...ev.components.map((component) => ({ value: component.id, label: `${component.it} · ${sm(component.total)}` }))]} />
+    </div>
+    <div class="chips cost-chips">
       <button class=${`chip ${!filter ? 'active' : ''}`} onClick=${() => setFilter(null)}>Tutte · ${sm(ev.total)}</button>
       ${ev.components.map((c) => html`<button class=${`chip ${filter === c.id ? 'active' : ''}`} onClick=${() => setFilter(c.id)}>${c.it} · ${sm(c.total)}</button>`)}
     </div>
@@ -42,9 +47,9 @@ export function Lines({ project, ev, ctx, update, baseTotals, filter, setFilter,
         </div>`}
         ${c.lines.length === 0
           ? html`<p class="muted small">Nessuna voce.</p>`
-          : html`<div class="table-scroll"><table class="tbl lines-tbl">
-              <thead><tr><th>Voce</th><th>Cosa</th><th class="r">Quantità</th><th>Provenienza / anno</th><th class="r">SM$/unità</th><th>Lavorazione</th><th class="r">Totale SM$</th><th></th></tr></thead>
-              <tbody>
+          : html`<div class="table-scroll"><table class="tbl stack-table lines-tbl" role="table">
+              <thead role="rowgroup"><tr role="row"><th role="columnheader">Voce</th><th role="columnheader">Cosa</th><th role="columnheader" class="r">Quantità</th><th role="columnheader">Provenienza / anno</th><th role="columnheader" class="r">SM$/unità</th><th role="columnheader">Lavorazione</th><th role="columnheader" class="r">Totale SM$</th><th role="columnheader"></th></tr></thead>
+              <tbody role="rowgroup">
                 ${c.lines.map((lr) => lr.line.auto
                   ? html`<${AutoRow} lr=${lr} project=${project} go=${go} isS2=${isS2} baseTotals=${baseTotals} />`
                   : html`<${LineRow} key=${lr.id} lr=${lr} project=${project} ev=${ev} ctx=${ctx} update=${update} expanded=${expandedId === lr.id} setExpanded=${setExpanded} isS2=${isS2} baseTotals=${baseTotals} />`)}
@@ -65,16 +70,16 @@ function AutoRow({ lr, project, go, isS2, baseTotals }) {
   const partId = lr.id.split(':')[0];
   const part = project.parts.find((p) => p.id === partId);
   const m = lr.material;
-  return html`<tr class="row-auto">
-    <td class="c-name">${lr.name}<div class="small muted">calcolata dal pezzo ${part?.name || ''}</div>
+  return html`<tr role="row" class="row-auto">
+    <td role="cell" class="stack-wide">${lr.name}<div class="small muted">calcolata dal pezzo ${part?.name || ''}</div>
       ${isS2 && html`<${StatusPill} status=${lr.status} title="Lo stato si cambia nel pezzo laminato" />`}</td>
-    <td class="c-what" data-label="Cosa">${shortName(m?.entry) || m?.label}</td>
-    <td class="r" data-label="Quantità">${num(m?.qty || 0, 3)} ${unitLabel(m?.unit)}${m?.waste > 0 && html`<span class="s1-ref">di cui scarto ${num(m.waste, 3)}</span>`}</td>
-    <td class="c-opt" data-label="Provenienza">${SOURCE_LABEL[m?.source] || ''}</td>
-    <td class="r" data-label="SM$/unità">${num(m?.unitPrice || 0, 2)}</td>
-    <td class="c-empty"></td>
-    <td class="r strong c-total">${sm(lr.total)}<${S1Ref} isS2=${isS2} baseTotals=${baseTotals} id=${lr.id} /></td>
-    <td class="row-actions"><${Button} small icon="layers" title=${`Apri il pezzo ${part?.name || ''}`} onClick=${() => go('parts', { part: partId })} /></td>
+    <td role="cell" class="stack-wide" data-label="Cosa">${shortName(m?.entry) || m?.label}</td>
+    <td role="cell" class="r" data-label="Quantità">${num(m?.qty || 0, 3)} ${unitLabel(m?.unit)}${m?.waste > 0 && html`<span class="s1-ref">di cui scarto ${num(m.waste, 3)}</span>`}</td>
+    <td role="cell" data-label="Provenienza">${SOURCE_LABEL[m?.source] || ''}</td>
+    <td role="cell" class="r" data-label="SM$/unità">${num(m?.unitPrice || 0, 2)}</td>
+    <td role="cell"></td>
+    <td role="cell" class="r strong" data-label="Totale SM$">${sm(lr.total)}<${S1Ref} isS2=${isS2} baseTotals=${baseTotals} id=${lr.id} /></td>
+    <td role="cell" class="row-actions"><${Button} small icon="layers" title=${`Apri il pezzo ${part?.name || ''}`} onClick=${() => go('parts', { part: partId })} /></td>
   </tr>`;
 }
 
@@ -141,22 +146,22 @@ function LineRow({ lr, project, ev, ctx, update, expanded, setExpanded, isS2, ba
   const duplicate = () => update((d) => { const i = d.lines.findIndex((x) => x.id === line.id); d.lines.splice(i + 1, 0, { ...structuredClone(line), id: uid('line') }); });
 
   return html`
-    <tr class=${`${errs ? 'row-err' : ''} ${expanded ? 'row-open' : ''}`}>
-      <td class="c-name"><${TextInput} value=${line.name} width=${150} placeholder="Nome voce" onChange=${(v) => set((l) => { l.name = v; }, 'lname')} />
+    <tr role="row" class=${`${errs ? 'row-err' : ''} ${expanded ? 'row-open' : ''}`}>
+      <td role="cell" class="stack-wide"><${TextInput} value=${line.name} width=${150} placeholder="Nome voce" onChange=${(v) => set((l) => { l.name = v; }, 'lname')} />
         ${isS2 && html`<div><${StatusPill} status=${lr.status} onToggle=${() => set((l) => { l.status = l.status === 'measured' ? 'estimated' : 'measured'; })} /></div>`}
         ${errs && html`<div class="t-err small">${lr.errors.join(' · ')}</div>`}</td>
-      <td class="c-what" data-label="Cosa">${what}</td>
-      <td class="r" data-label="Quantità">${qty}</td>
-      <td data-label=${type === 'used' ? 'Anno' : 'Provenienza'}>${source}</td>
-      <td class="r" data-label="SM$/unità">${unitPrice}</td>
-      <td class="c-opt" data-label="Lavorazione">${processCell}</td>
-      <td class="r strong c-total">${sm(lr.total)}<${S1Ref} isS2=${isS2} baseTotals=${baseTotals} id=${line.id} /></td>
-      <td class="row-actions">
+      <td role="cell" class="stack-wide" data-label="Cosa">${what}</td>
+      <td role="cell" class="r" data-label="Quantità">${qty}</td>
+      <td role="cell" data-label=${type === 'used' ? 'Anno' : 'Provenienza'}>${source}</td>
+      <td role="cell" class="r" data-label="SM$/unità">${unitPrice}</td>
+      <td role="cell" data-label="Lavorazione">${processCell}</td>
+      <td role="cell" class="r strong" data-label="Totale SM$">${sm(lr.total)}<${S1Ref} isS2=${isS2} baseTotals=${baseTotals} id=${line.id} /></td>
+      <td role="cell" class="row-actions">
         <${Button} small icon=${expanded ? 'chevronDown' : 'chevron'} title="Dettagli" onClick=${() => setExpanded(expanded ? null : line.id)} />
         <${Button} small icon="trash" title="Elimina voce" onClick=${remove} />
       </td>
     </tr>
-    ${expanded && html`<tr class="row-details"><td colspan="8"><${LineDetails} line=${line} lr=${lr} type=${type} usedAtPrice=${usedAtPrice} project=${project} ctx=${ctx} set=${set} setMat=${setMat} catalog=${catalog} duplicate=${duplicate} /></td></tr>`}`;
+    ${expanded && html`<tr role="row" class="row-details"><td role="cell" colspan="8"><${LineDetails} line=${line} lr=${lr} type=${type} usedAtPrice=${usedAtPrice} project=${project} ctx=${ctx} set=${set} setMat=${setMat} catalog=${catalog} duplicate=${duplicate} /></td></tr>`}`;
 }
 
 function LineDetails({ line, lr, type, usedAtPrice, project, ctx, set, setMat, catalog, duplicate }) {

@@ -1,6 +1,6 @@
 import { onCrmLoad, publishProject, projectReplaced, saveToCrm } from './crm.js';
 import { html, useState, useMemo, useEffect, useCallback } from '../../vendor/preact-htm.js';
-import { Button, Icon, Bar, Badge, TextInput, NumInput } from './ui.js';
+import { Button, Icon, Bar, Badge, TextInput, NumInput, Select } from './ui.js';
 import { sm, pct } from './format.js';
 import { useProject, useAutosave, loadAutosave, openProjectFile, saveProjectFile, serialize, validateProject, downloadBytes, hasUnsavedWork, saveRecoveryCopy, loadRecoveryCopy, clearRecoveryCopy } from './store.js';
 import { emptyProject, projectFrom2026, freezeToS2, toRules2027 } from './templates.js';
@@ -141,9 +141,6 @@ export function App({ contexts }) {
       setTimeout(() => document.querySelector('.row-open')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50);
     }
     document.querySelector('main')?.scrollTo(0, 0);
-    window.scrollTo(0, 0); // sul telefono scorre la pagina intera
-    // sul telefono le sezioni sono una fila che scorre: porta in vista quella scelta
-    setTimeout(() => document.querySelector('.nav-item.active')?.scrollIntoView({ block: 'nearest', inline: 'center' }), 0);
   }, []);
 
   const actions = {
@@ -275,6 +272,8 @@ export function App({ contexts }) {
   const warnings = checks.filter((c) => c.level === 'warning').length;
   const isS2 = project.stage === 'S2';
   const exportLabel = `Esporta ${project.stage}`;
+  const sections = NAV.filter((section) => !section.needs || ctx.rules[section.needs]);
+  const activeSection = sections.some((section) => section.id === view) ? view : 'overview';
 
   return html`<div class="app">
     <header class="topbar">
@@ -291,7 +290,7 @@ export function App({ contexts }) {
         <${Button} kind="ghost" icon="undo" title="Annulla (Ctrl+Z)" onClick=${undo} disabled=${!canUndo} />
         <${Button} kind="ghost" icon="redo" title="Ripeti (Ctrl+Y)" onClick=${redo} disabled=${!canRedo} />
         <span class="sep"></span>
-        <${Button} kind="ghost" icon="file" onClick=${() => setWelcome(true)}>Nuovo / apri</${Button}>
+        <${Button} kind="ghost" icon="file" title="Nuovo / apri" onClick=${() => setWelcome(true)}>Nuovo / apri</${Button}>
         <${Button} kind="ghost" icon="save" onClick=${() => actions.save(false)} title="Scarica il file progetto (Ctrl+S)">Salva file</${Button}>
         <span class="crm-save"><${Button} kind="primary" icon="save" onClick=${saveCrm} title="Salva nel CRM (Ctrl+Shift+S)">Salva nel CRM</${Button}></span>
         <${Button} kind="primary" icon="export" onClick=${() => go('export')}>${exportLabel}</${Button}>
@@ -316,8 +315,16 @@ export function App({ contexts }) {
     </div>
 
     <div class="body">
+      <div class="section-tools">
+        <div class="field section-picker">
+          <label for="dollaroni-section">Sezione</label>
+          <${Select} id="dollaroni-section" value=${activeSection} onChange=${go}
+            options=${sections.map(({ id, label }) => ({ value: id, label: id === 'export' ? exportLabel : label }))} />
+        </div>
+        ${!ev.error && html`<${Assistant} key=${chatSession} ev=${ev} checks=${checks} ctx=${ctx} evBase=${evBase} go=${go} update=${update} undo=${undo} />`}
+      </div>
       <nav class="sidebar" aria-label="Sezioni">
-        ${NAV.filter((n) => !n.needs || ctx.rules[n.needs]).map((n) => html`<button class=${`nav-item ${view === n.id ? 'active' : ''}`} onClick=${() => go(n.id)}>
+        ${sections.map((n) => html`<button class=${`nav-item ${activeSection === n.id ? 'active' : ''}`} aria-current=${activeSection === n.id ? 'page' : undefined} onClick=${() => go(n.id)}>
           <${Icon} name=${n.icon} /><span>${n.id === 'export' ? exportLabel : n.label}</span>
           ${n.id === 'parts' && html`<span class="nav-count">${project.parts.length}</span>`}
           ${n.id === 'lines' && html`<span class="nav-count">${project.lines.length}</span>`}
@@ -345,7 +352,6 @@ export function App({ contexts }) {
       </main>
     </div>
     ${toast && html`<div class=${`toast tone-${toast.tone}`}>${toast.text}</div>`}
-    ${!ev.error && html`<${Assistant} key=${chatSession} ev=${ev} checks=${checks} ctx=${ctx} evBase=${evBase} go=${go} update=${update} undo=${undo} />`}
   </div>`;
 }
 

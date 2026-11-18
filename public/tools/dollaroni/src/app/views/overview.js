@@ -117,10 +117,10 @@ export function Overview({ project, ev, evBase, ctx, checks, go, onToS2, onToRul
     <div class="grid-2">
       <${Card} title=${massRef ? `Masse stimate per il ${massRef}` : 'Masse stimate'} actions=${html`<span class="muted small">kg</span>`}>
         ${ev.mass.some((m) => m.total > 0)
-          ? html`<table class="tbl tbl-compact">
-              <thead><tr><th></th><th class="r">Fibra</th><th class="r">Resina</th><th class="r">Anima</th><th class="r">Altro</th><th class="r">Totale</th></tr></thead>
-              <tbody>${ev.mass.filter((m) => m.total > 0).map((m) => html`
-                <tr><td>${m.en}</td><td class="r">${num(m.fibre, 2)}</td><td class="r">${num(m.resin + m.uptake, 2)}</td><td class="r">${num(m.core, 2)}</td><td class="r">${num(m.other, 2)}</td><td class="r strong">${num(m.total, 2)}</td></tr>`)}
+          ? html`<table class="tbl stack-table tbl-compact" role="table">
+              <thead role="rowgroup"><tr role="row"><th role="columnheader"></th><th role="columnheader" class="r">Fibra</th><th role="columnheader" class="r">Resina</th><th role="columnheader" class="r">Anima</th><th role="columnheader" class="r">Altro</th><th role="columnheader" class="r">Totale</th></tr></thead>
+              <tbody role="rowgroup">${ev.mass.filter((m) => m.total > 0).map((m) => html`
+                <tr role="row"><td role="cell" class="stack-wide">${m.en}</td><td role="cell" data-label="Fibra" class="r">${num(m.fibre, 2)}</td><td role="cell" data-label="Resina" class="r">${num(m.resin + m.uptake, 2)}</td><td role="cell" data-label="Anima" class="r">${num(m.core, 2)}</td><td role="cell" data-label="Altro" class="r">${num(m.other, 2)}</td><td role="cell" data-label="Totale" class="r strong">${num(m.total, 2)}</td></tr>`)}
               </tbody></table>`
           : html`<p class="muted">Aggiungi dei pezzi laminati per vedere le masse.</p>`}
       </${Card}>
