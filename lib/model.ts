@@ -54,7 +54,7 @@ export const TEAMS = [
   {
     id: "shore",
     name: "Shore Team e Logistica",
-    short: "Shore team",
+    short: "Shore Team",
     description: "Tutto pronto, a terra e in acqua.",
     color: "#8c8d67",
     icon: "anchor",
