@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { TEAMS } from '@/lib/model';
 import { live, supabase } from '@/lib/repository';
-import { CAPTAIN, PROJECT_MANAGER_LABEL, hasCaptainPowers, roleTags, setMemberAssignment, type Role, ROLE_LABEL } from '@/lib/attendance';
+import { CAPTAIN, PROJECT_MANAGER_LABEL, captainPowers, roleTags, setMemberAssignment, type Role, ROLE_LABEL } from '@/lib/attendance';
 import { useWorkspace } from './provider';
 import { Button } from './ui/button';
 import { Badge, Empty, SectionTitle } from './views/shared';
@@ -26,22 +26,25 @@ const roleLabel = (r: MemberRow) => r.role === 'team_captain' ? ROLE_LABEL.team_
 export function MembersAdmin() {
   const { notice } = useWorkspace();
   const [rows, setRows] = useState<MemberRow[] | null>(null);
-  const [me, setMe] = useState<MemberRow | null>(null);
+  const [me, setMe] = useState<MemberRow | null>(null), [captain, setCaptain] = useState(false);
   const [error, setError] = useState(''), [saving, setSaving] = useState('');
   const load = useCallback(async () => {
     if (!supabase) return;
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error: loadError } = await supabase.from('members').select('id,email,full_name,display_name,team_id,role,project_manager,active,is_admin,created_at').order('created_at', { ascending: false });
+    const [{ data, error: loadError }, powers] = await Promise.all([
+      supabase.from('members').select('id,email,full_name,display_name,team_id,role,project_manager,active,is_admin,created_at').order('created_at', { ascending: false }),
+      captainPowers().catch(() => false),
+    ]);
     if (loadError) { setError(loadError.message); return; }
     const list = (data || []) as MemberRow[];
     setMe(list.find(m => m.id === user?.id) || null);
+    setCaptain(powers);
     setRows(list);
   }, []);
   useEffect(() => { void load(); }, [load]);
   if (!live) return <section className="panel settings-links"><SectionTitle title="Account del team" /><Empty text="La gestione degli account è disponibile con Supabase collegato." /></section>;
   if (error) return <section className="panel settings-links" role="alert"><p>{error}</p><Button onClick={() => { setError(''); void load(); }}>Riprova</Button></section>;
   if (!rows) return <section className="panel settings-links"><p role="status">Caricamento degli account…</p></section>;
-  const captain = hasCaptainPowers(me);
   const run = async (row: MemberRow, action: () => Promise<void>) => {
     setSaving(row.id);
     try { await action(); notice('Account aggiornato'); void load(); }

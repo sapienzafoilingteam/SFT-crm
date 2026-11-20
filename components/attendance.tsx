@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { CalendarDays, Check, Lock, UserCheck } from 'lucide-react';
 import { TEAMS } from '@/lib/model';
 import {
-  ROLE_LABEL, attendanceMonths, canMarkTeam, hasCaptainPowers, roleTags, dayLabel, initials, loadAttendance, monthLabel, monthSheet, setAttendance, setNameAttendance, subscribeAttendance, todayInRome, wednesdays,
+  ROLE_LABEL, attendanceMonths, canMarkTeam, hasCaptainPowers, isWednesday, roleTags, dayLabel, initials, loadAttendance, monthLabel, monthSheet, setAttendance, setNameAttendance, subscribeAttendance, todayInRome, wednesdays,
   type AttendanceSnapshot, type RosterMember, type SheetRow,
 } from '@/lib/attendance';
 import { useWorkspace } from './provider';
@@ -59,8 +59,11 @@ function useAttendance() {
   return { snapshot, error, reload, toggle, toggleName };
 }
 
-/** Sezione della pagina del reparto: solo le presenze di oggi; lo storico è nella pagina "Presenze". */
+/** Sezione della pagina del reparto: solo il mercoledì, le presenze di oggi; lo storico è nella pagina "Presenze". */
 export function DepartmentAttendance({ team }: { team: (typeof TEAMS)[number] }) {
+  return isWednesday(todayInRome()) ? <DepartmentAttendanceToday team={team} /> : null;
+}
+function DepartmentAttendanceToday({ team }: { team: (typeof TEAMS)[number] }) {
   const { snapshot, error, reload, toggle } = useAttendance();
   const date = todayInRome();
   if (error) return <section className="attendance-panel" role="alert"><p>{error}</p><Button variant="outline" size="sm" onClick={() => void reload()}>Riprova</Button></section>;
@@ -98,9 +101,12 @@ export function DepartmentAttendance({ team }: { team: (typeof TEAMS)[number] })
 
 /**
  * Riquadro della Home: ognuno segna o toglie la propria presenza di oggi (come nella sezione del
- * proprio reparto). Il Team Captain, senza reparto, la segna solo da qui.
+ * proprio reparto), solo il mercoledì. Il Team Captain, senza reparto, la segna solo da qui.
  */
 export function MyAttendance() {
+  return isWednesday(todayInRome()) ? <MyAttendanceToday /> : null;
+}
+function MyAttendanceToday() {
   const { snapshot, error, reload, toggle } = useAttendance();
   const date = todayInRome();
   const me = snapshot?.me;
