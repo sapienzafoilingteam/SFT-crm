@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/repository";
 import { TEAMS } from "@/lib/model";
-import { CAPTAIN, INSTITUTIONAL_EMAIL, assignment, availableNames, completeProfile } from "@/lib/attendance";
+import { CAPTAIN, INSTITUTIONAL_EMAIL, ROLE_LABEL, assignment, availableNames, completeProfile } from "@/lib/attendance";
 import { Button } from "./ui/button";
 
 const NAME_ERROR = "Scegli il tuo Nome Cognome dall’elenco.";
@@ -21,39 +21,44 @@ function NameSelect({ token, value, onChange }: { token?: string; value: string;
       <option value="" disabled>{error ? "Elenco non disponibile" : !names ? "Caricamento…" : names.length ? "Scegli il tuo nome" : "Nessun nome disponibile"}</option>
       {names?.map(n => <option key={n} value={n}>{n}</option>)}
     </select>
-    <small className="muted">{error || "Comparirà nelle presenze e non potrai modificarlo da solo. Se il tuo nome manca o risulta già usato, contatta il Team Captain."}</small>
+    {error && <small className="muted">{error}</small>}
   </label>;
 }
 
-function ProfileFields({ token, fullName, setFullName, team, setTeam, projectLead, setProjectLead, withTeam = true }: {
-  token?: string; fullName: string; setFullName: (v: string) => void; team: string; setTeam: (v: string) => void; projectLead: boolean; setProjectLead: (v: boolean) => void; withTeam?: boolean;
+function ProfileFields({ token, fullName, setFullName, team, setTeam, projectLead, setProjectLead, teamAlert, setTeamAlert, withTeam = true }: {
+  teamAlert: boolean; setTeamAlert: (v: boolean) => void; token?: string; fullName: string; setFullName: (v: string) => void; team: string; setTeam: (v: string) => void; projectLead: boolean; setProjectLead: (v: boolean) => void; withTeam?: boolean;
 }) {
   const captain = team === CAPTAIN;
+  // Scritta "Seleziona un reparto": compare premendo Registrati senza reparto, sparisce scegliendolo.
+  const teams = useRef<HTMLFieldSetElement>(null);
+  useEffect(() => { if (teamAlert) teams.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, [teamAlert]);
+  const pick = (value: string) => { setTeam(value); setTeamAlert(false); };
   return <>
     <NameSelect token={token} value={fullName} onChange={setFullName} />
-    {withTeam && <fieldset className="auth-teams">
+    {withTeam && <fieldset className="auth-teams" ref={teams}>
       <legend>Il tuo reparto</legend>
       {TEAMS.map((t) => <label key={t.id} className={team === t.id ? "selected" : ""}>
-        <input type="radio" name="team" value={t.id} required checked={team === t.id} onChange={() => setTeam(t.id)} />
+        <input type="radio" name="team" value={t.id} checked={team === t.id} onChange={() => pick(t.id)} />
         <span className="attendance-dot" style={{ background: t.color }} aria-hidden="true" />{t.name}
       </label>)}
       <label className={captain ? "selected" : ""}>
-        <input type="radio" name="team" value={CAPTAIN} required checked={captain} onChange={() => { setTeam(CAPTAIN); setProjectLead(false); }} />
+        <input type="radio" name="team" value={CAPTAIN} checked={captain} onChange={() => { pick(CAPTAIN); setProjectLead(false); }} />
         <span className="attendance-dot" style={{ background: "var(--primary)" }} aria-hidden="true" />Team Captain
       </label>
-      {/* Radio a sé, da spuntare/togliere con un clic: si combina con il reparto, non con Team Captain. */}
+      {/* Capo Reparto: radio a sé, da spuntare/togliere con un clic; si combina con il reparto, non con Team Captain. */}
       <label className={(projectLead && !captain ? "selected" : "") + (captain ? " disabled" : "")}>
         <input type="radio" name="project-lead" value="capo_progetto" checked={projectLead && !captain} disabled={captain}
           onChange={() => {}} onClick={() => setProjectLead(!projectLead)} />
-        <span className="attendance-dot" style={{ background: "var(--muted-foreground)" }} aria-hidden="true" />Capo Progetto
+        <span className="attendance-dot" style={{ background: "var(--muted-foreground)" }} aria-hidden="true" />{ROLE_LABEL.capo_progetto}
       </label>
+      {teamAlert && <p className="auth-team-error" role="alert">Seleziona un reparto</p>}
     </fieldset>}
   </>;
 }
 
 /** Profilo mancante per account creati prima delle presenze (o via invito). */
 export function ProfilePanel({ accountEmail }: { accountEmail: string }) {
-  const [fullName, setFullName] = useState(""), [team, setTeam] = useState(""), [projectLead, setProjectLead] = useState(false);
+  const [fullName, setFullName] = useState(""), [team, setTeam] = useState(""), [projectLead, setProjectLead] = useState(false), [teamAlert, setTeamAlert] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   // Chi ha già reparto o ruolo (es. nome da riscegliere dall'elenco) indica solo il nome.
   const [needsTeam, setNeedsTeam] = useState<boolean | null>(null);
@@ -68,7 +73,7 @@ export function ProfilePanel({ accountEmail }: { accountEmail: string }) {
     event.preventDefault();
     if (busy || needsTeam === null) return;
     if (!fullName) { setError(NAME_ERROR); return; }
-    if (needsTeam && !team) { setError("Seleziona il tuo reparto o Team Captain."); return; }
+    if (needsTeam && !team) { setTeamAlert(true); return; }
     setBusy(true); setError("");
     const { team_id, role } = assignment(team, projectLead);
     try { await completeProfile(fullName, team_id, role); window.location.replace("/"); }
@@ -78,11 +83,11 @@ export function ProfilePanel({ accountEmail }: { accountEmail: string }) {
     <h1>Completa il profilo.</h1>
     <p>{needsTeam === false
       ? "Scegli il tuo nome dall’elenco del team: serve per le presenze alle riunioni."
-      : "Scegli il tuo nome dall’elenco, il tuo reparto (o Team Captain) ed eventualmente se sei Capo Progetto: servono per le presenze alle riunioni."} Account: {accountEmail}</p>
+      : "Scegli il tuo nome dall’elenco, il tuo reparto (o Team Captain) ed eventualmente se sei Capo Reparto: servono per le presenze alle riunioni."} Account: {accountEmail}</p>
     <form onSubmit={submit}>
-      <ProfileFields withTeam={needsTeam !== false} fullName={fullName} setFullName={setFullName} team={team} setTeam={setTeam} projectLead={projectLead} setProjectLead={setProjectLead} />
+      <ProfileFields withTeam={needsTeam !== false} teamAlert={teamAlert} setTeamAlert={setTeamAlert} fullName={fullName} setFullName={setFullName} team={team} setTeam={setTeam} projectLead={projectLead} setProjectLead={setProjectLead} />
       {error && <p className="form-error" role="alert">{error}</p>}
-      <Button disabled={busy || needsTeam === null}>{busy ? "Attendi…" : "Salva e accedi"}</Button>
+      <Button disabled={busy || needsTeam === null} onClick={(e) => { if (needsTeam && !team) { e.preventDefault(); setTeamAlert(true); } }}>{busy ? "Attendi…" : "Salva e accedi"}</Button>
     </form>
     <Button variant="ghost" disabled={busy} onClick={async () => { await supabase?.auth.signOut(); window.location.replace("/"); }}>Esci</Button>
   </>;
@@ -105,6 +110,7 @@ export function AuthPanel({
   const [fullName, setFullName] = useState("");
   const [team, setTeam] = useState("");
   const [projectLead, setProjectLead] = useState(false);
+  const [teamAlert, setTeamAlert] = useState(false);
   const [teamPassword, setTeamPassword] = useState("");
   const [gateToken, setGateToken] = useState("");
   const [busy, setBusy] = useState(false);
@@ -136,7 +142,7 @@ export function AuthPanel({
       return;
     }
     if (register && !team) {
-      setError("Seleziona il tuo reparto o Team Captain.");
+      setTeamAlert(true);
       return;
     }
     if (creating && password !== confirmation) {
@@ -315,7 +321,7 @@ export function AuthPanel({
           </label>
         )}
         {register && (
-          <ProfileFields token={gateToken} fullName={fullName} setFullName={setFullName} team={team} setTeam={setTeam} projectLead={projectLead} setProjectLead={setProjectLead} />
+          <ProfileFields token={gateToken} teamAlert={teamAlert} setTeamAlert={setTeamAlert} fullName={fullName} setFullName={setFullName} team={team} setTeam={setTeam} projectLead={projectLead} setProjectLead={setProjectLead} />
         )}
         </>}
         {error && (
@@ -328,7 +334,10 @@ export function AuthPanel({
             {notice}
           </p>
         )}
-        <Button disabled={busy}>
+        <Button disabled={busy} onClick={(e) => {
+          // Senza reparto l'avviso compare subito, prima dei controlli del browser sugli altri campi.
+          if (register && gateToken && !team) { e.preventDefault(); setTeamAlert(true); }
+        }}>
           {busy
             ? "Attendi…"
             : setup

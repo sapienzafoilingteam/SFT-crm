@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { TEAMS } from '@/lib/model';
 import { live, supabase } from '@/lib/repository';
-import { CAPTAIN, ROLE_LABEL, setMemberAssignment, type Role } from '@/lib/attendance';
+import { CAPTAIN, ROLE_LABEL, captainPowers, setMemberAssignment, type Role } from '@/lib/attendance';
 import { useWorkspace } from './provider';
 import { Button } from './ui/button';
 import { Badge, Empty, SectionTitle } from './views/shared';
@@ -21,27 +21,27 @@ const roleLabel = (r: MemberRow) => r.role === 'team_captain' ? ROLE_LABEL.team_
 
 /**
  * Gli account si attivano alla conferma della mail. Tutti i membri vedono l'elenco;
- * solo il Team Captain abilita o disattiva gli account e corregge reparto e ruolo.
+ * solo chi ha i poteri del Team Captain abilita o disattiva gli account e corregge reparto e ruolo.
  */
 export function MembersAdmin() {
   const { notice } = useWorkspace();
   const [rows, setRows] = useState<MemberRow[] | null>(null);
-  const [me, setMe] = useState<MemberRow | null>(null);
+  const [me, setMe] = useState<MemberRow | null>(null), [captain, setCaptain] = useState(false);
   const [error, setError] = useState(''), [saving, setSaving] = useState('');
   const load = useCallback(async () => {
     if (!supabase) return;
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error: loadError } = await supabase.from('members').select('id,email,full_name,display_name,team_id,role,active,is_admin,created_at').order('created_at', { ascending: false });
+    const [{ data, error: loadError }, powers] = await Promise.all([supabase.from('members').select('id,email,full_name,display_name,team_id,role,active,is_admin,created_at').order('created_at', { ascending: false }), captainPowers().catch(() => false)]);
     if (loadError) { setError(loadError.message); return; }
     const list = (data || []) as MemberRow[];
     setMe(list.find(m => m.id === user?.id) || null);
+    setCaptain(powers);
     setRows(list);
   }, []);
   useEffect(() => { void load(); }, [load]);
   if (!live) return <section className="panel settings-links"><SectionTitle title="Account del team" /><Empty text="La gestione degli account è disponibile con Supabase collegato." /></section>;
   if (error) return <section className="panel settings-links" role="alert"><p>{error}</p><Button onClick={() => { setError(''); void load(); }}>Riprova</Button></section>;
   if (!rows) return <section className="panel settings-links"><p role="status">Caricamento degli account…</p></section>;
-  const captain = me?.role === 'team_captain';
   const run = async (row: MemberRow, action: () => Promise<void>) => {
     setSaving(row.id);
     try { await action(); notice('Account aggiornato'); void load(); }
@@ -59,7 +59,6 @@ export function MembersAdmin() {
   const pending = rows.filter(r => !r.active);
   return <section className="panel settings-links">
     <SectionTitle title="Account del team"><span className="muted">{pending.length} non attivi</span></SectionTitle>
-    {!captain && <p className="muted">Solo il Team Captain può abilitare o disattivare gli account e correggere reparto e ruolo.</p>}
     {[...pending, ...rows.filter(r => r.active)].map(r => <div className="task-row member-row" key={r.id}>
       <div>
         <strong>{r.full_name || r.display_name || 'Profilo da completare'}</strong>
@@ -70,7 +69,7 @@ export function MembersAdmin() {
         <select id={`team-${r.id}`} value={encode(r)} disabled={saving === r.id} onChange={e => void reassign(r, e.target.value)}>
           {!encode(r) && <option value="" disabled>Nessun reparto</option>}
           <optgroup label="Reparto">{TEAMS.map(t => <option key={t.id} value={t.id}>{t.short}</option>)}</optgroup>
-          <optgroup label="Reparto + Capo Progetto">{TEAMS.map(t => <option key={t.id} value={`${t.id}:capo_progetto`}>{t.short} · Capo Progetto</option>)}</optgroup>
+          <optgroup label={`Reparto + ${ROLE_LABEL.capo_progetto}`}>{TEAMS.map(t => <option key={t.id} value={`${t.id}:capo_progetto`}>{t.short} · {ROLE_LABEL.capo_progetto}</option>)}</optgroup>
           <optgroup label="Tutti i reparti"><option value={CAPTAIN}>Team Captain</option></optgroup>
         </select>
       </>}

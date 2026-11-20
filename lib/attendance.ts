@@ -3,8 +3,8 @@ import { romeClock } from './department-resources';
 import { live, supabase } from './repository';
 
 export type Role = 'membro' | 'capo_progetto' | 'team_captain';
-export const ROLE_LABEL: Record<Role, string> = { membro: 'Membro', capo_progetto: 'Capo Progetto', team_captain: 'Team Captain' };
-/** Scelta in registrazione: un reparto (eventualmente con "Capo Progetto") oppure "Team Captain", da solo. */
+export const ROLE_LABEL: Record<Role, string> = { membro: 'Membro', capo_progetto: 'Capo Reparto', team_captain: 'Team Captain' };
+/** Scelta in registrazione: un reparto (eventualmente con "Capo Reparto") oppure "Team Captain", da solo. */
 export const CAPTAIN = 'team_captain';
 export function assignment(choice: string, projectLead: boolean): { team_id: string | null; role: Role } {
   if (choice === CAPTAIN) return { team_id: null, role: 'team_captain' };
@@ -14,13 +14,17 @@ export function assignment(choice: string, projectLead: boolean): { team_id: str
 export function validAssignment(teamId: string | null, role: Role) {
   return role === 'team_captain' ? !teamId : Boolean(teamId && TEAMS.some(t => t.id === teamId));
 }
-/** Il Team Captain vale come membro di ogni reparto. */
-export const canMarkTeam = (me: Pick<Profile, 'team_id' | 'role'> | null | undefined, teamId: string) =>
-  Boolean(me && (me.role === 'team_captain' || me.team_id === teamId));
+/** Poteri del Team Captain: il Team Captain e chi ne ha i poteri (public.captain_delegates). */
+export const hasCaptainPowers = (me: Pick<Profile, 'role'> & { captain?: boolean } | null | undefined) =>
+  Boolean(me && (me.role === 'team_captain' || me.captain));
+/** Chi ha i poteri del Team Captain vale come membro di ogni reparto. */
+export const canMarkTeam = (me: Pick<Profile, 'team_id' | 'role'> & { captain?: boolean } | null | undefined, teamId: string) =>
+  Boolean(me && (hasCaptainPowers(me) || me.team_id === teamId));
 /** team_id è null solo per il Team Captain, che vale per tutti i reparti. */
 export interface RosterMember { id: string; full_name: string; team_id: string | null; role?: Role }
 export interface AttendanceRecord { member_id: string; meeting_date: string; team_id: string | null; marked_by: string | null; marked_at: string }
-export interface Profile { id: string; full_name: string; team_id: string | null; role: Role; is_admin: boolean }
+/** captain: poteri del Team Captain (public.is_team_captain), anche per chi ha un reparto. */
+export interface Profile { id: string; full_name: string; team_id: string | null; role: Role; is_admin: boolean; captain: boolean }
 /** Presenza segnata dal Team Captain sul nome di chi non ha ancora un account. */
 export interface NameAttendanceRecord { full_name: string; meeting_date: string }
 /** names: l'elenco dei Nomi Cognomi del team, compresi quelli non ancora registrati. */
@@ -110,11 +114,11 @@ function demoRecords(key = DEMO_KEY): unknown[] {
 export async function loadAttendance(): Promise<AttendanceSnapshot> {
   if (!live) {
     const roster = demoRoster();
-    return { names: [...roster.map(m => m.full_name), ...DEMO_UNREGISTERED], roster, records: demoRecords() as AttendanceRecord[], nameRecords: demoRecords(DEMO_NAMES_KEY) as NameAttendanceRecord[], me: { ...DEMO_CAPTAIN, team_id: null, role: 'team_captain', is_admin: true } };
+    return { names: [...roster.map(m => m.full_name), ...DEMO_UNREGISTERED], roster, records: demoRecords() as AttendanceRecord[], nameRecords: demoRecords(DEMO_NAMES_KEY) as NameAttendanceRecord[], me: { ...DEMO_CAPTAIN, team_id: null, role: 'team_captain', is_admin: true, captain: true } };
   }
   if (!supabase) throw new Error('Configurazione Supabase mancante.');
   const { data: { user } } = await supabase.auth.getUser();
-  const [names, nameRecords, roster, records, me] = await Promise.all([
+  const [names, nameRecords, roster, records, me, powers] = await Promise.all([
     supabase.rpc('team_name_list'),
     supabase.from('name_attendance').select('full_name,meeting_date'),
     supabase.rpc('attendance_roster'),
@@ -128,12 +132,13 @@ export async function loadAttendance(): Promise<AttendanceSnapshot> {
       }
     })(),
     user ? supabase.from('members').select('id,full_name,team_id,role,is_admin').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
+    captainPowers(),
   ]);
   if (names.error) throw names.error;
   if (nameRecords.error) throw nameRecords.error;
   if (roster.error) throw roster.error;
   if (me.error) throw me.error;
-  return { names: (names.data || []) as string[], nameRecords: (nameRecords.data || []) as NameAttendanceRecord[], roster: (roster.data || []) as RosterMember[], records, me: (me.data as Profile | null) };
+  return { names: (names.data || []) as string[], nameRecords: (nameRecords.data || []) as NameAttendanceRecord[], roster: (roster.data || []) as RosterMember[], records, me: me.data ? { ...(me.data as Omit<Profile, 'captain'>), captain: powers } : null };
 }
 
 export async function setAttendance(member: RosterMember, date: string, present: boolean, by: string) {
@@ -149,7 +154,7 @@ export async function setAttendance(member: RosterMember, date: string, present:
   if (error) throw new Error(error.message);
 }
 
-/** Presenza sul nome di chi non ha un account: solo il Team Captain (verificato dal database). */
+/** Presenza sul nome di chi non ha un account: solo con i poteri del Team Captain (verificato dal database). */
 export async function setNameAttendance(fullName: string, date: string, present: boolean) {
   if (!live) {
     const rest = (demoRecords(DEMO_NAMES_KEY) as NameAttendanceRecord[]).filter(r => !(r.full_name === fullName && r.meeting_date === date));
@@ -193,7 +198,16 @@ export async function completeProfile(fullName: string, teamId: string | null, r
   if (error) throw new Error(error.message);
 }
 
-/** Correzione di reparto e ruolo di un membro: solo il Team Captain (verificato dal database). */
+/** Poteri del Team Captain dell'utente collegato (verificati dal database). */
+export async function captainPowers() {
+  if (!live) return true;
+  if (!supabase) return false;
+  const { data, error } = await supabase.rpc('is_team_captain');
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+/** Correzione di reparto e ruolo di un membro: solo con i poteri del Team Captain (verificato dal database). */
 export async function setMemberAssignment(memberId: string, teamId: string | null, role: Role) {
   if (!supabase) throw new Error('Configurazione Supabase mancante.');
   const { error } = await supabase.rpc('set_member_assignment', { p_member: memberId, p_team_id: teamId || '', p_role: role });

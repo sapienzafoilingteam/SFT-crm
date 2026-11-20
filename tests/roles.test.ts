@@ -46,7 +46,7 @@ test("Team Captain: presenze in ogni reparto e correzione dei reparti", async ()
     await signup(lead, "lead@example.com", { full_name: "Luca Capo", team_id: "scafo", role: "capo_progetto" });
     await signup(scafo, "scafo@example.com", { full_name: "Sara Scafo", team_id: "scafo", role: "membro" });
     await signup(foil, "foil@example.com", { full_name: "Fabio Foil", team_id: "foil" });
-    // Combinazioni vietate: reparto + Team Captain, Capo Progetto senza reparto → profilo da completare.
+    // Combinazioni vietate: reparto + Team Captain, Capo Reparto senza reparto → profilo da completare.
     await signup(invalid, "x@example.com", { full_name: "Ivo Errato", team_id: "foil", role: "team_captain" });
     await signup(admin, "admin@example.com", { full_name: "Ada Admin", team_id: "foil", role: "capo_progetto" });
     assert.deepEqual(await profile(captain), { team_id: null, role: "team_captain" });
@@ -63,7 +63,7 @@ test("Team Captain: presenze in ogni reparto e correzione dei reparti", async ()
     assert.ok(!roster.rows.some(r => r.full_name === "Carla Capitano"));
     assert.equal(roster.rows.find(r => r.full_name === "Luca Capo")?.role, "capo_progetto");
 
-    // Il Capo Progetto resta limitato al proprio reparto.
+    // Il Capo Reparto resta limitato al proprio reparto.
     await as(lead);
     await mark(scafo);
     await assert.rejects(mark(foil), /tuo reparto/);

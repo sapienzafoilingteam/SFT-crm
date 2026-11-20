@@ -22,7 +22,7 @@ import {
   Wrench
 } from "lucide-react";
 import Link from "next/link";
-import { CaptainAttendance } from "../attendance";
+import { MyAttendance } from "../attendance";
 import { DepartmentResources } from "../department-resources";
 import { Deadlines } from "../deadlines";
 import { linkIcon } from "../link-icons";
@@ -31,20 +31,18 @@ import { Button } from "../ui/button";
 import { Empty, SectionTitle, type Props } from "./shared";
 import { isDollaroniReport } from "@/lib/dollaroni";
 import { readRequest } from "@/lib/feature-requests";
-import { live } from "@/lib/repository";
 const teamIcons = [Waves, Megaphone, Leaf, Wrench, Wind, Cpu, Anchor];
 export function HomeView({ edit }: Props) {
-  const { data, season, account } = useWorkspace();
+  const { data, season } = useWorkspace();
   const links = data.links.filter(
     (x) => !x.archived && x.season_id === season && !x.team_id,
   );
-  const captain = !live || account?.role === "team_captain";
   const reports = data.reports
     .filter((x) => !x.archived && x.season_id === season && !readRequest(x) && !isDollaroniReport(x))
     .slice(0, 3);
   return (
     <>
-      {captain && <CaptainAttendance />}
+      <MyAttendance />
       <SectionTitle title="Risorse del team">
         <Link href="/drive" className="text-link"><FolderOpen size={15} />Drive del team</Link>
         <Button variant="ghost" size="sm" onClick={() => edit("links")}>

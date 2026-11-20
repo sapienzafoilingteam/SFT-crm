@@ -3243,6 +3243,7 @@ html.dark .recruiting-actions .recruiting-reject { color: var(--destructive); }
 .login .auth-teams label.selected { border-color: var(--primary); background: var(--secondary); color: var(--secondary-foreground); font-weight: 600; }
 .login .auth-teams input[type=radio] { flex-shrink: 0; width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; border: 0; accent-color: var(--primary); }
 .login .auth-teams label.disabled { cursor: not-allowed; opacity: .55; }
+.login .auth-team-error { grid-column: 1 / -1; margin: 2px 0 0; color: var(--destructive); font-size: 12.5px; font-weight: 500; }
 @media (max-width: 420px) { .login .auth-teams { grid-template-columns: 1fr; } }
 .member-row > div:first-child { flex: 1; min-width: 0; }
 .member-row select { max-width: 220px; }

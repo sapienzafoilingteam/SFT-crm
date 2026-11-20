@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { CalendarDays, Check, Lock, UserCheck } from 'lucide-react';
 import { TEAMS } from '@/lib/model';
 import {
-  ROLE_LABEL, attendanceMonths, canMarkTeam, dayLabel, initials, loadAttendance, monthLabel, monthSheet, setAttendance, setNameAttendance, subscribeAttendance, todayInRome, wednesdays,
+  ROLE_LABEL, attendanceMonths, canMarkTeam, hasCaptainPowers, dayLabel, initials, loadAttendance, monthLabel, monthSheet, setAttendance, setNameAttendance, subscribeAttendance, todayInRome, wednesdays,
   type AttendanceSnapshot, type RosterMember, type SheetRow,
 } from '@/lib/attendance';
 import { useWorkspace } from './provider';
@@ -41,7 +41,7 @@ function useAttendance() {
     catch (e) { setSnapshot(before); notice('Presenza non salvata: ' + (e instanceof Error ? e.message : String(e))); }
     finally { pending.current--; void reload(); }
   }, [snapshot, notice, reload]);
-  /** Solo Team Captain: presenza sul nome di chi non ha ancora un account. */
+  /** Solo con i poteri del Team Captain: presenza sul nome di chi non ha ancora un account. */
   const toggleName = useCallback(async (fullName: string, date: string, present: boolean) => {
     const before = snapshot;
     if (!before?.me) return;
@@ -96,20 +96,26 @@ export function DepartmentAttendance({ team }: { team: (typeof TEAMS)[number] })
   </section>;
 }
 
-/** Riquadro della Home, solo per il Team Captain: segna o toglie la propria presenza di oggi. */
-export function CaptainAttendance() {
+/**
+ * Riquadro della Home: ognuno segna o toglie la propria presenza di oggi (come nella sezione del
+ * proprio reparto). Il Team Captain, senza reparto, la segna solo da qui.
+ */
+export function MyAttendance() {
   const { snapshot, error, reload, toggle } = useAttendance();
   const date = todayInRome();
   const me = snapshot?.me;
   if (error) return <section className="attendance-panel" role="alert"><p>{error}</p><Button variant="outline" size="sm" onClick={() => void reload()}>Riprova</Button></section>;
   if (!snapshot) return <section className="attendance-panel" aria-busy="true"><p className="muted">Caricamento presenza…</p></section>;
-  if (!me || me.role !== 'team_captain') return null;
-  const self = snapshot.roster.find(m => m.id === me.id) || { id: me.id, full_name: me.full_name, team_id: null, role: me.role };
+  const captain = me?.role === 'team_captain';
+  const team = TEAMS.find(t => t.id === me?.team_id);
+  // Account senza nome o senza reparto (es. account condiviso del team): nessuna presenza da segnare.
+  if (!me || !me.full_name || (!captain && !team)) return null;
+  const self = snapshot.roster.find(m => m.id === me.id) || { id: me.id, full_name: me.full_name, team_id: captain ? null : me.team_id, role: me.role };
   const here = snapshot.records.some(r => r.member_id === me.id && r.meeting_date === date);
   return <section className="attendance-panel captain-attendance" aria-labelledby="captain-attendance">
     <header className="attendance-head">
       <div>
-        <span className="eyebrow">TEAM CAPTAIN</span>
+        <span className="eyebrow">{captain ? 'TEAM CAPTAIN' : team!.name.toUpperCase()}</span>
         <h2 id="captain-attendance">La tua presenza</h2>
       </div>
       <Link href="/presenze" className="attendance-history-link"><CalendarDays size={15} />Storico presenze</Link>
@@ -124,7 +130,9 @@ export function CaptainAttendance() {
         </button>
       </li>
     </ul>
-    <p className="attendance-note">Vale per tutti i reparti: nello storico compari come Team Captain.</p>
+    <p className="attendance-note">{captain
+      ? 'Vale per tutti i reparti: nello storico compari come Team Captain.'
+      : 'Puoi segnare la presenza da qui o dalla pagina del reparto.'}</p>
   </section>;
 }
 
@@ -137,8 +145,9 @@ export function AttendanceView() {
   const days = useMemo(() => wednesdays(month), [month]);
   const rows = useMemo(() => snapshot ? monthSheet(snapshot.names, snapshot.roster, snapshot.records, month, snapshot.nameRecords) : [], [snapshot, month]);
   const me = snapshot?.me;
-  // Il Team Captain segna dalla tabella chiunque, anche chi non ha un account; non un altro Team Captain.
-  const editable = (r: SheetRow) => me?.role === 'team_captain' && (!r.member || r.member.role !== 'team_captain' || r.member.id === me.id);
+  // Con i poteri del Team Captain si segna dalla tabella chiunque, anche chi non ha un account; non un altro Team Captain.
+  const powers = hasCaptainPowers(me);
+  const editable = (r: SheetRow) => powers && (!r.member || r.member.role !== 'team_captain' || r.member.id === me?.id);
   const flip = (r: SheetRow, d: string) => { const here = r.present.has(d); void (r.member ? toggle(r.member, d, !here) : toggleName(r.full_name, d, !here)); };
   const team = (m: RosterMember | null) => m && (m.role === 'team_captain' ? ROLE_LABEL.team_captain : TEAMS.find(t => t.id === m.team_id)?.short);
   return <div className="attendance-page">
@@ -183,8 +192,8 @@ export function AttendanceView() {
             </tr></tfoot>
           </table>
         </div>
-        <p className="attendance-note attendance-sheet-note"><UserCheck size={13} />{me?.role === 'team_captain'
-          ? 'Ognuno parte assente. Come Team Captain puoi segnare o togliere la presenza da qui con un clic, anche per chi non ha ancora un account: quando si registra con quel nome, le presenze passano al suo account.'
+        <p className="attendance-note attendance-sheet-note"><UserCheck size={13} />{powers
+          ? 'Ognuno parte assente. Con i poteri del Team Captain puoi segnare o togliere la presenza da qui con un clic, anche per chi non ha ancora un account: quando si registra con quel nome, le presenze passano al suo account.'
           : 'Ognuno parte assente: diventa presente quando la presenza viene segnata nella sezione del suo reparto.'}</p>
       </section>}
   </div>;
