@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { CalendarDays, Check, Lock, UserCheck } from 'lucide-react';
 import { TEAMS } from '@/lib/model';
 import {
-  ROLE_LABEL, attendanceMonths, canMarkTeam, hasCaptainPowers, dayLabel, initials, loadAttendance, monthLabel, monthSheet, setAttendance, setNameAttendance, subscribeAttendance, todayInRome, wednesdays,
+  ROLE_LABEL, attendanceMonths, canMarkTeam, hasCaptainPowers, roleTags, dayLabel, initials, loadAttendance, monthLabel, monthSheet, setAttendance, setNameAttendance, subscribeAttendance, todayInRome, wednesdays,
   type AttendanceSnapshot, type RosterMember, type SheetRow,
 } from '@/lib/attendance';
 import { useWorkspace } from './provider';
@@ -82,7 +82,7 @@ export function DepartmentAttendance({ team }: { team: (typeof TEAMS)[number] })
         const here = present.has(m.id);
         return <li key={m.id} className={here ? 'present' : ''}>
           <span className={"attendance-avatar" + (initials(m.full_name).length > 2 ? " three" : "")} aria-hidden="true">{initials(m.full_name)}</span>
-          <span className="attendance-name">{m.full_name}{m.role === 'capo_progetto' && <small> · {ROLE_LABEL.capo_progetto}</small>}{m.id === snapshot.me?.id && <small> · tu</small>}</span>
+          <span className="attendance-name">{m.full_name}{roleTags(m).map(tag => <small key={tag}> · {tag}</small>)}{m.id === snapshot.me?.id && <small> · tu</small>}</span>
           {canMark
             ? <button type="button" className="attendance-toggle" aria-pressed={here} onClick={() => void toggle(m, date, !here)}
                 aria-label={here ? `Togli la presenza di ${m.full_name}` : `Segna presente ${m.full_name}`}>

@@ -8,14 +8,17 @@ const id = (n: number) => `40000000-0000-4000-8000-${String(n).padStart(12, "0")
 const captain = id(1), lead = id(2), scafo = id(3), foil = id(4), invalid = id(5), admin = id(6), legacy = id(7);
 
 test("combinazioni reparto/ruolo lato client", () => {
-  assert.deepEqual(assignment("scafo", false), { team_id: "scafo", role: "membro" });
-  assert.deepEqual(assignment("scafo", true), { team_id: "scafo", role: "capo_progetto" });
-  assert.deepEqual(assignment("team_captain", true), { team_id: null, role: "team_captain" });
+  assert.deepEqual(assignment("scafo", false), { team_id: "scafo", role: "membro", project_manager: false });
+  assert.deepEqual(assignment("scafo", true), { team_id: "scafo", role: "capo_progetto", project_manager: false });
+  assert.deepEqual(assignment("scafo", true, true), { team_id: "scafo", role: "capo_progetto", project_manager: true });
+  assert.deepEqual(assignment("", false, true), { team_id: null, role: "membro", project_manager: false });
+  assert.deepEqual(assignment("team_captain", true, true), { team_id: null, role: "team_captain", project_manager: false });
   assert.ok(validAssignment("foil", "membro") && validAssignment("foil", "capo_progetto") && validAssignment(null, "team_captain"));
   assert.ok(!validAssignment("foil", "team_captain") && !validAssignment(null, "capo_progetto") && !validAssignment(null, "membro"));
   assert.ok(canMarkTeam({ team_id: null, role: "team_captain" }, "foil"));
   assert.ok(canMarkTeam({ team_id: "foil", role: "membro" }, "foil"));
   assert.ok(!canMarkTeam({ team_id: "scafo", role: "capo_progetto" }, "foil"));
+  assert.ok(canMarkTeam({ team_id: "scafo", role: "membro", project_manager: true }, "foil"));
 });
 
 test("Team Captain: presenze in ogni reparto e correzione dei reparti", async () => {

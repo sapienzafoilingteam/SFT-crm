@@ -4,27 +4,34 @@ import { live, supabase } from './repository';
 
 export type Role = 'membro' | 'capo_progetto' | 'team_captain';
 export const ROLE_LABEL: Record<Role, string> = { membro: 'Membro', capo_progetto: 'Capo Reparto', team_captain: 'Team Captain' };
-/** Scelta in registrazione: un reparto (eventualmente con "Capo Reparto") oppure "Team Captain", da solo. */
+export const PROJECT_MANAGER_LABEL = 'Project Manager';
+/**
+ * Scelta in registrazione: un reparto, eventualmente con "Capo Reparto" e/o "Project Manager",
+ * oppure "Team Captain", da solo.
+ */
 export const CAPTAIN = 'team_captain';
-export function assignment(choice: string, projectLead: boolean): { team_id: string | null; role: Role } {
-  if (choice === CAPTAIN) return { team_id: null, role: 'team_captain' };
-  return { team_id: choice || null, role: projectLead ? 'capo_progetto' : 'membro' };
+export function assignment(choice: string, projectLead: boolean, projectManager = false): { team_id: string | null; role: Role; project_manager: boolean } {
+  if (choice === CAPTAIN) return { team_id: null, role: 'team_captain', project_manager: false };
+  const team_id = choice || null;
+  return { team_id, role: projectLead ? 'capo_progetto' : 'membro', project_manager: Boolean(team_id && projectManager) };
 }
+/** Ruoli accanto al reparto: "Capo Reparto", "Project Manager" o entrambi. */
+export const roleTags = (m: { role?: Role; project_manager?: boolean }) =>
+  [m.role === 'capo_progetto' ? ROLE_LABEL.capo_progetto : '', m.project_manager ? PROJECT_MANAGER_LABEL : ''].filter(Boolean);
 /** Stesse regole di public.member_assignment. */
 export function validAssignment(teamId: string | null, role: Role) {
   return role === 'team_captain' ? !teamId : Boolean(teamId && TEAMS.some(t => t.id === teamId));
 }
-/** Poteri del Team Captain: il Team Captain e chi ne ha i poteri (public.captain_delegates). */
-export const hasCaptainPowers = (me: Pick<Profile, 'role'> & { captain?: boolean } | null | undefined) =>
-  Boolean(me && (me.role === 'team_captain' || me.captain));
+/** Poteri del Team Captain (come public.is_team_captain): il Team Captain e i Project Manager. */
+export const hasCaptainPowers = (me: { role?: Role; project_manager?: boolean } | null | undefined) =>
+  Boolean(me && (me.role === 'team_captain' || me.project_manager));
 /** Chi ha i poteri del Team Captain vale come membro di ogni reparto. */
-export const canMarkTeam = (me: Pick<Profile, 'team_id' | 'role'> & { captain?: boolean } | null | undefined, teamId: string) =>
+export const canMarkTeam = (me: Pick<Profile, 'team_id' | 'role'> & { project_manager?: boolean } | null | undefined, teamId: string) =>
   Boolean(me && (hasCaptainPowers(me) || me.team_id === teamId));
 /** team_id è null solo per il Team Captain, che vale per tutti i reparti. */
-export interface RosterMember { id: string; full_name: string; team_id: string | null; role?: Role }
+export interface RosterMember { id: string; full_name: string; team_id: string | null; role?: Role; project_manager?: boolean }
 export interface AttendanceRecord { member_id: string; meeting_date: string; team_id: string | null; marked_by: string | null; marked_at: string }
-/** captain: poteri del Team Captain (public.is_team_captain), anche per chi ha un reparto. */
-export interface Profile { id: string; full_name: string; team_id: string | null; role: Role; is_admin: boolean; captain: boolean }
+export interface Profile { id: string; full_name: string; team_id: string | null; role: Role; project_manager: boolean; is_admin: boolean }
 /** Presenza segnata dal Team Captain sul nome di chi non ha ancora un account. */
 export interface NameAttendanceRecord { full_name: string; meeting_date: string }
 /** names: l'elenco dei Nomi Cognomi del team, compresi quelli non ancora registrati. */
@@ -114,11 +121,11 @@ function demoRecords(key = DEMO_KEY): unknown[] {
 export async function loadAttendance(): Promise<AttendanceSnapshot> {
   if (!live) {
     const roster = demoRoster();
-    return { names: [...roster.map(m => m.full_name), ...DEMO_UNREGISTERED], roster, records: demoRecords() as AttendanceRecord[], nameRecords: demoRecords(DEMO_NAMES_KEY) as NameAttendanceRecord[], me: { ...DEMO_CAPTAIN, team_id: null, role: 'team_captain', is_admin: true, captain: true } };
+    return { names: [...roster.map(m => m.full_name), ...DEMO_UNREGISTERED], roster, records: demoRecords() as AttendanceRecord[], nameRecords: demoRecords(DEMO_NAMES_KEY) as NameAttendanceRecord[], me: { ...DEMO_CAPTAIN, team_id: null, role: 'team_captain', is_admin: true, project_manager: false } };
   }
   if (!supabase) throw new Error('Configurazione Supabase mancante.');
   const { data: { user } } = await supabase.auth.getUser();
-  const [names, nameRecords, roster, records, me, powers] = await Promise.all([
+  const [names, nameRecords, roster, records, me] = await Promise.all([
     supabase.rpc('team_name_list'),
     supabase.from('name_attendance').select('full_name,meeting_date'),
     supabase.rpc('attendance_roster'),
@@ -131,14 +138,13 @@ export async function loadAttendance(): Promise<AttendanceSnapshot> {
         if (!data || data.length < 1000) return rows;
       }
     })(),
-    user ? supabase.from('members').select('id,full_name,team_id,role,is_admin').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
-    captainPowers(),
+    user ? supabase.from('members').select('id,full_name,team_id,role,project_manager,is_admin').eq('id', user.id).maybeSingle() : Promise.resolve({ data: null, error: null }),
   ]);
   if (names.error) throw names.error;
   if (nameRecords.error) throw nameRecords.error;
   if (roster.error) throw roster.error;
   if (me.error) throw me.error;
-  return { names: (names.data || []) as string[], nameRecords: (nameRecords.data || []) as NameAttendanceRecord[], roster: (roster.data || []) as RosterMember[], records, me: me.data ? { ...(me.data as Omit<Profile, 'captain'>), captain: powers } : null };
+  return { names: (names.data || []) as string[], nameRecords: (nameRecords.data || []) as NameAttendanceRecord[], roster: (roster.data || []) as RosterMember[], records, me: (me.data as Profile | null) };
 }
 
 export async function setAttendance(member: RosterMember, date: string, present: boolean, by: string) {
@@ -192,24 +198,15 @@ export async function availableNames(token?: string) {
   return ((data || []) as string[]).sort((a, b) => a.localeCompare(b, 'it'));
 }
 
-export async function completeProfile(fullName: string, teamId: string | null, role: Role) {
+export async function completeProfile(fullName: string, teamId: string | null, role: Role, projectManager = false) {
   if (!supabase) throw new Error('Configurazione Supabase mancante.');
-  const { error } = await supabase.rpc('complete_profile', { p_full_name: normalizeName(fullName), p_team_id: teamId || '', p_role: role });
+  const { error } = await supabase.rpc('complete_profile', { p_full_name: normalizeName(fullName), p_team_id: teamId || '', p_role: role, p_project_manager: projectManager });
   if (error) throw new Error(error.message);
-}
-
-/** Poteri del Team Captain dell'utente collegato (verificati dal database). */
-export async function captainPowers() {
-  if (!live) return true;
-  if (!supabase) return false;
-  const { data, error } = await supabase.rpc('is_team_captain');
-  if (error) throw new Error(error.message);
-  return data === true;
 }
 
 /** Correzione di reparto e ruolo di un membro: solo con i poteri del Team Captain (verificato dal database). */
-export async function setMemberAssignment(memberId: string, teamId: string | null, role: Role) {
+export async function setMemberAssignment(memberId: string, teamId: string | null, role: Role, projectManager = false) {
   if (!supabase) throw new Error('Configurazione Supabase mancante.');
-  const { error } = await supabase.rpc('set_member_assignment', { p_member: memberId, p_team_id: teamId || '', p_role: role });
+  const { error } = await supabase.rpc('set_member_assignment', { p_member: memberId, p_team_id: teamId || '', p_role: role, p_project_manager: projectManager });
   if (error) throw new Error(error.message);
 }

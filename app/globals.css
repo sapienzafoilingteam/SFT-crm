@@ -3247,6 +3247,7 @@ html.dark .recruiting-actions .recruiting-reject { color: var(--destructive); }
 @media (max-width: 420px) { .login .auth-teams { grid-template-columns: 1fr; } }
 .member-row > div:first-child { flex: 1; min-width: 0; }
 .member-row select { max-width: 220px; }
+.member-row .member-pm { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; white-space: nowrap; }
 
 @media (max-width: 640px) {
   .attendance-panel { padding: 16px; }
