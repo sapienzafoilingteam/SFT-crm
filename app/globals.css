@@ -3272,3 +3272,58 @@ html.dark .recruiting-actions .recruiting-reject { color: var(--destructive); }
 .profile strong { overflow-wrap: anywhere; }
 /* Tre iniziali: carattere leggermente più piccolo per restare nel cerchietto. */
 .avatar.three, .attendance-avatar.three { font-size: 10px; letter-spacing: 0; }
+
+/*
+ * Tendine e caselle di spunta con lo stesso aspetto in tutti i browser (ispirato a Safari):
+ * senza questo stile Chrome e Safari le disegnano in modo nativo e diverso.
+ * :not([multiple]) alza la specificità sopra le regole di sezione che usano `background:`.
+ */
+:root { --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%23696064' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3'/%3E%3C/svg%3E"); }
+.dark { --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%23bfb1b6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 5l3-3 3 3M2 9l3 3 3-3'/%3E%3C/svg%3E"); }
+select:not([multiple]),
+.mobile-preferences select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: var(--select-chevron);
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 9px 13px;
+  padding-right: 28px;
+  text-overflow: ellipsis;
+}
+/* Più bassa delle caselle di testo; sui telefoni resta alta 44px per il tocco. */
+select:not([multiple]) { min-height: 36px; padding-top: 6px; padding-bottom: 6px; }
+@media (max-width: 640px) { select:not([multiple]) { min-height: 44px; } }
+/* Impostazioni → Account del team: tendina compatta accanto a ogni account. */
+.member-row select:not([multiple]) { min-height: 30px; padding-top: 3px; padding-bottom: 3px; font-size: 13px; }
+.season-switch select:not([multiple]) { background-image: none; padding-right: 0; }
+
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 17px;
+  height: 17px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--input);
+  border-radius: 5px;
+  background: var(--card);
+  cursor: pointer;
+  transition: background-color .12s ease, border-color .12s ease;
+}
+input[type="checkbox"]::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--primary-foreground);
+  clip-path: polygon(14% 44%, 0 59%, 40% 100%, 100% 18%, 85% 4%, 38% 68%);
+  transform: scale(0);
+  transition: transform .12s ease;
+}
+input[type="checkbox"]:checked { background: var(--primary); border-color: var(--primary); }
+input[type="checkbox"]:checked::before { transform: scale(1); }
+input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .5; }
+@media (prefers-reduced-motion: reduce) { input[type="checkbox"], input[type="checkbox"]::before { transition: none; } }
