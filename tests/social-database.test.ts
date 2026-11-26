@@ -14,7 +14,10 @@ test('Social migration enforces access, atomic optimistic saves, revisions and p
   await db.exec(await readFile('supabase/migrations/202610010001_workspace.sql','utf8'));
   await db.exec(await readFile('supabase/migrations/202611130001_social_studio.sql','utf8'));
   await db.exec(await readFile('supabase/migrations/202611130002_social_folders.sql','utf8'));
-  await db.exec(`insert into members(id,active,social_enabled,is_admin,display_name) values('${member}',true,false,false,'Member'),('${enabled}',true,true,false,'Editor'),('${admin}',true,false,true,'Admin');set role authenticated;set "request.jwt.claim.sub"='${member}';`);
+  await db.exec(await readFile('supabase/migrations/202611260001_social_for_active_members.sql','utf8'));
+  await db.exec(`insert into members(id,active,social_enabled,is_admin,display_name) values('${member}',false,false,false,'Member'),('${enabled}',true,false,false,'Editor'),('${admin}',true,false,true,'Admin');set role anon;`);
+  await assert.rejects(db.query('select public.can_use_social()'),/permission denied/);
+  await db.exec(`reset role;set role authenticated;set "request.jwt.claim.sub"='${member}';`);
   const p=createProject('Shared project',season);const save=(expected:number|null)=>db.query<{save_social_project:{version:number;author_name:string}}>('select public.save_social_project($1::jsonb,$2::integer)',[JSON.stringify(p),expected]);
   await assert.rejects(save(0),/non abilitato/);assert.equal((await db.query('select * from social_projects')).rows.length,0);
   await assert.rejects(db.exec(`insert into social_drive_folders(id,name,created_by) values('denied-folder','Denied','${member}')`),/row-level security/);

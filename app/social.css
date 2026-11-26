@@ -59,9 +59,3 @@
  .social-drive-file { flex-wrap:wrap; }
  .social-error { align-items:flex-start; flex-direction:column; }
 }
-
-.social-access-panel { margin-top:32px; }
-.social-access-panel summary { cursor:pointer; font-weight:600; }
-.social-access-panel p { margin:16px 0; }
-.social-access-row { display:flex; gap:16px; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); }
-.social-access-row small { display:block; color:var(--muted-foreground); }

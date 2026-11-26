@@ -34,9 +34,9 @@ export async function getAccess(): Promise<SocialAccess> {
   if (!supabase) throw new Error('Configurazione Supabase mancante.');
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error('Accedi nuovamente al CRM.');
-  const { data, error: memberError } = await supabase.from('members').select('active,is_admin,social_enabled,display_name').eq('id', user.id).single();
-  if (memberError) throw new Error('Social non disponibile: verifica che la migrazione Social Studio sia stata applicata.');
-  return { allowed: Boolean(data.active && (data.is_admin || data.social_enabled)), admin: Boolean(data.active && data.is_admin), userId: user.id, displayName: data.display_name || user.email || 'Membro del team' };
+  const { data, error: memberError } = await supabase.from('members').select('active,is_admin,display_name').eq('id', user.id).maybeSingle();
+  if (memberError) throw new Error('Impossibile verificare lo stato del tuo account CRM.');
+  return { allowed: Boolean(data?.active), admin: Boolean(data?.active && data.is_admin), userId: user.id, displayName: data?.display_name || user.email || 'Membro del team' };
 }
 interface ProjectRow { document: unknown; id: string; season_id: string; title: string; author_name: string; updated_at: string; version: number; is_template: boolean }
 function fromRow(row: ProjectRow): SocialProject {
